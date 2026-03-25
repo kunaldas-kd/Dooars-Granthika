@@ -1,0 +1,51 @@
+/* ═══════════════════════════════════════════════════════════════════
+   EDIT MEMBER PAGE — page-specific styles
+   ═══════════════════════════════════════════════════════════════════ */
+
+@import url("members.css");
+
+/* ── Constrain form width ── */
+.form-container {
+  max-width: 860px;
+}
+
+/* ── Current photo thumbnail ── */
+.current-photo-preview {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid #e5e7eb;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+/* ── Image preview shown after new file is selected ── */
+.image-preview {
+  margin-top: 1rem;
+  display: none;
+}
+
+.image-preview.active {
+  display: block;
+}
+
+.image-preview img {
+  max-width: 200px;
+  border-radius: 8px;
+  border: 2px solid #e5e7eb;
+}
+
+/* ── Error messages ── */
+.error-message {
+  color: #ef4444;
+  font-size: 0.8125rem;
+  margin-top: 0.25rem;
+}
+
+/* ── Submit button loading state ── */
+#submitBtn[disabled],
+button[type="submit"][disabled] {
+  opacity: 0.7;
+  cursor: not-allowed;
+}

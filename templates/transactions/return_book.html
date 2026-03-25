@@ -1,0 +1,363 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/transactions/return_book.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header__left">
+      <div class="page-header__breadcrumb">
+        <span class="breadcrumb-item">Library</span>
+        <svg class="breadcrumb-sep" viewBox="0 0 6 10" fill="none"><path d="M1 1l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <a href="{% url 'transactions:transaction_list' %}" class="breadcrumb-item">Transactions</a>
+        <svg class="breadcrumb-sep" viewBox="0 0 6 10" fill="none"><path d="M1 1l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <a href="{% url 'transactions:transaction_detail' transaction.id %}" class="breadcrumb-item">{{ transaction.transaction_id }}</a>
+        <svg class="breadcrumb-sep" viewBox="0 0 6 10" fill="none"><path d="M1 1l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="breadcrumb-item breadcrumb-item--active">Return Book</span>
+      </div>
+      <h1 class="page-title">Process Return</h1>
+      <p class="page-subtitle">Transaction {{ transaction.transaction_id }}</p>
+    </div>
+    <div class="page-header__actions">
+      <a href="{% url 'transactions:transaction_detail' transaction.id %}" class="btn btn--ghost">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M12 4l-6 6 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back
+      </a>
+    </div>
+  </div>
+
+  <!-- Status Banner (shown when overdue) -->
+  {% if transaction.is_overdue %}
+  <div class="alert-banner alert-banner--overdue">
+    <div class="alert-banner__icon">
+      <svg viewBox="0 0 20 20" fill="none"><path d="M10 3L2 17h16L10 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M10 9v4M10 15v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </div>
+    <div class="alert-banner__content">
+      <strong>Overdue Return</strong>
+      This book is <strong>{{ transaction.overdue_days }} days overdue</strong>. A fine of
+      <strong>₹{{ transaction.fine_amount|floatformat:2 }}</strong> will be charged.
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Return Grid -->
+  <div class="return-grid">
+
+    <!-- Left Column -->
+    <div class="return-grid__main">
+
+      <!-- Member & Book Overview -->
+      <div class="overview-card">
+        <div class="overview-card__section">
+          <div class="overview-label">
+            <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 15c0-3 2.7-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Member
+          </div>
+          <div class="overview-profile">
+            <div class="overview-avatar">
+              {% if transaction.member.photo_mime_type %}
+              <img
+                src="{% url 'transactions:member_photo_image' transaction.member.pk %}"
+                alt="{{ transaction.member.first_name }}"
+                class="member-avatar__photo"
+                onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+              >
+              {% endif %}
+              <span class="member-avatar__initial" {% if transaction.member.photo_mime_type %}style="display:none"{% endif %}>
+                {{ transaction.member.first_name|first|upper }}
+              </span>
+            </div>
+            <div class="overview-info">
+              <h3 class="overview-name">{{ transaction.member.first_name }} {{ transaction.member.last_name }}</h3>
+              <span class="overview-meta">{{ transaction.member.member_id }} · {{ transaction.member.get_role_display }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="overview-divider"></div>
+
+        <div class="overview-card__section">
+          <div class="overview-label">
+            <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 6h6M5 9h6M5 12h3" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>
+            Book
+          </div>
+          <div class="overview-book">
+            <div class="overview-book__cover">
+              {% if transaction.book.cover_image %}
+              <img
+                src="{% url 'transactions:book_cover_image' transaction.book.pk %}"
+                alt="{{ transaction.book.title }}"
+                style="width:100%;height:100%;object-fit:cover;border-radius:4px;"
+                onerror="this.style.display='none';this.nextElementSibling.style.display='block';"
+              >
+              <svg style="display:none" viewBox="0 0 32 38" fill="none"><rect x="2" y="2" width="28" height="34" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 11h18M7 16h18M7 21h12" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>
+              {% else %}
+              <svg viewBox="0 0 32 38" fill="none"><rect x="2" y="2" width="28" height="34" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 11h18M7 16h18M7 21h12" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>
+              {% endif %}
+            </div>
+            <div>
+              <h3 class="overview-name">{{ transaction.book.title }}</h3>
+              <span class="overview-meta">by {{ transaction.book.author }}</span>
+              <span class="overview-meta">ISBN: {{ transaction.book.isbn|default:"—" }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Date Summary -->
+      <div class="date-summary-card">
+        <h3 class="date-summary-card__title">Transaction Dates</h3>
+        <div class="date-row-group">
+          <div class="date-row">
+            <div class="date-row__icon date-row__icon--issue">
+              <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 1v3M11 1v3M2 7h12" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>
+            </div>
+            <div class="date-row__content">
+              <span class="date-row__label">Issue Date</span>
+              <span class="date-row__value">{{ transaction.issue_date|date:"d F Y" }}</span>
+            </div>
+          </div>
+          <div class="date-row {% if transaction.is_overdue %}date-row--overdue{% endif %}">
+            <div class="date-row__icon {% if transaction.is_overdue %}date-row__icon--overdue{% else %}date-row__icon--due{% endif %}">
+              <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v3.5l2 2" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="date-row__content">
+              <span class="date-row__label">Due Date</span>
+              <span class="date-row__value">{{ transaction.due_date|date:"d F Y" }}</span>
+              {% if transaction.is_overdue %}
+              <span class="date-row__overdue-tag">{{ transaction.overdue_days }} days overdue</span>
+              {% endif %}
+            </div>
+          </div>
+          <div class="date-row date-row--return">
+            <div class="date-row__icon date-row__icon--return">
+              <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h9M8 5l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="date-row__content">
+              <span class="date-row__label">Return Date</span>
+              <span class="date-row__value date-row__value--today">Today — {{ today|date:"d F Y" }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Return Form -->
+      <div class="return-form-card">
+        <h3 class="return-form-card__title">Return Details</h3>
+        <form method="POST" action="" id="returnForm" novalidate>
+          {% csrf_token %}
+          <input type="hidden" name="transaction_id" value="{{ transaction.id }}">
+          <input type="hidden" name="return_date"    value="{{ today|date:'Y-m-d' }}">
+
+          <!-- Book Condition -->
+          <div class="form-group">
+            <label class="form-label">Book Condition</label>
+            <div class="condition-options" id="conditionOptions">
+              <label class="condition-option condition-option--good">
+                <input type="radio" name="condition" value="good" checked>
+                <span class="condition-option__box">
+                  <svg viewBox="0 0 20 20" fill="none"><path d="M5 10l3 3 7-7" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  Good
+                </span>
+              </label>
+              <label class="condition-option condition-option--fair">
+                <input type="radio" name="condition" value="fair">
+                <span class="condition-option__box">
+                  <svg viewBox="0 0 20 20" fill="none"><path d="M5 10h10" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+                  Fair
+                </span>
+              </label>
+              <label class="condition-option condition-option--damaged">
+                <input type="radio" name="condition" value="damaged">
+                <span class="condition-option__box">
+                  <svg viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+                  Damaged
+                </span>
+              </label>
+              <label class="condition-option condition-option--lost">
+                <input type="radio" name="condition" value="lost">
+                <span class="condition-option__box">
+                  <svg viewBox="0 0 20 20" fill="none"><path d="M10 3L3 17h14L10 3z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/><path d="M10 9v3M10 14v.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+                  Lost
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <!-- ── Damaged: copy ID + book price ── -->
+          <div id="damageChargeGroup" hidden>
+            <div class="copy-status-notice copy-status-notice--damaged">
+              <svg viewBox="0 0 16 16" fill="none" width="15" height="15">
+                <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M8 5v3.5M8 10.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              <div>
+                This copy will be marked <strong>Damaged</strong> and removed from circulation.
+                You will be taken to the <strong>payment screen</strong> to collect the charge.
+                <div class="copy-id-field">
+                  <label>Copy ID</label>
+                  <input type="text" value="{{ transaction.book_copy.copy_id|default:'—' }}" readonly disabled>
+                </div>
+              </div>
+            </div>
+            <input type="hidden" name="damage_charge" id="damageCharge"
+                   value="{{ transaction.book.price|default:'0' }}"
+                   data-book-price="{{ transaction.book.price|default:'0' }}">
+            <div class="price-display" id="damageChargeDisplay">
+              <span class="price-display__label">Book Price</span>
+              <span class="price-display__amount" id="damageChargeAmountLabel">₹{{ transaction.book.price|default:'0'|floatformat:2 }}</span>
+              <button type="button" class="price-override-link" id="damageOverrideBtn">different price?</button>
+            </div>
+            <div class="price-override-row" id="damageOverrideRow" hidden>
+              <label for="damageChargeOverride">Updated Book Price (₹)</label>
+              <input type="number" id="damageChargeOverride" min="0" step="0.50"
+                     placeholder="{{ transaction.book.price|default:'0' }}">
+              <button type="button" class="price-override-reset" id="damageResetBtn">reset</button>
+            </div>
+          </div>
+
+          <!-- ── Lost: copy ID + book price ── -->
+          <div id="lostChargeGroup" hidden>
+            <div class="copy-status-notice copy-status-notice--lost">
+              <svg viewBox="0 0 16 16" fill="none" width="15" height="15">
+                <path d="M8 2L2 14h12L8 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                <path d="M8 7v3M8 12v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              <div>
+                This copy will be marked <strong>Lost</strong> and deducted from inventory.
+                You will be taken to the <strong>payment screen</strong> to collect the penalty.
+                <div class="copy-id-field">
+                  <label>Copy ID</label>
+                  <input type="text" value="{{ transaction.book_copy.copy_id|default:'—' }}" readonly disabled>
+                </div>
+              </div>
+            </div>
+            <input type="hidden" name="damage_charge" id="lostCharge"
+                   value="{{ transaction.book.price|default:'0' }}"
+                   data-book-price="{{ transaction.book.price|default:'0' }}">
+            <div class="price-display" id="lostChargeDisplay">
+              <span class="price-display__label">Book Price</span>
+              <span class="price-display__amount" id="lostChargeAmountLabel">₹{{ transaction.book.price|default:'0'|floatformat:2 }}</span>
+              <button type="button" class="price-override-link" id="lostOverrideBtn">different price?</button>
+            </div>
+            <div class="price-override-row" id="lostOverrideRow" hidden>
+              <label for="lostChargeOverride">Updated Book Price (₹)</label>
+              <input type="number" id="lostChargeOverride" min="0" step="0.50"
+                     placeholder="{{ transaction.book.price|default:'0' }}">
+              <button type="button" class="price-override-reset" id="lostResetBtn">reset</button>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div class="form-group" style="margin-top:16px">
+            <label for="returnNotes" class="form-label">
+              Return Notes <span class="form-label-hint">(optional)</span>
+            </label>
+            <textarea name="return_notes" id="returnNotes" class="form-textarea" rows="3"
+                      placeholder="Any observations about this return…"></textarea>
+          </div>
+
+          <!-- Submit -->
+          <div class="form-actions" style="margin-top:20px">
+            <a href="{% url 'transactions:transaction_detail' transaction.id %}" class="btn btn--ghost">Cancel</a>
+            <input type="hidden" name="book_price_override" id="bookPriceOverride">
+            <button type="submit" class="btn btn--success btn--lg" id="confirmReturnBtn">
+              <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M3 10l5 5 9-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Confirm Return
+            </button>
+          </div>
+
+        </form>
+      </div>
+
+    </div><!-- /.return-grid__main -->
+
+    <!-- Sidebar -->
+    <div class="return-grid__sidebar">
+
+      <!-- Fine Summary Card -->
+      <div class="fine-summary-card">
+        <div class="fine-summary-card__header">
+          <h3 class="fine-summary-card__title">Fine Summary</h3>
+          {% if transaction.is_overdue %}
+          <span class="status-badge status-badge--overdue">
+            <span class="status-badge__dot"></span>
+            Overdue
+          </span>
+          {% else %}
+          <span class="status-badge status-badge--issued">
+            <span class="status-badge__dot"></span>
+            On Time
+          </span>
+          {% endif %}
+        </div>
+        <div class="fine-summary-card__body">
+          <div class="fine-meter">
+            <div class="fine-meter__ring" data-pct="{{ fine_pct }}">
+              <svg viewBox="0 0 80 80" class="fine-meter__svg">
+                <circle cx="40" cy="40" r="34" class="fine-meter__track"/>
+                <circle cx="40" cy="40" r="34" class="fine-meter__fill"
+                  stroke-dasharray="213.63"
+                  stroke-dashoffset="213.63"/>
+              </svg>
+              <div class="fine-meter__center">
+                <span class="fine-meter__amount">₹{{ transaction.fine_amount|floatformat:2 }}</span>
+                <span class="fine-meter__label">total fine</span>
+              </div>
+            </div>
+          </div>
+          <div class="fine-breakdown">
+            <div class="fine-breakdown__row">
+              <span>Days Borrowed</span>
+              <strong>{{ transaction.days_borrowed }} days</strong>
+            </div>
+            <div class="fine-breakdown__row">
+              <span>Overdue Days</span>
+              <strong class="{% if transaction.overdue_days > 0 %}text-danger{% endif %}">{{ transaction.overdue_days }} days</strong>
+            </div>
+            <div class="fine-breakdown__row">
+              <span>Fine Rate</span>
+              <strong>₹{{ transaction.fine_rate_per_day }}/day</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Info -->
+      <div class="quick-info-card">
+        <h4 class="quick-info-card__title">Transaction Info</h4>
+        <div class="quick-info-list">
+          <div class="quick-info-item">
+            <span class="quick-info-item__label">Txn ID</span>
+            <span class="quick-info-item__value">{{ transaction.transaction_id }}</span>
+          </div>
+          <div class="quick-info-item">
+            <span class="quick-info-item__label">Issued By</span>
+            <span class="quick-info-item__value">{{ transaction.issued_by|default:"—" }}</span>
+          </div>
+          <div class="quick-info-item">
+            <span class="quick-info-item__label">Loan Duration</span>
+            <span class="quick-info-item__value">{{ transaction.loan_duration_days }} days</span>
+          </div>
+          <div class="quick-info-item">
+            <span class="quick-info-item__label">Renewals</span>
+            <span class="quick-info-item__value">{{ transaction.renewal_count }}</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.return-grid__sidebar -->
+
+  </div><!-- /.return-grid -->
+
+</div><!-- /.page-wrapper -->
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/transactions/return_book.js' %}"></script>
+{% endblock %}

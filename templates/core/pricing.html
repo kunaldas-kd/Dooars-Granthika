@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pricing - Dooars Granthika{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/core/pricing.css' %}" />
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+  <h1>Simple, Transparent Pricing</h1>
+  <p>Choose the plan that's right for your library. All plans include core features and dedicated support.</p>
+</section>
+
+<!-- Pricing Cards -->
+<section class="pricing-section">
+  <div class="pricing-container">
+
+    {% for plan in plans %}
+    <div class="pricing-card {% if plan.is_popular %}featured{% endif %}" style="--card-index: {{ forloop.counter0 }}">
+
+      {% if plan.is_popular %}
+      <div class="featured-badge">Most Popular</div>
+      {% endif %}
+
+      <div class="pricing-header">
+        <h3>{{ plan.name }}</h3>
+        <div class="price">
+          {% if plan.is_free %}
+            <span class="amount">Free</span>
+          {% else %}
+            <span class="currency">₹</span>
+            <span class="amount">{{ plan.price }}</span>
+            <span class="period">/{{ plan.get_billing_cycle_display|lower }}</span>
+          {% endif %}
+        </div>
+        {% if plan.tagline %}
+        <p class="pricing-description">{{ plan.tagline }}</p>
+        {% elif plan.description %}
+        <p class="pricing-description">{{ plan.description }}</p>
+        {% endif %}
+      </div>
+
+      <ul class="pricing-features">
+        {# ── DB-driven limits ── #}
+        {% if plan.max_members == 987654321 %}
+        <li style="--feature-index: 0"><span class="check">✓</span> Unlimited members</li>
+        {% else %}
+        <li style="--feature-index: 0"><span class="check">✓</span> Up to {{ plan.max_members }} members</li>
+        {% endif %}
+
+        {% if plan.max_books == 987654321 %}
+        <li style="--feature-index: 1"><span class="check">✓</span> Unlimited books</li>
+        {% else %}
+        <li style="--feature-index: 1"><span class="check">✓</span> Up to {{ plan.max_books }} books</li>
+        {% endif %}
+
+        {% if plan.max_book_copies == 987654321 %}
+        <li style="--feature-index: 2"><span class="check">✓</span> Unlimited book copies</li>
+        {% else %}
+        <li style="--feature-index: 2"><span class="check">✓</span> Up to {{ plan.max_book_copies }} copies</li>
+        {% endif %}
+
+        {% if plan.max_staff %}
+        <li style="--feature-index: 3"><span class="check">✓</span> {{ plan.max_staff }} staff account{{ plan.max_staff|pluralize }}</li>
+        {% endif %}
+
+        {# ── Feature toggles from DB ── #}
+        {% if plan.allow_reports %}
+        <li style="--feature-index: 4"><span class="check">✓</span> Reports &amp; analytics</li>
+        {% endif %}
+
+        {% if plan.allow_export %}
+        <li style="--feature-index: 5"><span class="check">✓</span> Data export</li>
+        {% endif %}
+
+        {% if plan.allow_sms %}
+        <li style="--feature-index: 6"><span class="check">✓</span> SMS notifications</li>
+        {% endif %}
+
+        {% if plan.allow_email_reminders %}
+        <li style="--feature-index: 7"><span class="check">✓</span> Email reminders</li>
+        {% endif %}
+
+        {% if plan.allow_api_access %}
+        <li style="--feature-index: 8"><span class="check">✓</span> API access</li>
+        {% endif %}
+
+        {% if plan.allow_custom_branding %}
+        <li style="--feature-index: 9"><span class="check">✓</span> Custom branding</li>
+        {% endif %}
+
+        {% if plan.allow_advance_booking %}
+        <li style="--feature-index: 10"><span class="check">✓</span> Advance booking</li>
+        {% endif %}
+
+        {% if plan.priority_support %}
+        <li style="--feature-index: 11"><span class="check">✓</span> Priority support (24/7)</li>
+        {% endif %}
+
+        {# ── Extra features_list from plan model ── #}
+        {% for feature in plan.features_list %}
+        <li style="--feature-index: {{ forloop.counter|add:11 }}"><span class="check">✓</span> {{ feature }}</li>
+        {% endfor %}
+      </ul>
+
+      {% if plan.is_free %}
+        <a href="{% url 'accounts:signup' %}?plan={{ plan.slug }}" class="btn btn-outline btn-lg pricing-btn">Get Started Free</a>
+      {% elif plan.slug == 'enterprise' %}
+        <a href="{% url 'contact' %}" class="btn btn-outline btn-lg pricing-btn">Contact Sales</a>
+      {% else %}
+        <a href="{% url 'accounts:signup' %}?plan={{ plan.slug }}" class="btn {% if plan.is_popular %}btn-primary{% else %}btn-outline{% endif %} btn-lg pricing-btn">
+          Get Started — ₹{{ plan.price|floatformat:2 }}/{{plan.get_billing_cycle_display}}
+        </a>
+      {% endif %}
+
+    </div>
+    {% empty %}
+    {# Fallback if no plans in DB yet #}
+    <div class="pricing-card" style="--card-index: 0">
+      <div class="pricing-header">
+        <h3>No plans available</h3>
+        <p class="pricing-description">Please check back soon or contact us.</p>
+      </div>
+      <a href="{% url 'contact' %}" class="btn btn-outline btn-lg pricing-btn">Contact Us</a>
+    </div>
+    {% endfor %}
+
+  </div>
+</section>
+
+<!-- FAQ Section -->
+<section class="faq-section">
+  <div class="content-container">
+    <h2 class="section-title">Frequently Asked Questions</h2>
+
+    <div class="faq-grid">
+      <div class="faq-item" style="--faq-index: 0">
+        <h3>Can I switch plans later?</h3>
+        <p>Yes! You can upgrade or downgrade your plan at any time. Changes will be reflected in your next billing cycle.</p>
+      </div>
+
+      <div class="faq-item" style="--faq-index: 1">
+        <h3>Is there a free trial?</h3>
+        <p>Yes, we offer a free Trial plan with no credit card required to get started.</p>
+      </div>
+
+      <div class="faq-item" style="--faq-index: 2">
+        <h3>What payment methods do you accept?</h3>
+        <p>We accept all major credit cards, debit cards, UPI, net banking, and bank transfers.</p>
+      </div>
+
+      <div class="faq-item" style="--faq-index: 3">
+        <h3>Is my data secure?</h3>
+        <p>Absolutely! We use industry-standard encryption and security measures to protect your data.</p>
+      </div>
+
+      <div class="faq-item" style="--faq-index: 4">
+        <h3>Do you offer discounts for educational institutions?</h3>
+        <p>Yes, we offer special pricing for educational institutions. Contact our sales team for details.</p>
+      </div>
+
+      <div class="faq-item" style="--faq-index: 5">
+        <h3>What happens if I exceed my plan limits?</h3>
+        <p>We'll notify you when you're approaching limits. You can upgrade or we can discuss custom solutions.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+  <h2>Still Have Questions?</h2>
+  <p>Our team is here to help you choose the right plan for your library.</p>
+  <a href="{% url 'contact' %}" class="btn btn-primary btn-lg">Contact Us</a>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/core/pricing.js' %}"></script>
+{% endblock %}

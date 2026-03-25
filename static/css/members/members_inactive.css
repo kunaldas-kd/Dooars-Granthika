@@ -1,0 +1,33 @@
+/* ═══════════════════════════════════════════════════════════════════
+   INACTIVE MEMBERS PAGE — page-specific styles
+   ═══════════════════════════════════════════════════════════════════ */
+
+@import url("members.css");
+
+/* ── Muted avatar for inactive members ── */
+.members-inactive-page .member-avatar {
+  opacity: 0.6;
+}
+
+/* ── 3-column filter grid ── */
+.members-inactive-page .filters-grid {
+  grid-template-columns: repeat(3, 1fr) auto;
+}
+
+@media (max-width: 900px) {
+  .members-inactive-page .filters-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .members-inactive-page .filters-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Reactivate icon ── */
+.action-icon.reactivate:hover {
+  background: #d1fae5;
+  color: #10b981;
+}

@@ -1,0 +1,106 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+{% block title %}Member Report — Dooars Granthika{% endblock %}
+{% block nav_reports %}active{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/reports/reports_members.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="rpt-page">
+
+  <div class="rpt-header">
+    <div>
+      <h1 class="rpt-title">Member Report</h1>
+      <p class="rpt-sub">{{ date_from }} — {{ date_to }}</p>
+    </div>
+    <div class="rpt-actions">
+      <a href="{% url 'reports:export_members' %}?date_from={{ date_from|date:'Y-m-d' }}&date_to={{ date_to|date:'Y-m-d' }}&role={{ role }}&status={{ status }}" class="rpt-btn-export"><i class="fas fa-download"></i> Export CSV</a>
+      <a href="{% url 'reports:overview' %}" class="rpt-btn-back"><i class="fas fa-arrow-left"></i> Overview</a>
+    </div>
+  </div>
+
+  <form method="get" class="rpt-filter">
+    <div class="rpt-filter-group">
+      <label class="rpt-filter-label">From</label>
+      <input type="date" name="date_from" class="rpt-filter-input" value="{{ date_from|date:'Y-m-d' }}">
+    </div>
+    <div class="rpt-filter-group">
+      <label class="rpt-filter-label">To</label>
+      <input type="date" name="date_to" class="rpt-filter-input" value="{{ date_to|date:'Y-m-d' }}">
+    </div>
+    <div class="rpt-filter-group">
+      <label class="rpt-filter-label">Role</label>
+      <select name="role" class="rpt-filter-select">
+        {% for val, label in role_choices %}<option value="{{ val }}" {% if val == role %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="rpt-filter-group">
+      <label class="rpt-filter-label">Status</label>
+      <select name="status" class="rpt-filter-select">
+        {% for val, label in status_choices %}<option value="{{ val }}" {% if val == status %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="rpt-filter-actions">
+      <button type="submit" class="rpt-filter-submit">Filter</button>
+      <a href="?" class="rpt-filter-reset">Reset</a>
+    </div>
+  </form>
+
+  <div class="rpt-members-layout">
+    <div class="rpt-card">
+      <div class="rpt-card-head"><span class="rpt-card-icon"><i class="fas fa-id-card"></i></span>Member Activity in Period</div>
+      <div class="rpt-table-wrap">
+        <table class="rpt-table">
+          <thead>
+            <tr>
+              <th>Member</th><th style="width:90px">Role</th>
+              <th class="rpt-cell-center" style="width:120px">Loans (period)</th>
+              <th class="rpt-cell-center" style="width:100px">Active Now</th>
+              <th class="rpt-cell-right" style="width:120px">Unpaid Fines</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in members %}
+            <tr>
+              <td>
+                <div class="rpt-member-cell">
+                  <div class="rpt-avatar">{{ r.member.first_name.0 }}{{ r.member.last_name.0 }}</div>
+                  <div><div class="rpt-cell-name">{{ r.member.first_name }} {{ r.member.last_name }}</div><div class="rpt-cell-sub">{{ r.member.member_id }}</div></div>
+                </div>
+              </td>
+              <td><span class="rpt-badge rpt-role--{{ r.member.role }}">{{ r.member.get_role_display }}</span></td>
+              <td class="rpt-cell-center">{{ r.loans_in_range }}</td>
+              <td class="rpt-cell-center">{% if r.active_loans %}<span class="rpt-loan-pill">{{ r.active_loans }}</span>{% else %}—{% endif %}</td>
+              <td class="rpt-cell-right">{% if r.unpaid_fines %}<span class="rpt-fine-warn">₹{{ r.unpaid_fines }}</span>{% else %}<span class="rpt-fine-clear">—</span>{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="rpt-table-empty">No members found</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="rpt-card" style="align-self:start">
+      <div class="rpt-card-head"><span class="rpt-card-icon"><i class="fas fa-trophy"></i></span>Top Borrowers — All Time</div>
+      <ul class="rpt-lboard">
+        {% for b in top_borrowers %}
+        <li class="rpt-lboard-item rpt-lboard-item--{% if forloop.counter <= 3 %}{{ forloop.counter }}{% else %}n{% endif %}">
+          <span class="rpt-lboard-rank rpt-lboard-rank--{% if forloop.counter <= 3 %}{{ forloop.counter }}{% else %}n{% endif %}">{{ forloop.counter }}</span>
+          <div class="rpt-lboard-info">
+            <div class="rpt-lboard-name">{{ b.member__first_name }} {{ b.member__last_name }}</div>
+            <div class="rpt-lboard-meta">{{ b.member__member_id }}</div>
+          </div>
+          <span class="rpt-lboard-count">{{ b.loan_count }}</span>
+        </li>
+        {% empty %}
+        <li style="padding:32px;text-align:center;color:#6b7fa8">No data yet</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

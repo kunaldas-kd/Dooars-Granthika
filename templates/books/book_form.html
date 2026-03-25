@@ -1,0 +1,568 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}
+  {% if form.instance.pk %}Edit Book{% else %}Add / Import Books{% endif %} — Dooars Granthika
+{% endblock %}
+{% block nav_books %}active{% endblock %}
+{% block page_heading %}
+  {% if form.instance.pk %}Edit Book{% else %}Add / Import Books{% endif %}
+{% endblock %}
+{% block page_subheading %}
+  {% if form.instance.pk %}Update the details for {{ form.instance.title }}
+  {% else %}Manually add a book or bulk-import from Excel{% endif %}
+{% endblock %}
+
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/books/books.css' %}" />
+<link rel="stylesheet" href="{% static 'css/books/book_form.css' %}" />
+{% endblock %}
+
+
+{% block content %}
+
+  {# ── Django-context bridge for book_form.js ── #}
+  <div id="bookFormMeta"
+       data-import-step="{{ import_step|default:'' }}"
+       style="display:none;">
+  </div>
+
+  {# ── Breadcrumb ── #}
+  <nav class="breadcrumb">
+    <a href="{% url 'accounts:admin_dashboard' %}"><i class="fas fa-home"></i> Dashboard</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="{% url 'books:book_list' %}">Books</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{% if form.instance.pk %}Edit: {{ form.instance.title }}{% else %}Add / Import{% endif %}</span>
+  </nav>
+
+  {# ── Page header ── #}
+  <div class="books-page-header animate-in" style="margin-bottom:24px;">
+    <div class="header-text">
+      <h1>
+        <i class="fas fa-{% if form.instance.pk %}pen{% else %}plus-circle{% endif %}"></i>
+        {% if form.instance.pk %}Edit Book{% else %}Add / Import Books{% endif %}
+      </h1>
+      <p>
+        {% if form.instance.pk %}Update the details for <em>{{ form.instance.title }}</em>
+        {% else %}Manually enter a book or bulk-import from Excel{% endif %}
+      </p>
+    </div>
+    <div class="header-actions">
+      <a href="{% url 'books:book_list' %}" class="btn btn-ghost btn-sm">
+        <i class="fas fa-times"></i> Cancel
+      </a>
+    </div>
+  </div>
+
+
+  {# ── Tab bar (add / import mode only) ── #}
+  {% if not form.instance.pk %}
+  <div class="form-tabs">
+    <button class="form-tab-btn active" data-tab="manual">
+      <i class="fas fa-pen"></i> Manual Entry
+    </button>
+    <button class="form-tab-btn" data-tab="import">
+      <i class="fas fa-file-excel"></i> Import from Excel
+    </button>
+  </div>
+  {% endif %}
+
+
+  {% comment %} {# ═══════════════════════════════════════════
+     TAB 1 — MANUAL ENTRY
+  ═══════════════════════════════════════════ #} {% endcomment %}
+  <div class="tab-panel active" id="tab-manual">
+    <div class="card form-card animate-in">
+
+      <div class="card-header">
+        <span class="card-title">
+          <i class="fas fa-book" style="color:var(--ink-accent);"></i>
+          Book Information
+        </span>
+        <span class="text-sm text-muted">
+          Fields marked <span style="color:var(--red);">*</span> are required
+        </span>
+      </div>
+
+      <div class="card-body">
+        <form id="bookForm" method="POST" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+          <input type="hidden" name="form_type" value="manual">
+
+          <div class="form-grid">
+
+            {# ── Section: Basic Information ── #}
+            <div class="form-divider">
+              <i class="fas fa-info-circle" style="color:var(--ink-accent);"></i>
+              Basic Information
+            </div>
+
+            <div class="form-group full-width">
+              <label class="form-label" for="id_title">Book Title <span class="required">*</span></label>
+              <input type="text" id="id_title" name="title"
+                class="form-control {% if form.title.errors %}is-invalid{% endif %}"
+                placeholder="e.g. The Great Gatsby"
+                value="{{ form.title.value|default:'' }}" required>
+              <div class="invalid-feedback">
+                <i class="fas fa-exclamation-circle"></i>
+                {% if form.title.errors %}{{ form.title.errors|join:", " }}{% else %}Book title is required.{% endif %}
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="id_author">Author <span class="required">*</span></label>
+              <input type="text" id="id_author" name="author"
+                class="form-control {% if form.author.errors %}is-invalid{% endif %}"
+                placeholder="e.g. F. Scott Fitzgerald"
+                value="{{ form.author.value|default:'' }}" required>
+              <div class="invalid-feedback">
+                <i class="fas fa-exclamation-circle"></i>
+                {% if form.author.errors %}{{ form.author.errors|join:", " }}{% else %}Author name is required.{% endif %}
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="id_isbn">ISBN <span class="required">*</span></label>
+              <input type="text" id="id_isbn" name="isbn"
+                class="form-control {% if form.isbn.errors %}is-invalid{% endif %}"
+                placeholder="e.g. 978-0-7432-7356-5"
+                value="{{ form.isbn.value|default:'' }}" required>
+              <div class="invalid-feedback">
+                <i class="fas fa-exclamation-circle"></i>
+                {% if form.isbn.errors %}{{ form.isbn.errors|join:", " }}{% else %}ISBN is required.{% endif %}
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="id_category">Category</label>
+              <select id="id_category" name="category" class="form-control">
+                <option value="">— Select existing category —</option>
+                {% for cat in categories %}
+                  <option value="{{ cat.pk }}"
+                    {% if form.category.value|stringformat:"s" == cat.pk|stringformat:"s" %}selected{% endif %}>
+                    {{ cat.name }}
+                  </option>
+                {% endfor %}
+              </select>
+              {% if form.category.errors %}
+                <div class="invalid-feedback" style="display:block;">
+                  <i class="fas fa-exclamation-circle"></i>
+                  {{ form.category.errors|join:", " }}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="form-group" style="position:relative;">
+              <label class="form-label" for="id_new_category">Or create a new category</label>
+              <div style="position:relative;">
+                <input type="text" id="id_new_category" name="new_category"
+                  class="form-control"
+                  placeholder="e.g. Science Fiction"
+                  autocomplete="off"
+                  value="{{ form.new_category.value|default:'' }}">
+                <span id="newCatHint"></span>
+              </div>
+              <div class="form-text" style="font-size:.73rem;color:var(--text-muted);margin-top:4px;">
+                <i class="fas fa-info-circle"></i>
+                If a matching category already exists it will be reused automatically.
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="id_publisher">Publisher</label>
+              <input type="text" id="id_publisher" name="publisher"
+                class="form-control" placeholder="e.g. Penguin Books"
+                value="{{ form.publisher.value|default:'' }}">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="id_publication_year">Publication Year</label>
+              <input type="number" id="id_publication_year" name="publication_year"
+                class="form-control" placeholder="e.g. 2020" min="1000" max="2099"
+                value="{{ form.publication_year.value|default:'' }}">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="id_language">Language</label>
+              <select id="id_language" name="language" class="form-control">
+                <option value="">— Select Language —</option>
+                <option value="English"  {% if form.language.value == "English"  %}selected{% endif %}>English</option>
+                <option value="Bengali"  {% if form.language.value == "Bengali"  %}selected{% endif %}>Bengali</option>
+                <option value="Hindi"    {% if form.language.value == "Hindi"    %}selected{% endif %}>Hindi</option>
+                <option value="Sanskrit" {% if form.language.value == "Sanskrit" %}selected{% endif %}>Sanskrit</option>
+                <option value="Nepali"   {% if form.language.value == "Nepali"   %}selected{% endif %}>Nepali</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="id_edition">Edition</label>
+              <input type="text" id="id_edition" name="edition"
+                class="form-control" placeholder="e.g. 3rd Edition"
+                value="{{ form.edition.value|default:'' }}">
+            </div>
+
+            {# ── Section: Stock & Location ── #}
+            <div class="form-divider">
+              <i class="fas fa-boxes" style="color:var(--ink-accent);"></i>
+              Stock &amp; Location
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="id_total_copies">Total Copies <span class="required">*</span></label>
+              <input type="number" id="id_total_copies" name="total_copies"
+                class="form-control" placeholder="e.g. 10" min="0"
+                value="{{ form.total_copies.value|default:'' }}" required>
+              <div class="invalid-feedback">
+                <i class="fas fa-exclamation-circle"></i> Total copies is required.
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="id_shelf_location">Shelf Location</label>
+              <input type="text" id="id_shelf_location" name="shelf_location"
+                class="form-control" placeholder="e.g. A-12-F"
+                value="{{ form.shelf_location.value|default:'' }}">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="id_price">
+                Price (₹) <span class="required">*</span>
+              </label>
+              <input type="number" id="id_price" name="price"
+                class="form-control" placeholder="e.g. 350.00"
+                min="0" step="0.01" required
+                value="{{ form.price.value|default:'' }}">
+              <div class="invalid-feedback">
+                <i class="fas fa-exclamation-circle"></i>
+                {% if form.price.errors %}{{ form.price.errors|join:", " }}{% else %}Price is required.{% endif %}
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label class="form-label" for="id_cover_image">Cover Image</label>
+
+              <div class="cover-upload-panel">
+
+                {# ── Preview pane ── #}
+                <div class="cover-preview-pane" id="coverPreviewPane">
+                  {% if form.instance.cover_image %}
+                    <img id="coverPreviewImg"
+                         src="{% url 'books:book_cover' form.instance.pk %}?v={{ form.instance.updated_at.timestamp|floatformat:0 }}"
+                         alt="Book cover">
+                    <div class="cover-preview-overlay">
+                      <i class="fas fa-camera"></i> Change cover
+                    </div>
+                  {% else %}
+                    <div class="cover-placeholder" id="coverPlaceholder">
+                      <i class="fas fa-image"></i>
+                      <span>No cover yet</span>
+                    </div>
+                    <img id="coverPreviewImg" src="" alt="Cover preview" style="display:none;">
+                    <div class="cover-preview-overlay" style="display:none;">
+                      <i class="fas fa-camera"></i> Change cover
+                    </div>
+                  {% endif %}
+                </div>
+
+                {# ── Upload controls ── #}
+                <div class="cover-upload-controls">
+                  <label class="btn btn-outline btn-sm cover-upload-btn" for="id_cover_image">
+                    <i class="fas fa-upload"></i>
+                    {% if form.instance.cover_image %}Replace Cover{% else %}Upload Cover{% endif %}
+                  </label>
+                  <input type="file" id="id_cover_image" name="cover_image"
+                    accept="image/*" style="display:none;">
+
+                  <div class="cover-filename-wrap" id="coverFilenameWrap" style="display:none;">
+                    <i class="fas fa-check-circle" style="color:#22c55e;"></i>
+                    <span id="coverFilenameTxt"></span>
+                    <button type="button" class="cover-clear-btn" id="coverClearBtn" title="Remove selection">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+
+                  <p class="form-text" style="margin-top:6px;">
+                    JPEG / PNG / WEBP / GIF &nbsp;·&nbsp; max 5 MB
+                    {% if form.instance.cover_image %}
+                      <br><span style="color:var(--text-muted);">Upload a new file to replace the current cover.</span>
+                    {% endif %}
+                  </p>
+                </div>
+
+              </div>{# /cover-upload-panel #}
+            </div>
+
+            {# ── Section: Description ── #}
+            <div class="form-divider">
+              <i class="fas fa-align-left" style="color:var(--ink-accent);"></i>
+              Description
+            </div>
+
+            <div class="form-group full-width">
+              <label class="form-label" for="id_description">Book Description</label>
+              <textarea id="id_description" name="description"
+                class="form-control" placeholder="A brief description of the book…"
+                rows="4">{{ form.description.value|default:'' }}</textarea>
+            </div>
+
+            {# ── Form actions ── #}
+            <div class="form-actions">
+              <a href="{% url 'books:book_list' %}" class="btn btn-outline">
+                <i class="fas fa-times"></i> Cancel
+              </a>
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i>
+                {% if form.instance.pk %}Update Book{% else %}Save Book{% endif %}
+              </button>
+            </div>
+
+          </div>{# /form-grid #}
+        </form>
+      </div>{# /card-body #}
+    </div>{# /card #}
+  </div>{# /tab-manual #}
+
+
+  {% comment %} {# ═══════════════════════════════════════════
+     TAB 2 — IMPORT FROM EXCEL  (add mode only)
+  ═══════════════════════════════════════════ #} {% endcomment %}
+  {% if not form.instance.pk %}
+  <div class="tab-panel" id="tab-import">
+
+    {# ── Step indicator ── #}
+    <div class="import-steps animate-in">
+      <div class="import-step {% if import_step == 'preview' %}done{% else %}active{% endif %}">
+        <span class="step-num">
+          {% if import_step == 'preview' %}<i class="fas fa-check"></i>{% else %}1{% endif %}
+        </span>
+        Upload File
+      </div>
+      <span class="step-arrow"><i class="fas fa-chevron-right"></i></span>
+      <div class="import-step {% if import_step == 'preview' %}active{% endif %}">
+        <span class="step-num">2</span>
+        Preview &amp; Confirm
+      </div>
+    </div>
+
+
+    {# ─── STEP 1 : UPLOAD ─── #}
+    {% if import_step != 'preview' %}
+
+    <div class="template-card animate-in">
+      <div class="template-card-icon"><i class="fas fa-file-download"></i></div>
+      <div class="template-card-body">
+        <div class="template-card-title">Download blank template</div>
+        <div class="template-card-desc">Pre-formatted .xlsx with correct headers and one sample row.</div>
+      </div>
+      <a href="{% url 'books:download_import_template' %}" class="btn btn-outline btn-sm">
+        <i class="fas fa-download"></i> Template (.xlsx)
+      </a>
+    </div>
+
+    <div class="card animate-in" style="margin-bottom:20px;">
+      <div class="card-header">
+        <span class="card-title">
+          <i class="fas fa-columns" style="color:var(--ink-accent);"></i> Expected columns
+        </span>
+      </div>
+      <div class="card-body">
+        <div class="col-guide">
+          <div class="col-pill required">
+            <span class="dot"></span> ISBN
+            <em style="font-weight:400;color:#ef4444;margin-left:2px;">(required)</em>
+          </div>
+          <div class="col-pill required"><span class="dot"></span> Price (₹)</div>
+          <div class="col-pill"><span class="dot"></span> Title</div>
+          <div class="col-pill"><span class="dot"></span> Author</div>
+          <div class="col-pill"><span class="dot"></span> Category</div>
+          <div class="col-pill"><span class="dot"></span> Publisher</div>
+          <div class="col-pill"><span class="dot"></span> Publication Year</div>
+          <div class="col-pill"><span class="dot"></span> Language</div>
+          <div class="col-pill"><span class="dot"></span> Edition</div>
+          <div class="col-pill"><span class="dot"></span> Total Copies</div>
+          <div class="col-pill"><span class="dot"></span> Shelf Location</div>
+          <div class="col-pill"><span class="dot"></span> Description</div>
+        </div>
+        <p style="font-size:.74rem;color:var(--text-muted);margin-top:6px;">
+          <i class="fas fa-info-circle"></i>
+          Column order doesn't matter. Unknown categories are created automatically.
+          Existing ISBNs are updated, not duplicated.
+        </p>
+      </div>
+    </div>
+
+    <div class="card animate-in">
+      <div class="card-header">
+        <span class="card-title">
+          <i class="fas fa-upload" style="color:var(--ink-accent);"></i> Upload your spreadsheet
+        </span>
+      </div>
+      <div class="card-body">
+        <form method="POST" enctype="multipart/form-data" id="importUploadForm">
+          {% csrf_token %}
+          <input type="hidden" name="form_type" value="import_upload">
+
+          {% if import_form and import_form.excel_file.errors %}
+            <div class="alert-card alert-warning" style="margin-bottom:14px;">
+              <div class="alert-icon"><i class="fas fa-exclamation-triangle"></i></div>
+              <div>
+                <div class="alert-title">File error</div>
+                <div class="alert-desc">{{ import_form.excel_file.errors|join:", " }}</div>
+              </div>
+            </div>
+          {% endif %}
+
+          <div class="upload-zone" id="uploadZone">
+            <input type="file" name="excel_file" id="excelFileInput" accept=".xlsx,.xls">
+            <div class="upload-icon"><i class="fas fa-file-excel"></i></div>
+            <h3>Drag &amp; drop your spreadsheet here</h3>
+            <p>.xlsx and .xls &nbsp;·&nbsp; max 10 MB</p>
+            <div class="upload-filename" id="uploadFilename">
+              <i class="fas fa-check-circle"></i>
+              <span id="uploadFilenameTxt"></span>
+            </div>
+          </div>
+
+          <div style="margin-top:18px;display:flex;justify-content:flex-end;gap:10px;">
+            <a href="{% url 'books:book_list' %}" class="btn btn-outline">
+              <i class="fas fa-times"></i> Cancel
+            </a>
+            <button type="submit" class="btn btn-primary" id="uploadPreviewBtn" disabled>
+              <i class="fas fa-search"></i> Preview Import
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    {% endif %}{# /upload step #}
+
+
+    {# ─── STEP 2 : PREVIEW & CONFIRM ─── #}
+    {% if import_step == 'preview' %}
+
+    <div class="preview-summary animate-in">
+      <span class="preview-chip chip-new">
+        <i class="fas fa-plus-circle"></i> {{ import_new_count }} new book{{ import_new_count|pluralize }}
+      </span>
+      <span class="preview-chip chip-dup">
+        <i class="fas fa-sync-alt"></i> {{ import_dup_count }} will be updated
+      </span>
+      {% if import_err_count %}
+      <span class="preview-chip chip-err">
+        <i class="fas fa-exclamation-circle"></i>
+        {{ import_err_count }} row{{ import_err_count|pluralize }} with errors
+      </span>
+      {% endif %}
+    </div>
+
+    <form method="POST" id="importConfirmForm">
+      {% csrf_token %}
+      <input type="hidden" name="form_type" value="import_confirm">
+
+      <div class="card animate-in">
+        <div class="card-header">
+          <span class="card-title">
+            <i class="fas fa-table" style="color:var(--ink-accent);"></i> Row Preview
+          </span>
+          <span class="text-sm text-muted">Tick rows to import. Error rows are excluded automatically.</span>
+        </div>
+        <div class="card-body" style="padding:0;">
+          <div class="preview-table-wrap">
+            <table class="preview-table">
+              <thead>
+                <tr>
+                  <th style="width:34px;padding-left:14px;">
+                    <input type="checkbox" id="selectAllChk" title="Toggle all valid rows">
+                  </th>
+                  <th>Row</th>
+                  <th>Status</th>
+                  <th>ISBN</th>
+                  <th>Title</th>
+                  <th>Author</th>
+                  <th>Category</th>
+                  <th>Total Copies</th>
+                  <th>Price (₹)</th>
+                  <th>Errors / Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in import_rows %}
+                <tr class="{% if r.status == 'error' %}row-error{% elif r.status == 'duplicate' %}row-dup{% endif %}">
+                  <td style="padding-left:14px;">
+                    {% if r.status != 'error' %}
+                      <input type="checkbox" name="selected_rows" value="{{ r.row }}" class="row-chk" checked>
+                    {% endif %}
+                  </td>
+                  <td style="color:#94a3b8;font-size:.7rem;">{{ r.row }}</td>
+                  <td>
+                    {% if r.status == 'new' %}
+                      <span class="row-badge row-badge-new"><i class="fas fa-plus"></i> New</span>
+                    {% elif r.status == 'duplicate' %}
+                      <span class="row-badge row-badge-dup"><i class="fas fa-sync-alt"></i> Update</span>
+                    {% else %}
+                      <span class="row-badge row-badge-err"><i class="fas fa-times"></i> Error</span>
+                    {% endif %}
+                  </td>
+                  <td style="font-size:.69rem;color:#64748b;">{{ r.data.isbn|default:"—" }}</td>
+                  <td><strong>{{ r.data.title|default:"—" }}</strong></td>
+                  <td>{{ r.data.author|default:"—" }}</td>
+                  <td>
+                    {{ r.data.category_name|default:"—" }}
+                    {% if r.data.category_created %}
+                      <span style="font-size:.63rem;color:#059669;font-weight:700;">(new)</span>
+                    {% endif %}
+                  </td>
+                  <td style="text-align:center;">
+                    {{ r.data.total_copies }}
+                  </td>
+                  <td style="text-align:right;">
+                    {% if r.data.price %}₹{{ r.data.price }}{% else %}<span style="color:#ef4444;font-size:.68rem;">Missing</span>{% endif %}
+                  </td>
+                  <td>
+                    {% if r.errors %}
+                      <ul class="error-list">
+                        {% for e in r.errors %}<li>{{ e }}</li>{% endfor %}
+                      </ul>
+                    {% elif r.status == 'duplicate' %}
+                      <span style="font-size:.69rem;color:#92400e;">
+                        <i class="fas fa-info-circle"></i> Will overwrite existing record
+                      </span>
+                    {% else %}—{% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="confirm-bar">
+            <label class="select-all-wrap" for="selectAllChk">
+              <i class="fas fa-check-square" style="color:var(--ink-accent);"></i>
+              Select / deselect all valid rows
+            </label>
+            <a href="{% url 'books:book_create' %}" class="btn btn-outline">
+              <i class="fas fa-redo"></i> Upload Different File
+            </a>
+            <button type="submit" class="btn btn-primary" id="confirmImportBtn">
+              <i class="fas fa-check"></i> Confirm Import
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    {% endif %}{# /preview #}
+
+  </div>{# /tab-import #}
+  {% endif %}{# /not editing #}
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script src="{% static 'js/books/books.js' %}"></script>
+<script src="{% static 'js/books/book_form.js' %}"></script>
+{% endblock %}

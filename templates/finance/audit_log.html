@@ -1,0 +1,266 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Audit Log — Dooars Granthika{% endblock %}
+{% block nav_reports %}active{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/finance/audit_log.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="al-wrapper">
+
+  <!-- Page Header -->
+  <div class="al-page-header">
+    <div class="al-page-header__left">
+      <div class="al-page-header__icon">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" stroke="currentColor" stroke-width="1.75"/><rect x="9" y="3" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.75"/><path d="M9 12h6M9 16h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <div>
+        <h1 class="al-page-title">Audit Log</h1>
+        <p class="al-page-sub">Complete record of all fine payment transactions</p>
+      </div>
+    </div>
+    <div class="al-page-header__actions">
+      <a href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}export=csv" class="al-btn al-btn--ghost">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M10 3v9M6 9l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 15h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Export CSV
+      </a>
+      <button class="al-btn al-btn--ghost" onclick="window.print()">
+        <svg viewBox="0 0 20 20" fill="none"><rect x="4" y="2" width="12" height="4" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="8" width="16" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M6 14h8M6 17h5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>
+        Print
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary Strip -->
+  <div class="al-summary-strip">
+    <div class="al-summary-card">
+      <div class="al-summary-card__icon al-summary-card__icon--blue">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M10 3v9M6 9l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div>
+        <div class="al-summary-card__label">Total Collected</div>
+        <div class="al-summary-card__value">₹{{ total_collected|default:"0.00" }}</div>
+      </div>
+    </div>
+    <div class="al-summary-card">
+      <div class="al-summary-card__icon al-summary-card__icon--green">
+        <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div>
+        <div class="al-summary-card__label">Successful</div>
+        <div class="al-summary-card__value">{{ success_count|default:"0" }}</div>
+      </div>
+    </div>
+    <div class="al-summary-card">
+      <div class="al-summary-card__icon al-summary-card__icon--amber">
+        <svg viewBox="0 0 20 20" fill="none"><rect x="2" y="5" width="16" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M2 9h16" stroke="currentColor" stroke-width="1.5"/><path d="M6 13h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <div>
+        <div class="al-summary-card__label">Cash Payments</div>
+        <div class="al-summary-card__value">₹{{ cash_total|default:"0.00" }}</div>
+      </div>
+    </div>
+    <div class="al-summary-card">
+      <div class="al-summary-card__icon al-summary-card__icon--indigo">
+        <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M6 10h8M10 6c0 4-2 7-4 7s-4-3-4-7" stroke="currentColor" stroke-width="1.25"/></svg>
+      </div>
+      <div>
+        <div class="al-summary-card__label">Online Payments</div>
+        <div class="al-summary-card__value">₹{{ online_total|default:"0.00" }}</div>
+      </div>
+    </div>
+    <div class="al-summary-card">
+      <div class="al-summary-card__icon al-summary-card__icon--red">
+        <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M10 6v5M10 13.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <div>
+        <div class="al-summary-card__label">Failed / Pending</div>
+        <div class="al-summary-card__value">{{ failed_count|default:"0" }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <form method="GET" class="al-filter-bar">
+    <div class="al-filter-group">
+      <label class="al-filter-label">From</label>
+      <input type="date" name="from_date" class="al-filter-input" value="{{ request.GET.from_date }}">
+    </div>
+    <div class="al-filter-group">
+      <label class="al-filter-label">To</label>
+      <input type="date" name="to_date" class="al-filter-input" value="{{ request.GET.to_date }}">
+    </div>
+    <div class="al-filter-group">
+      <label class="al-filter-label">Method</label>
+      <select name="method" class="al-filter-input">
+        <option value="">All Methods</option>
+        <option value="online" {% if request.GET.method == 'online' %}selected{% endif %}>Online</option>
+        <option value="cash"   {% if request.GET.method == 'cash'   %}selected{% endif %}>Cash</option>
+      </select>
+    </div>
+    <div class="al-filter-group">
+      <label class="al-filter-label">Status</label>
+      <select name="status" class="al-filter-input">
+        <option value="">All Statuses</option>
+        <option value="success" {% if request.GET.status == 'success' %}selected{% endif %}>Success</option>
+        <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
+        <option value="failed"  {% if request.GET.status == 'failed'  %}selected{% endif %}>Failed</option>
+      </select>
+    </div>
+    <div class="al-filter-group al-filter-group--search">
+      <label class="al-filter-label">Search</label>
+      <input type="text" name="q" class="al-filter-input" value="{{ request.GET.q }}"
+             placeholder="Member, book, receipt…">
+    </div>
+    <div class="al-filter-actions">
+      <button type="submit" class="al-btn al-btn--primary">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M11 11l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Filter
+      </button>
+      <a href="?" class="al-btn al-btn--ghost">Clear</a>
+    </div>
+  </form>
+
+  <!-- Audit Table -->
+  <div class="al-table-card">
+    <div class="al-table-card__header">
+      <span class="al-table-card__title">
+        Payment Records
+        {% if page_obj.paginator.count %}<span class="al-count">{{ page_obj.paginator.count }} entries</span>{% endif %}
+      </span>
+    </div>
+    <div class="al-table-responsive">
+      <table class="al-table">
+        <thead>
+          <tr>
+            <th>Date &amp; Time</th>
+            <th>Receipt / ID</th>
+            <th>Member</th>
+            <th>Book</th>
+            <th>Method</th>
+            <th>Collected By</th>
+            <th>Status</th>
+            <th style="text-align:right;">Amount</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for payment in page_obj %}
+          <tr class="al-row">
+            <td>
+              <div class="al-date">{{ payment.transaction_date|date:"d M Y" }}</div>
+              <div class="al-time">{{ payment.transaction_date|time:"H:i" }}</div>
+            </td>
+            <td>
+              <span class="al-ref">
+                {{ payment.receipt_number|default:payment.gateway_payment_id|default:"—" }}
+              </span>
+            </td>
+            <td>
+              <div class="al-member">
+                <div class="al-member__avatar">
+                  {{ payment.member_name|first|upper|default:payment.fine.transaction.member.first_name|first|upper|default:"?" }}
+                </div>
+                <div>
+                  <div class="al-member__name">
+                    {{ payment.member_name|default:payment.fine.transaction.member.first_name|add:" "|add:payment.fine.transaction.member.last_name|default:"—" }}
+                  </div>
+                  <div class="al-member__id">{{ payment.member_id_snapshot|default:payment.fine.transaction.member.member_id|default:"—" }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="al-book-title" title="{{ payment.book_title|default:payment.fine.transaction.book.title|default:'' }}">
+                {{ payment.book_title|default:payment.fine.transaction.book.title|default:"—" }}
+              </div>
+              <div class="al-txn-id">{{ payment.transaction_id_snapshot|default:payment.fine.transaction.transaction_id|default:"—" }}</div>
+            </td>
+            <td>
+              {% if payment.method == 'online' %}
+                <span class="al-badge al-badge--online">
+                  <svg viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.25"/><path d="M3.5 6c0-2.5 1.25-4 2.5-4s2.5 1.5 2.5 4-1.25 4-2.5 4-2.5-1.5-2.5-4z" stroke="currentColor" stroke-width="1"/></svg>
+                  Online
+                </span>
+              {% else %}
+                <span class="al-badge al-badge--cash">
+                  <svg viewBox="0 0 12 12" fill="none"><rect x="1" y="3" width="10" height="6" rx="1" stroke="currentColor" stroke-width="1.25"/><circle cx="6" cy="6" r="1.5" stroke="currentColor" stroke-width="1"/></svg>
+                  Cash
+                </span>
+              {% endif %}
+            </td>
+            <td class="al-staff">{{ payment.collected_by|default:"—" }}</td>
+            <td>
+              {% if payment.status == 'success' %}
+                <span class="al-status al-status--success">
+                  <span class="al-status__dot"></span> Success
+                </span>
+              {% elif payment.status == 'pending' %}
+                <span class="al-status al-status--pending">
+                  <span class="al-status__dot"></span> Pending
+                </span>
+              {% else %}
+                <span class="al-status al-status--failed">
+                  <span class="al-status__dot"></span> Failed
+                </span>
+              {% endif %}
+            </td>
+            <td style="text-align:right;">
+              <span class="al-amount {% if payment.status == 'success' %}al-amount--success{% endif %}">
+                ₹{{ payment.amount }}
+              </span>
+            </td>
+            <td>
+              <a href="{% url 'finance:payment_receipt' payment.pk %}" class="al-view-btn" title="View receipt">
+                <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M1 8s3-5 7-5 7 5 7 5-3 5-7 5-7-5-7-5z" stroke="currentColor" stroke-width="1.5"/></svg>
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="9">
+              <div class="al-empty">
+                <div class="al-empty__icon">
+                  <svg viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="3" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+                </div>
+                <p class="al-empty__title">No audit records found</p>
+                <p class="al-empty__sub">Try adjusting your filters or date range.</p>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="al-pagination">
+      {% with qs=request.GET.urlencode %}
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}&{{ qs }}" class="al-page-btn">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      {% endif %}
+      {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+          <span class="al-page-btn al-page-btn--active">{{ num }}</span>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+          <a href="?page={{ num }}&{{ qs }}" class="al-page-btn">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&{{ qs }}" class="al-page-btn">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      {% endif %}
+      {% endwith %}
+    </div>
+    {% endif %}
+
+  </div><!-- /.al-table-card -->
+
+</div><!-- /.al-wrapper -->
+{% endblock %}

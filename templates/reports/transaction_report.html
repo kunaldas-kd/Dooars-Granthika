@@ -1,0 +1,106 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+{% block title %}Transaction Report — Dooars Granthika{% endblock %}
+{% block nav_reports %}active{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/reports/reports_transactions.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="rpt-page">
+
+  <div class="rpt-header">
+    <div>
+      <h1 class="rpt-title">Transaction Report</h1>
+      <p class="rpt-sub">{{ date_from }} — {{ date_to }}</p>
+    </div>
+    <div class="rpt-actions">
+      <a href="{% url 'reports:overview' %}" class="rpt-btn-back"><i class="fas fa-arrow-left"></i> Overview</a>
+    </div>
+  </div>
+
+  <form method="get" class="rpt-filter">
+    <div class="rpt-filter-group">
+      <label class="rpt-filter-label">From</label>
+      <input type="date" name="date_from" class="rpt-filter-input" value="{{ date_from|date:'Y-m-d' }}">
+    </div>
+    <div class="rpt-filter-group">
+      <label class="rpt-filter-label">To</label>
+      <input type="date" name="date_to" class="rpt-filter-input" value="{{ date_to|date:'Y-m-d' }}">
+    </div>
+    <div class="rpt-filter-group">
+      <label class="rpt-filter-label">Status</label>
+      <select name="status" class="rpt-filter-select">
+        {% for val, label in status_choices %}<option value="{{ val }}" {% if val == status %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="rpt-filter-actions">
+      <button type="submit" class="rpt-filter-submit">Filter</button>
+      <a href="?" class="rpt-filter-reset">Reset</a>
+    </div>
+    <div class="rpt-filter-end">
+      <a href="{% url 'reports:export_transactions' %}?date_from={{ date_from|date:'Y-m-d' }}&date_to={{ date_to|date:'Y-m-d' }}&status={{ status }}" class="rpt-btn-export"><i class="fas fa-download"></i> Export CSV</a>
+    </div>
+  </form>
+
+  <div class="rpt-pills">
+    <div class="rpt-pill rpt-pill--all"><div class="rpt-pill-label">Total</div><div class="rpt-pill-value">{{ summary.total }}</div></div>
+    <div class="rpt-pill rpt-pill--issued"><div class="rpt-pill-label">Issued</div><div class="rpt-pill-value">{{ summary.issued }}</div></div>
+    <div class="rpt-pill rpt-pill--returned"><div class="rpt-pill-label">Returned</div><div class="rpt-pill-value">{{ summary.returned }}</div></div>
+    <div class="rpt-pill rpt-pill--overdue"><div class="rpt-pill-label">Overdue</div><div class="rpt-pill-value">{{ summary.overdue }}</div></div>
+    <div class="rpt-pill rpt-pill--lost"><div class="rpt-pill-label">Lost</div><div class="rpt-pill-value">{{ summary.lost }}</div></div>
+  </div>
+
+  <div class="rpt-card">
+    <div class="rpt-card-head">
+      <span class="rpt-card-icon"><i class="fas fa-list"></i></span>
+      Transactions in Period
+    </div>
+    <div class="rpt-table-wrap">
+      <table class="rpt-table">
+        <thead>
+          <tr>
+            <th style="width:52px">#</th>
+            <th>Member</th>
+            <th>Book</th>
+            <th>Issue Date</th>
+            <th>Due Date</th>
+            <th>Return Date</th>
+            <th>Status</th>
+            <th class="rpt-cell-right">Fine (₹)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in transactions %}
+          <tr>
+            <td class="rpt-cell-mono rpt-cell-muted">{{ t.transaction_id }}</td>
+            <td><div class="rpt-cell-name">{{ t.member.first_name }} {{ t.member.last_name }}</div><div class="rpt-cell-sub">{{ t.member.member_id }}</div></td>
+            <td><div class="rpt-cell-name">{{ t.book.title }}</div><div class="rpt-cell-sub">{{ t.book.author }}</div></td>
+            <td class="rpt-cell-mono rpt-cell-muted">{{ t.issue_date }}</td>
+            <td class="rpt-cell-mono rpt-cell-muted">{{ t.due_date }}</td>
+            <td class="rpt-cell-mono rpt-cell-muted">{{ t.return_date|default:"—" }}</td>
+            <td><span class="rpt-badge rpt-badge--{{ t.status }}">{{ t.get_status_display }}</span></td>
+            <td class="rpt-cell-right">
+              {% if t.fine_amount %}<span class="{% if t.fine_paid %}rpt-fine-paid{% else %}rpt-fine-unpaid{% endif %}">₹{{ t.fine_amount }}</span>
+              {% else %}<span class="rpt-fine-nil">—</span>{% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="8" class="rpt-table-empty">No transactions found for this period</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if transactions.has_other_pages %}
+  <ul class="rpt-pagination">
+    {% if transactions.has_previous %}<li><a href="?page={{ transactions.previous_page_number }}&date_from={{ date_from|date:'Y-m-d' }}&date_to={{ date_to|date:'Y-m-d' }}&status={{ status }}">‹</a></li>{% endif %}
+    <li class="active"><span>{{ transactions.number }} / {{ transactions.paginator.num_pages }}</span></li>
+    {% if transactions.has_next %}<li><a href="?page={{ transactions.next_page_number }}&date_from={{ date_from|date:'Y-m-d' }}&date_to={{ date_to|date:'Y-m-d' }}&status={{ status }}">›</a></li>{% endif %}
+  </ul>
+  {% endif %}
+
+</div>
+{% endblock %}

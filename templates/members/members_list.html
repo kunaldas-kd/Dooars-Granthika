@@ -1,0 +1,313 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Members List - Dooars Granthika{% endblock %}
+
+{% block nav_members %}active{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/members/members_list.css' %}" />
+<style>
+.role-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:12px;font-size:.78rem;font-weight:600;color:#fff;white-space:nowrap}
+.role-badge.role-student{background:#3b82f6}
+.role-badge.role-teacher{background:#8b5cf6}
+.role-badge.role-general{background:#6b7280}
+@keyframes sdot-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.6)}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="members-list-page">
+
+  <!-- Page Header -->
+  <div class="page-header" style="margin-bottom: 2rem;">
+    <h1 style="font-size: 2rem; font-weight: 700; color: #1f2937; margin: 0;">
+      <i class="fas fa-users" style="color: #1a6fd4;"></i> Members Management
+    </h1>
+    <p style="color: #6b7280; margin: 0.5rem 0 0;">Manage library members and their information</p>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <a href="{% url 'members:member_add' %}" class="action-btn secondary">
+      <i class="fas fa-user-plus"></i> Add New Member
+    </a>
+    <a href="{% url 'members:members_active' %}" class="action-btn secondary">
+      <i class="fas fa-user-check"></i> Active Members
+    </a>
+    <a href="{% url 'members:members_passout' %}" class="action-btn secondary">
+      <i class="fas fa-user-graduate"></i> Pass Out
+    </a>
+    <a href="{% url 'members:members_inactive' %}" class="action-btn secondary">
+      <i class="fas fa-user-slash"></i> Inactive
+    </a>
+    <a href="{% url 'members:clearance_check' %}" class="action-btn secondary">
+      <i class="fas fa-clipboard-check"></i> Clearance Check
+    </a>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <form id="filterForm" method="get">
+      <div class="filters-grid">
+
+        <!-- Status -->
+        <div class="filter-group">
+          <label for="status">Status</label>
+          <select id="status" name="status" class="filter-select">
+            <option value="">All Status</option>
+            <option value="active"   {% if request.GET.status == 'active'   %}selected{% endif %}>Active</option>
+            <option value="passout"  {% if request.GET.status == 'passout'  %}selected{% endif %}>Pass Out</option>
+            <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive</option>
+          </select>
+        </div>
+
+        <!-- Role -->
+        <div class="filter-group">
+          <label for="role">Role</label>
+          <select id="role" name="role" class="filter-select">
+            <option value="">All Roles</option>
+            <option value="student" {% if request.GET.role == 'student' %}selected{% endif %}>Student</option>
+            <option value="teacher" {% if request.GET.role == 'teacher' %}selected{% endif %}>Teacher / Faculty</option>
+            <option value="general" {% if request.GET.role == 'general' %}selected{% endif %}>General Member</option>
+          </select>
+        </div>
+
+        <!-- Department -->
+        <div class="filter-group">
+          <label for="department">Department</label>
+          <select id="department" name="department" class="filter-select">
+            <option value="">All Departments</option>
+            {% for dept in departments %}
+            <option value="{{ dept.id }}"
+              {% if request.GET.department == dept.id|stringformat:"s" %}selected{% endif %}>
+              {{ dept.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Course -->
+        <div class="filter-group">
+          <label for="course">Course</label>
+          <select id="course" name="course" class="filter-select">
+            <option value="">All Courses</option>
+            {% for course in courses %}
+            <option value="{{ course.id }}"
+              {% if request.GET.course == course.id|stringformat:"s" %}selected{% endif %}>
+              {{ course.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Academic Year -->
+        <div class="filter-group">
+          <label for="year">Academic Year</label>
+          <select id="year" name="year" class="filter-select">
+            <option value="">All Years</option>
+            {% for yr in academic_years %}
+            <option value="{{ yr.id }}"
+              {% if request.GET.year == yr.id|stringformat:"s" %}selected{% endif %}>
+              {{ yr.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Semester -->
+        <div class="filter-group">
+          <label for="semester">Semester</label>
+          <select id="semester" name="semester" class="filter-select">
+            <option value="">All Semesters</option>
+            {% for sem in semesters %}
+            <option value="{{ sem.id }}"
+              {% if request.GET.semester == sem.id|stringformat:"s" %}selected{% endif %}>
+              {{ sem.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Actions -->
+        <div class="filter-actions">
+          <button type="submit" class="btn-filter">
+            <i class="fas fa-filter"></i> Apply Filters
+          </button>
+          <button type="button" id="resetFilters" class="btn-reset">
+            <i class="fas fa-redo"></i> Reset
+          </button>
+        </div>
+
+      </div>
+    </form>
+  </div>
+
+  <!-- Members Table -->
+  <div class="members-table-container">
+    <div class="table-header">
+      <h2>All Members ({{ total_count }})</h2>
+      {% comment %} <h2>All Members </h2> {% endcomment %}
+      <div class="table-controls">
+        <div class="search-box">
+          <i class="fas fa-search"></i>
+          <input type="text" id="memberSearch" placeholder="Search members..." />
+        </div>
+      </div>
+    </div>
+
+    {% if members %}
+    <div class="members-table-wrapper">
+    <table class="members-table" id="membersTable">
+      <thead>
+        <tr>
+          <th data-sortable>Member Info</th>
+          <th data-sortable>Member ID</th>
+          <th data-sortable>Role</th>
+          <th data-sortable>Department</th>
+          <th data-sortable>Course</th>
+          <th data-sortable>Year</th>
+          <th data-sortable>Semester</th>
+          <th data-sortable>Contact</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for member in members %}
+        <tr>
+          <td>
+            <div class="member-info">
+              {% if member.photo %}
+              <img src="{% url 'members:member_photo' member.id %}" alt="{{ member.full_name }}"
+                   class="member-avatar" style="border-radius:50%; object-fit:cover;" />
+              {% else %}
+              <div class="member-avatar">
+                {{ member.full_name|slice:":1"|upper }}
+              </div>
+              {% endif %}
+              <div class="member-details">
+                <span class="member-name">{{ member.full_name }}</span>
+                <span class="member-id">{{ member.email }}</span>
+              </div>
+            </div>
+          </td>
+          <td><strong>{{ member.member_id }}</strong></td>
+          <td>
+            <span class="role-badge role-{{ member.role }}">
+              {% if member.role == 'teacher' %}<i class="fas fa-chalkboard-teacher"></i>
+              {% elif member.role == 'general' %}<i class="fas fa-user"></i>
+              {% else %}<i class="fas fa-user-graduate"></i>{% endif %}
+              {{ member.get_role_display }}
+            </span>
+          </td>
+          <td>{{ member.department.name|default:"N/A" }}</td>
+          <td>{{ member.course.name|default:"N/A" }}</td>
+          <td>{{ member.year.name|default:"N/A" }}</td>
+          <td>{{ member.semester.name|default:"N/A" }}</td>
+          <td>{{ member.phone|default:"N/A" }}</td>
+          <td>
+            {% if member.status == 'active' %}
+              <i class="fas fa-circle" style="font-size:.65rem;color:#10b981;animation:sdot-pulse 1.8s ease-in-out infinite;" title="Active"></i>
+            {% elif member.status == 'passout' %}
+              <i class="fas fa-circle" style="font-size:.65rem;color:#f59e0b;" title="Pass Out"></i>
+            {% elif member.status == 'inactive' %}
+              <i class="fas fa-circle" style="font-size:.65rem;color:#ef4444;" title="Inactive"></i>
+            {% elif member.status == 'pending' %}
+              <i class="fas fa-circle" style="font-size:.65rem;color:#3b82f6;" title="Pending"></i>
+            {% elif member.status == 'cleared' %}
+              <i class="fas fa-circle" style="font-size:.65rem;color:#10b981;" title="Cleared"></i>
+            {% else %}
+              <i class="fas fa-circle" style="font-size:.65rem;color:#9ca3af;" title="{{ member.get_status_display }}"></i>
+            {% endif %}
+          </td>
+          <td>
+            <div class="table-actions">
+              <a href="{% url 'members:member_detail' member.id %}" class="action-icon view" title="View Details">
+                <i class="fas fa-eye"></i>
+              </a>
+              <a href="{% url 'members:member_edit' member.id %}" class="action-icon edit" title="Edit">
+                <i class="fas fa-edit"></i>
+              </a>
+              <button class="action-icon delete delete-member-btn"
+                      data-member-name="{{ member.full_name }}"
+                      data-delete-url="{% url 'members:member_delete' member.id %}"
+                      title="Delete">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div><!-- /.members-table-wrapper -->
+
+    <!-- Pagination — FIX: preserve existing GET params on every page link -->
+    {% if is_paginated %}
+    <div class="pagination-container">
+      <div class="pagination-info">
+        Showing {{ page_obj.start_index }} to {{ page_obj.end_index }}
+        of {{ page_obj.paginator.count }} members
+      </div>
+      <ul class="pagination">
+        {% if page_obj.has_previous %}
+        <li>
+          <a href="?page=1{% for k, v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">
+            <i class="fas fa-angle-double-left"></i>
+          </a>
+        </li>
+        <li>
+          <a href="?page={{ page_obj.previous_page_number }}{% for k, v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">
+            <i class="fas fa-angle-left"></i>
+          </a>
+        </li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+          {% if page_obj.number == num %}
+            <li class="active"><span>{{ num }}</span></li>
+          {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li>
+              <a href="?page={{ num }}{% for k, v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">{{ num }}</a>
+            </li>
+          {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+        <li>
+          <a href="?page={{ page_obj.next_page_number }}{% for k, v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">
+            <i class="fas fa-angle-right"></i>
+          </a>
+        </li>
+        <li>
+          <a href="?page={{ page_obj.paginator.num_pages }}{% for k, v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">
+            <i class="fas fa-angle-double-right"></i>
+          </a>
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-state-icon">
+        <i class="fas fa-users"></i>
+      </div>
+      <h3>No Members Found</h3>
+      <p>Get started by adding your first member to the library system.</p>
+      <a href="{% url 'members:member_add' %}" class="btn btn-primary">
+        <i class="fas fa-user-plus"></i> Add First Member
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/members/members.js' %}"></script>
+<script src="{% static 'js/members/members_list.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,128 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Expenses — Dooars Granthika{% endblock %}
+{% block nav_finance %}active{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/finance/finance_dashboard.css' %}" />
+{% endblock %}
+
+{% block content %}
+<div class="fin-wrapper">
+
+  <!-- Page Header -->
+  <div class="fin-page-header">
+    <div class="fin-page-header__left">
+      <div class="fin-page-header__icon" style="background:linear-gradient(135deg,#ef4444,#dc2626);">
+        <i class="fas fa-file-invoice"></i>
+      </div>
+      <div>
+        <div class="fin-page-title">Expenses</div>
+        <div class="fin-page-sub">All recorded operational expenditures</div>
+      </div>
+    </div>
+    <div class="fin-page-header__actions">
+      <a href="?export=csv" class="fin-btn fin-btn--ghost">
+        <i class="fas fa-download"></i> Export CSV
+      </a>
+      <a href="{% url 'finance:add_expense' %}" class="fin-btn fin-btn--primary">
+        <i class="fas fa-plus"></i> Add Expense
+      </a>
+    </div>
+  </div>
+
+  <!-- Total Banner -->
+  <div class="fin-kpi-card fin-kpi-card--expense" style="margin-bottom:20px;max-width:320px;">
+    <div class="fin-kpi-header">
+      <div class="fin-kpi-icon fin-kpi-icon--expense"><i class="fas fa-arrow-trend-down"></i></div>
+      <span class="fin-kpi-trend fin-kpi-trend--down">Total</span>
+    </div>
+    <div class="fin-kpi-label">All-time Expenses</div>
+    <div class="fin-kpi-value"><span class="fin-rupee">&#8377;</span>{{ total_expense|floatformat:2 }}</div>
+    <div class="fin-kpi-sub">{{ expenses|length }} record(s)</div>
+  </div>
+
+  <!-- Table -->
+  <div class="fin-panel">
+    <div class="fin-panel__head">
+      <div class="fin-panel__title">
+        <i class="fas fa-list"></i> Expense Records
+        <span class="fin-count">{{ expenses|length }}</span>
+      </div>
+    </div>
+    <div class="fin-table-wrap">
+      <table class="fin-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Category</th>
+            <th>Recorded By</th>
+            <th style="text-align:right;">Amount</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in expenses %}
+          <tr>
+            <td>
+              <div style="font-size:13px;font-weight:500;color:var(--fin-ink-soft);">
+                {{ e.date|date:"d M Y" }}
+              </div>
+            </td>
+            <td>
+              <div style="font-size:13px;font-weight:500;color:var(--fin-ink);">{{ e.description }}</div>
+              {% if e.notes %}
+              <div style="font-size:11.5px;color:var(--fin-faint);margin-top:2px;">{{ e.notes|truncatechars:60 }}</div>
+              {% endif %}
+            </td>
+            <td>
+              {% if e.category %}
+              <span class="fin-badge fin-badge--pending">{{ e.category }}</span>
+              {% else %}
+              <span style="color:var(--fin-faint);">—</span>
+              {% endif %}
+            </td>
+            <td>
+              <span style="font-size:12.5px;color:var(--fin-muted);">{{ e.recorded_by|default:"—" }}</span>
+            </td>
+            <td style="text-align:right;">
+              <span class="fin-amount fin-amount--negative">&#8377;{{ e.amount|floatformat:2 }}</span>
+            </td>
+            <td>
+              <div style="display:flex;gap:6px;">
+                <a href="{% url 'finance:edit_expense' e.pk %}" class="fin-action-btn" title="Edit">
+                  <i class="fas fa-pen"></i>
+                </a>
+                <form method="post" action="{% url 'finance:delete_expense' e.pk %}"
+                      onsubmit="return confirm('Delete this expense record?');" style="display:inline;">
+                  {% csrf_token %}
+                  <button type="submit" class="fin-action-btn" title="Delete"
+                          style="cursor:pointer;background:none;border:1.5px solid var(--fin-rule);">
+                    <i class="fas fa-trash" style="color:var(--fin-red-mid);"></i>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6">
+              <div class="fin-empty">
+                <i class="fas fa-file-invoice"></i>
+                <div class="fin-empty__title">No expenses recorded</div>
+                <div class="fin-empty__sub">
+                  <a href="{% url 'finance:add_expense' %}" style="color:var(--fin-blue-mid);">Add your first expense</a>
+                </div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

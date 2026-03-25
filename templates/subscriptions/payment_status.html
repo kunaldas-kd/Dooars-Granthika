@@ -1,0 +1,162 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Payment Status — Dooars Granthika{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/subscriptions/payment_status.css' %}">
+{% endblock %}
+
+{% block nav_subscription %}active{% endblock %}
+
+{% block topbar %}
+<header class="top-bar">
+  <div class="topbar-left">
+    <h1 class="topbar-title">Payment Status</h1>
+  </div>
+  <div class="topbar-right">
+    <a href="{% url 'subscriptions:my_subscription' %}" class="btn-topbar">
+      <i class="fas fa-receipt"></i> My Subscription
+    </a>
+  </div>
+</header>
+{% endblock %}
+
+{% block content %}
+
+<div class="ps-wrap">
+
+  {% if payment.status == 'success' %}
+  <!-- ════ SUCCESS ════════════════════════════════════════════ -->
+  <div class="ps-card ps-success" id="psCard">
+    <div class="ps-confetti-wrap" id="confettiWrap"></div>
+
+    <div class="ps-icon-wrap ps-icon-success">
+      <svg class="ps-svg" viewBox="0 0 64 64">
+        <circle class="ps-circle" cx="32" cy="32" r="30"/>
+        <path  class="ps-path ps-check" d="M18 32 L28 42 L46 22"
+               stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <h1 class="ps-title">Payment Successful</h1>
+    <p class="ps-sub">
+      Your <strong>{{ plan.name }}</strong> plan is now active.
+      Happy cataloguing!
+    </p>
+
+    <!-- Receipt -->
+    <div class="ps-receipt">
+      <div class="ps-receipt-head">
+        <i class="fas fa-receipt"></i> Receipt
+      </div>
+      <div class="ps-receipt-rows">
+        <div class="rr">
+          <span>Payment ID</span>
+          <span class="rr-val mono" id="copyId" title="Click to copy">
+            {{ payment.payment_id }}
+          </span>
+        </div>
+        <div class="rr"><span>Plan</span><span class="rr-val">{{ plan.name }}</span></div>
+        <div class="rr">
+          <span>Amount</span>
+          <span class="rr-val">{% if payment.amount == 0 %}Free{% else %}₹{{ payment.amount }}{% endif %}</span>
+        </div>
+        <div class="rr">
+          <span>Method</span>
+          <span class="rr-val">{{ payment.get_payment_method_display }}</span>
+        </div>
+        <div class="rr">
+          <span>Date</span>
+          <span class="rr-val">{{ payment.paid_at|date:"d M Y, h:i A" }}</span>
+        </div>
+        {% if subscription %}
+        <div class="rr">
+          <span>Valid Until</span>
+          <span class="rr-val text-green">{{ subscription.expiry_date|date:"d M Y" }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="ps-actions">
+      <a href="{% url 'subscriptions:my_subscription' %}" class="btn-prim">
+        <i class="fas fa-gauge"></i> My Subscription
+      </a>
+      <a href="{% url 'accounts:admin_dashboard' %}" class="btn-sec">
+        <i class="fas fa-home"></i> Dashboard
+      </a>
+    </div>
+  </div>
+
+  {% elif payment.status == 'failed' %}
+  <!-- ════ FAILED ════════════════════════════════════════════ -->
+  <div class="ps-card ps-failed" id="psCard">
+
+    <div class="ps-icon-wrap ps-icon-failed">
+      <svg class="ps-svg" viewBox="0 0 64 64">
+        <circle class="ps-circle" cx="32" cy="32" r="30"/>
+        <path class="ps-path ps-cross"
+              d="M22 22 L42 42 M42 22 L22 42"
+              stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <h1 class="ps-title">Payment Failed</h1>
+    <p class="ps-sub">
+      Your payment for <strong>{{ plan.name }}</strong> could not be processed.
+      No amount has been charged. Please try again.
+    </p>
+
+    {% if payment.notes %}
+    <div class="ps-error-note">
+      <i class="fas fa-triangle-exclamation"></i> {{ payment.notes }}
+    </div>
+    {% endif %}
+
+    <div class="ps-actions">
+      <a href="{% url 'subscriptions:checkout' plan.slug %}" class="btn-prim">
+        <i class="fas fa-rotate-right"></i> Try Again
+      </a>
+      <a href="{% url 'subscriptions:plans' %}" class="btn-sec">
+        <i class="fas fa-list"></i> Browse Plans
+      </a>
+    </div>
+  </div>
+
+  {% else %}
+  <!-- ════ PENDING ═══════════════════════════════════════════ -->
+  <div class="ps-card ps-pending" id="psCard">
+
+    <div class="ps-icon-wrap ps-icon-pending">
+      <svg class="ps-svg ps-svg-spin" viewBox="0 0 64 64">
+        <circle class="ps-circle" cx="32" cy="32" r="30"/>
+        <path class="ps-path ps-arc"
+              d="M32 8 A24 24 0 0 1 56 32"
+              stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <h1 class="ps-title">Payment Processing</h1>
+    <p class="ps-sub">
+      Your payment of <strong>₹{{ payment.amount }}</strong> for
+      <strong>{{ plan.name }}</strong> is being verified.
+      This page will refresh automatically.
+    </p>
+    <div class="ps-refresh-note" id="refreshNote">Refreshing in 10s…</div>
+
+    <div class="ps-actions">
+      <a href="{% url 'subscriptions:my_subscription' %}" class="btn-prim">
+        Check Subscription
+      </a>
+    </div>
+  </div>
+  {% endif %}
+
+</div><!-- /ps-wrap -->
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/subscriptions/payment_status.js' %}"></script>
+{% endblock %}

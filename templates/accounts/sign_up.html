@@ -1,0 +1,290 @@
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/accounts/sign_up.css' %}" />
+{% endblock %}
+
+{% block content %}
+
+<div class="auth-wrapper">
+  <div class="register-container">
+    <div class="logo-section">
+      <div class="logo-container">
+        <span class="logo-icon"><img src="{% static 'assets/img/logo2.png' %}"
+             alt="Dooars Granthika"
+             width="60"
+             height="60"></span>
+      </div>
+      <div class="logo-text">Dooars Granthika</div>
+    </div>
+
+    <div class="header-section">
+      <h2>Library Registration</h2>
+      <p class="subtitle">Register your library and start managing efficiently</p>
+    </div>
+
+    {% if messages %}
+      <div id="status-msg" class="status">
+        {% for message in messages %}
+          {{ message }}
+        {% endfor %}
+      </div>
+    {% else %}
+      <div id="status-msg" class="status"></div>
+    {% endif %}
+
+    <form method="post" id="registrationForm" novalidate enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <!-- Library Information Section -->
+      <div class="form-section">
+        <div class="section-title">📚 Library Information</div>
+
+        <!-- Logo Upload -->
+        <div class="logo-upload-row">
+          <div class="logo-preview-wrap" id="logoPreviewWrap">
+            <img id="logoPreview" src="{% static 'assets/img/logo2.png' %}" alt="Library Logo" />
+          </div>
+          <div class="logo-upload-info">
+            <p class="logo-upload-label">Library Logo <span class="logo-optional">(Optional)</span></p>
+            <p class="logo-upload-hint">JPG or PNG · Max 2 MB · Shown on member ID cards and reports</p>
+            <label class="logo-upload-btn" for="libraryLogo">
+              <span>📁 Choose File</span>
+              <input
+                type="file"
+                id="libraryLogo"
+                name="library_logo"
+                accept="image/jpeg,image/png"
+              />
+            </label>
+            <p class="logo-file-name" id="logoFileName">No file chosen</p>
+            <p class="logo-error-message" id="logoError">Must be JPG or PNG under 2 MB</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+
+          <div class="form-group" id="libraryName-group">
+            <div class="input-wrapper">
+              <div class="input-icon">📖</div>
+              <input
+                type="text"
+                id="libraryName"
+                name="library_name"
+                placeholder="Library Name"
+                autofocus
+              />
+            </div>
+            <div class="error-message">Library name is required</div>
+          </div>
+
+          <div class="form-group" id="instituteType-group">
+            <div class="input-wrapper">
+              <div class="input-icon">🏛️</div>
+              <select
+                id="instituteType"
+                name="institute_type"
+              >
+                <option value="" disabled selected>Library Type</option>
+                <option value="Institution">Institution</option>
+                <option value="government_rural">Government – Rural</option>
+                <option value="government_urban">Government – Urban</option>
+              </select>
+            </div>
+            <div class="error-message">Institution type is required</div>
+          </div>
+
+          <div class="form-group" id="instituteName-group">
+            <div class="input-wrapper">
+              <div class="input-icon">🏫</div>
+              <input
+                type="text"
+                id="instituteName"
+                name="institute_name"
+                placeholder="Institution Name"
+              />
+            </div>
+            <div class="error-message">Institution name is required</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Contact Details Section -->
+      <div class="form-section">
+        <div class="section-title">📍 Contact Details</div>
+        <div class="form-grid">
+
+          <div class="form-group" id="instituteEmail-group">
+            <div class="input-wrapper">
+              <div class="input-icon">📧</div>
+              <input
+                type="email"
+                id="instituteEmail"
+                name="institute_email"
+                placeholder="Official Email"
+              />
+            </div>
+            <div class="error-message">Valid email is required</div>
+          </div>
+
+          <div class="form-group" id="phoneNumber-group">
+            <div class="input-wrapper">
+              <div class="input-icon">📞</div>
+              <input
+                type="tel"
+                id="phoneNumber"
+                name="phone_number"
+                placeholder="Phone Number"
+              />
+            </div>
+            <div class="error-message">Valid phone number is required</div>
+          </div>
+
+          <div class="form-group" id="address-group">
+            <div class="input-wrapper">
+              <div class="input-icon">📍</div>
+              <input
+                type="text"
+                id="address"
+                name="address"
+                placeholder="Address"
+              />
+            </div>
+            <div class="error-message">Address is required</div>
+          </div>
+
+          <div class="form-group" id="district-group">
+            <div class="input-wrapper">
+              <div class="input-icon">🏘️</div>
+              <input
+                type="text"
+                id="district"
+                name="district"
+                placeholder="District"
+              />
+            </div>
+            <div class="error-message">District is required</div>
+          </div>
+
+          <div class="form-group" id="state-group">
+            <div class="input-wrapper">
+              <div class="input-icon">🗺️</div>
+              <input
+                type="text"
+                id="state"
+                name="state"
+                placeholder="State"
+              />
+            </div>
+            <div class="error-message">State is required</div>
+          </div>
+
+          <div class="form-group" id="country-group">
+            <div class="input-wrapper">
+              <div class="input-icon">🌍</div>
+              <input
+                type="text"
+                id="country"
+                name="country"
+                placeholder="Country"
+              />
+            </div>
+            <div class="error-message">Country is required</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Admin Account Section -->
+      <div class="form-section">
+        <div class="section-title">👤 Admin Account</div>
+        <div class="form-grid">
+
+          <div class="form-group" id="adminFullName-group">
+            <div class="input-wrapper">
+              <div class="input-icon">🪪</div>
+              <input
+                type="text"
+                id="adminFullName"
+                name="admin_full_name"
+                placeholder="Full Name"
+              />
+            </div>
+            <div class="error-message">Full name is required</div>
+          </div>
+
+          <div class="form-group" id="adminPassword-group">
+            <div class="input-wrapper">
+              <div class="input-icon">🔒</div>
+              <input
+                type="password"
+                id="adminPassword"
+                name="admin_password"
+                placeholder="Password"
+                autocomplete="new-password"
+              />
+            </div>
+            <div class="error-message">Password must be at least 8 characters</div>
+          </div>
+
+          <div class="form-group" id="adminConfirmPassword-group">
+            <div class="input-wrapper">
+              <div class="input-icon">🔐</div>
+              <input
+                type="password"
+                id="adminConfirmPassword"
+                name="admin_confirm_password"
+                placeholder="Confirm Password"
+                autocomplete="new-password"
+              />
+            </div>
+            <div class="error-message">Passwords do not match</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Declaration Section -->
+      <div class="form-section">
+        <div class="section-title">📋 Declaration</div>
+        <div class="form-group" id="declaration-group">
+          <div class="declaration-box">
+            <label class="declaration-label" for="declaration">
+              <input
+                type="checkbox"
+                id="declaration"
+                name="declaration"
+                value="accepted"
+              />
+              <span class="declaration-checkmark"></span>
+              <span class="declaration-text">
+                I hereby declare that all the information provided above is accurate and complete to the best of my knowledge.
+                I confirm that I am authorised to register this library on the Dooars Granthika platform and agree to the
+                <a href="#" class="declaration-link">Terms of Service</a> and
+                <a href="#" class="declaration-link">Privacy Policy</a>.
+              </span>
+            </label>
+          </div>
+          <div class="error-message">You must accept the declaration to proceed</div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-register" id="registerBtn">
+        <div class="loading-spinner"></div>
+        <span class="btn-text">Create Library Account</span>
+      </button>
+
+      <h6 class='signup-text'>Already have an account?
+        <a class='signup-link' href="/authentication/sign_in/">Login here</a>
+      </h6>
+
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/accounts/sign_up.js' %}"></script>
+{% endblock %}

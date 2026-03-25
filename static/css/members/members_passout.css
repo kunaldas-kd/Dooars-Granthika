@@ -1,0 +1,28 @@
+/* ═══════════════════════════════════════════════════════════════════
+   PASS-OUT MEMBERS PAGE — page-specific styles
+   ═══════════════════════════════════════════════════════════════════ */
+
+@import url("members.css");
+
+/* ── 3-column filter grid ── */
+.members-passout-page .filters-grid {
+  grid-template-columns: repeat(3, 1fr) auto;
+}
+
+@media (max-width: 900px) {
+  .members-passout-page .filters-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .members-passout-page .filters-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Clearance action icon ── */
+.action-icon.clearance:hover {
+  background: #fef3c7;
+  color: #f59e0b;
+}

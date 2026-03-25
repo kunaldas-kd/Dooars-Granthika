@@ -1,0 +1,344 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/transactions/missing_books.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header__left">
+      <div class="page-header__breadcrumb">
+        <span class="breadcrumb-item">Library</span>
+        <svg class="breadcrumb-sep" viewBox="0 0 6 10" fill="none"><path d="M1 1l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <a href="{% url 'transactions:transaction_list' %}" class="breadcrumb-item">Transactions</a>
+        <svg class="breadcrumb-sep" viewBox="0 0 6 10" fill="none"><path d="M1 1l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="breadcrumb-item breadcrumb-item--active">Missing Books</span>
+      </div>
+      <div class="page-title-row">
+        <h1 class="page-title">Missing &amp; Lost Books</h1>
+        <span class="lost-count-badge">{{ missing_books|length }} book{{ missing_books|length|pluralize }}</span>
+      </div>
+      <p class="page-subtitle">Books reported lost, damaged beyond use, or missing from the library</p>
+    </div>
+    <div class="page-header__actions">
+      <button class="btn btn--danger-outline" id="reportMissingBtn" type="button">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M10 3L2 17h16L10 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M10 9v4M10 15v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Report Missing
+      </button>
+      <button class="btn btn--ghost" id="exportBtn" type="button">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M4 14l6 4 6-4M10 2v12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Export
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary Stats -->
+  <div class="missing-stats">
+    <div class="missing-stat-card">
+      <div class="missing-stat-card__icon missing-stat-card__icon--lost">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.75"/><path d="M8 8l8 8M16 8l-8 8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+      </div>
+      <div class="missing-stat-card__content">
+        <span class="missing-stat-card__number">{{ lost_count }}</span>
+        <span class="missing-stat-card__label">Reported Lost</span>
+      </div>
+    </div>
+    <div class="missing-stat-card">
+      <div class="missing-stat-card__icon missing-stat-card__icon--missing">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.75"/><path d="M16.5 16.5l4 4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><path d="M8 11h6M11 8v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <div class="missing-stat-card__content">
+        <span class="missing-stat-card__number">{{ missing_count }}</span>
+        <span class="missing-stat-card__label">Missing (Unconfirmed)</span>
+      </div>
+    </div>
+    <div class="missing-stat-card">
+      <div class="missing-stat-card__icon missing-stat-card__icon--penalty">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.75"/><path d="M12 8v5M12 15v.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+      </div>
+      <div class="missing-stat-card__content">
+        <span class="missing-stat-card__number">₹{{ total_penalty|floatformat:2 }}</span>
+        <span class="missing-stat-card__label">Total Penalties</span>
+      </div>
+    </div>
+    <div class="missing-stat-card">
+      <div class="missing-stat-card__icon missing-stat-card__icon--recovered">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M5 12l4 4 10-10" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="missing-stat-card__content">
+        <span class="missing-stat-card__number">{{ recovered_count }}</span>
+        <span class="missing-stat-card__label">Recovered</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Panel -->
+  <div class="filter-panel">
+    <form method="GET" action="" class="filter-form">
+      <div class="filter-panel__search">
+        <svg class="search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.75"/><path d="M13.5 13.5l3 3" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+        <input
+          type="text"
+          name="q"
+          value="{{ request.GET.q }}"
+          class="search-input"
+          placeholder="Search by book title, ISBN, or member…"
+          autocomplete="off">
+      </div>
+      <div class="filter-panel__filters">
+        <div class="filter-group">
+          <label class="filter-label">Status</label>
+          <select name="status" class="filter-select">
+            <option value="">All</option>
+            <option value="lost"      {% if request.GET.status == 'lost'      %}selected{% endif %}>Lost</option>
+            <option value="missing"   {% if request.GET.status == 'missing'   %}selected{% endif %}>Missing</option>
+            <option value="recovered" {% if request.GET.status == 'recovered' %}selected{% endif %}>Recovered</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Penalty Status</label>
+          <select name="penalty" class="filter-select">
+            <option value="">All</option>
+            <option value="pending" {% if request.GET.penalty == 'pending' %}selected{% endif %}>Penalty Pending</option>
+            <option value="paid"    {% if request.GET.penalty == 'paid'    %}selected{% endif %}>Penalty Paid</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn--filter">Apply</button>
+        {% if request.GET.q or request.GET.status or request.GET.penalty %}
+          <a href="{% url 'transactions:missing_books' %}" class="btn btn--reset">Clear</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  <!-- Table Card -->
+  <div class="table-card">
+    <div class="table-responsive">
+      <table class="data-table missing-table" id="missingTable">
+        <thead>
+          <tr>
+            <th class="th-check">
+              <label class="checkbox-label">
+                <input type="checkbox" id="selectAll" class="checkbox-input">
+                <span class="checkbox-custom"></span>
+              </label>
+            </th>
+            <th>Txn ID</th>
+            <th>Book Details</th>
+            <th>Last Borrower</th>
+            <th>Issue Date</th>
+            <th>Due Date</th>
+            <th>Reported Date</th>
+            <th>Status</th>
+            <th>Book Value</th>
+            <th>Penalty</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in missing_books %}
+          <tr class="table-row missing-row missing-row--{{ item.status }}" data-id="{{ item.id }}">
+            <td class="td-check">
+              <label class="checkbox-label">
+                <input type="checkbox" class="checkbox-input row-check" value="{{ item.id }}">
+                <span class="checkbox-custom"></span>
+              </label>
+            </td>
+            <td class="td-id">
+              <a href="{% url 'transactions:transaction_detail' item.transaction.id %}" class="txn-id-link">#{{ item.transaction.id }}</a>
+            </td>
+            <td class="td-book">
+              <div class="book-cell">
+                <div class="book-cell__cover">
+                  <svg viewBox="0 0 28 34" fill="none"><rect x="1" y="1" width="26" height="32" rx="2" stroke="currentColor" stroke-width="1.25"/><path d="M5 10h18M5 15h18M5 20h10" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
+                </div>
+                <div>
+                  <span class="book-title">{{ item.book.title }}</span>
+                  <span class="book-author">{{ item.book.author }}</span>
+                  <span class="book-isbn">ISBN: {{ item.book.isbn|default:"—" }}</span>
+                </div>
+              </div>
+            </td>
+            <td class="td-member">
+              <div class="member-cell">
+                <div class="member-avatar">
+                  {% if item.transaction.member.photo_mime_type %}
+                  <img
+                    src="{% url 'transactions:member_photo_image' item.transaction.member.pk %}"
+                    alt="{{ item.transaction.member.first_name }}"
+                    class="member-avatar__photo"
+                    onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+                  >
+                  {% endif %}
+                  <span class="member-avatar__initial" {% if item.transaction.member.photo_mime_type %}style="display:none"{% endif %}>
+                    {{ item.transaction.member.first_name|first|upper }}
+                  </span>
+                </div>
+                <div class="member-info">
+                  <span class="member-name">{{ item.transaction.member.first_name }} {{ item.transaction.member.last_name }}</span>
+                  <span class="member-id">{{ item.transaction.member.member_id }}</span>
+                </div>
+              </div>
+            </td>
+            <td class="td-date">{{ item.transaction.issue_date|date:"d M Y" }}</td>
+            <td class="td-date">{{ item.transaction.due_date|date:"d M Y" }}</td>
+            <td class="td-date">{{ item.reported_date|date:"d M Y" }}</td>
+            <td class="td-status">
+              <span class="status-badge status-badge--{{ item.status }}">
+                <span class="status-badge__dot"></span>
+                {{ item.get_status_display }}
+              </span>
+            </td>
+            <td class="td-value">—</td>
+            <td class="td-penalty">
+              {% if item.penalty_amount > 0 %}
+              <div class="penalty-cell">
+                <span class="penalty-amount">₹{{ item.penalty_amount|floatformat:2 }}</span>
+                <span class="penalty-status {% if item.penalty_paid %}penalty-status--paid{% else %}penalty-status--pending{% endif %}">
+                  {{ item.penalty_paid|yesno:"Paid,Pending" }}
+                </span>
+              </div>
+              {% else %}
+              <span class="fine-nil">Not set</span>
+              {% endif %}
+            </td>
+            <td class="td-actions">
+              <div class="action-group">
+                {% if item.status != 'recovered' %}
+                <button
+                  class="action-btn action-btn--mark-lost"
+                  type="button"
+                  data-id="{{ item.id }}"
+                  data-txn-id="{{ item.transaction.id }}"
+                  title="Mark as Lost">
+                  <svg viewBox="0 0 20 20" fill="none"><path d="M4 4l12 12M16 4L4 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  Mark Lost
+                </button>
+                {% endif %}
+                <button
+                  class="action-btn action-btn--penalty"
+                  type="button"
+                  data-id="{{ item.id }}"
+                  data-book="{{ item.book.title|escapejs }}"
+                  title="Add/Edit Penalty">
+                  <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M10 7v6M7 10h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  Penalty
+                </button>
+                {% if item.status != 'recovered' %}
+                <form method="POST" action="{% url 'transactions:mark_recovered' item.id %}" style="display:inline">
+                  {% csrf_token %}
+                  <button type="submit" class="action-btn action-btn--recover" title="Mark as Recovered">
+                    <svg viewBox="0 0 20 20" fill="none"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Recover
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr class="table-row--empty">
+            <td colspan="11">
+              <div class="empty-state empty-state--success">
+                <div class="empty-state__icon">
+                  <svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="2"/><path d="M20 32l8 8 16-16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <h3 class="empty-state__title">No Missing Books</h3>
+                <p class="empty-state__text">All library books are accounted for.</p>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div><!-- /.table-card -->
+
+  <!-- Mark Lost Modal -->
+  <div class="modal" id="markLostModal" aria-hidden="true" aria-modal="true" role="dialog">
+    <div class="modal__backdrop" id="markLostBackdrop"></div>
+    <div class="modal__dialog">
+      <div class="modal__header">
+        <h3 class="modal__title">Confirm Mark as Lost</h3>
+        <button class="modal__close" id="closeMarkLostModal" type="button" aria-label="Close">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <form method="POST" action="{% url 'transactions:mark_lost' %}" id="markLostForm">
+        {% csrf_token %}
+        <input type="hidden" name="transaction_id" id="markLostTxnId">
+        <div class="modal__body">
+          <div class="modal-warning">
+            <svg viewBox="0 0 20 20" fill="none"><path d="M10 3L2 17h16L10 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M10 9v4M10 15v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <p>Are you sure you want to mark this book as <strong>officially lost</strong>? This action will:</p>
+          </div>
+          <ul class="modal-consequence-list">
+            <li>Update the transaction status to <strong>Lost</strong></li>
+            <li>Remove the copy from available inventory</li>
+            <li>Trigger replacement penalty calculation</li>
+          </ul>
+          <div class="form-group">
+            <label for="lostNotes" class="form-label">Reason / Notes</label>
+            <textarea name="notes" id="lostNotes" class="form-textarea" rows="3" placeholder="Describe how or when the book was determined lost…"></textarea>
+          </div>
+        </div>
+        <div class="modal__footer">
+          <button type="button" class="btn btn--ghost" id="cancelMarkLost">Cancel</button>
+          <button type="submit" class="btn btn--danger">Mark as Lost</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Penalty Modal -->
+  <div class="modal" id="addPenaltyModal" aria-hidden="true" aria-modal="true" role="dialog">
+    <div class="modal__backdrop" id="addPenaltyBackdrop"></div>
+    <div class="modal__dialog">
+      <div class="modal__header">
+        <h3 class="modal__title">Add / Update Penalty</h3>
+        <button class="modal__close" id="closeAddPenaltyModal" type="button" aria-label="Close">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <form method="POST" action="{% url 'transactions:add_penalty' %}" id="addPenaltyForm">
+        {% csrf_token %}
+        <input type="hidden" name="missing_id" id="penaltyMissingId">
+        <div class="modal__body">
+          <div class="penalty-book-info" id="penaltyBookInfo"></div>
+          <div class="form-group">
+            <label for="penaltyAmount" class="form-label form-label--required">Penalty Amount (₹)</label>
+            <input type="number" name="penalty_amount" id="penaltyAmount" class="form-input" min="0" step="0.50" placeholder="e.g. 500.00" required>
+            <span class="form-hint">Book replacement value: <strong id="bookValueHint">—</strong></span>
+          </div>
+          <div class="form-group">
+            <label for="penaltyReason" class="form-label">Reason</label>
+            <select name="penalty_reason" id="penaltyReason" class="form-select">
+              <option value="lost">Book Lost</option>
+              <option value="damaged">Severely Damaged</option>
+              <option value="missing">Missing - Not Returned</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="penaltyNotes" class="form-label">Notes</label>
+            <textarea name="notes" id="penaltyNotes" class="form-textarea" rows="2" placeholder="Additional notes…"></textarea>
+          </div>
+        </div>
+        <div class="modal__footer">
+          <button type="button" class="btn btn--ghost" id="cancelAddPenalty">Cancel</button>
+          <button type="submit" class="btn btn--primary">Apply Penalty</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div><!-- /.page-wrapper -->
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/transactions/missing_books.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+{% block title %}Book Report — Dooars Granthika{% endblock %}
+{% block nav_reports %}active{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/reports/reports_books.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="rpt-page">
+
+  <div class="rpt-header">
+    <div>
+      <h1 class="rpt-title">Book Report</h1>
+      <p class="rpt-sub">{{ date_from }} — {{ date_to }}</p>
+    </div>
+    <div class="rpt-actions">
+      <a href="{% url 'reports:export_books' %}?date_from={{ date_from|date:'Y-m-d' }}&date_to={{ date_to|date:'Y-m-d' }}{% if category_id %}&category={{ category_id }}{% endif %}" class="rpt-btn-export"><i class="fas fa-download"></i> Export CSV</a>
+      <a href="{% url 'reports:overview' %}" class="rpt-btn-back"><i class="fas fa-arrow-left"></i> Overview</a>
+    </div>
+  </div>
+
+  <form method="get" class="rpt-filter">
+    <div class="rpt-filter-group">
+      <label class="rpt-filter-label">From</label>
+      <input type="date" name="date_from" class="rpt-filter-input" value="{{ date_from|date:'Y-m-d' }}">
+    </div>
+    <div class="rpt-filter-group">
+      <label class="rpt-filter-label">To</label>
+      <input type="date" name="date_to" class="rpt-filter-input" value="{{ date_to|date:'Y-m-d' }}">
+    </div>
+    <div class="rpt-filter-group">
+      <label class="rpt-filter-label">Category</label>
+      <select name="category" class="rpt-filter-select">
+        <option value="">All Categories</option>
+        {% for cat in categories %}<option value="{{ cat.pk }}" {% if cat.pk|stringformat:"s" == category_id %}selected{% endif %}>{{ cat.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="rpt-filter-actions">
+      <button type="submit" class="rpt-filter-submit">Filter</button>
+      <a href="?" class="rpt-filter-reset">Reset</a>
+    </div>
+  </form>
+
+  <div class="rpt-stats">
+    <div class="rpt-stat rpt-stat--blue"><div class="rpt-stat-label">Total Titles</div><div class="rpt-stat-value">{{ stock.total }}</div></div>
+    <div class="rpt-stat rpt-stat--green"><div class="rpt-stat-label">Good Stock</div><div class="rpt-stat-value">{{ stock.available }}</div></div>
+    <div class="rpt-stat rpt-stat--amber"><div class="rpt-stat-label">Low Stock</div><div class="rpt-stat-value">{{ stock.low_stock }}</div><div class="rpt-stat-sub">≤ 3 copies</div></div>
+    <div class="rpt-stat rpt-stat--red"><div class="rpt-stat-label">Out of Stock</div><div class="rpt-stat-value">{{ stock.out_of_stock }}</div></div>
+  </div>
+
+  {% if stock.total %}
+  <div class="rpt-stock-bar-card">
+    <div class="rpt-stock-bar">
+      <div class="rpt-stock-bar-seg rpt-stock-bar-seg--ok"  style="width:{% widthratio stock.available stock.total 100 %}%"></div>
+      <div class="rpt-stock-bar-seg rpt-stock-bar-seg--low" style="width:{% widthratio stock.low_stock stock.total 100 %}%"></div>
+      <div class="rpt-stock-bar-seg rpt-stock-bar-seg--out" style="width:{% widthratio stock.out_of_stock stock.total 100 %}%"></div>
+    </div>
+    <div class="rpt-stock-legend">
+      <span><span class="rpt-stock-dot" style="background:#059669"></span>Available ({{ stock.available }})</span>
+      <span><span class="rpt-stock-dot" style="background:#d97706"></span>Low stock ({{ stock.low_stock }})</span>
+      <span><span class="rpt-stock-dot" style="background:#dc2626"></span>Out of stock ({{ stock.out_of_stock }})</span>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="rpt-books-layout">
+    <div class="rpt-card">
+      <div class="rpt-card-head"><span class="rpt-card-icon"><i class="fas fa-sort-amount-down"></i></span>Books by Popularity in Period</div>
+      <div class="rpt-table-wrap">
+        <table class="rpt-table">
+          <thead>
+            <tr>
+              <th style="width:36px">#</th><th>Title</th><th>Category</th>
+              <th style="width:130px">Copies</th><th style="width:110px">Issues</th><th style="width:90px">Stock</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in books %}
+            <tr>
+              <td class="rpt-cell-rank">{{ forloop.counter }}</td>
+              <td><div class="rpt-cell-name">{{ r.book.title }}</div><div class="rpt-cell-sub">{{ r.book.author }}</div></td>
+              <td class="rpt-cell-muted">{{ r.book.category.name|default:"—" }}</td>
+              <td>
+                <div class="rpt-copy-wrap">
+                  {% if r.total_copies %}
+                  <div class="rpt-copy-bar">
+                    <div class="rpt-copy-fill {% if r.available_copies == 0 %}rpt-copy-fill--out{% elif r.available_copies <= 3 %}rpt-copy-fill--low{% endif %}" style="width:{% widthratio r.available_copies r.total_copies 100 %}%"></div>
+                  </div>
+                  {% endif %}
+                  <span class="rpt-copy-label">{{ r.available_copies }}/{{ r.total_copies }}</span>
+                </div>
+              </td>
+              <td>
+                <div class="rpt-issue-wrap">
+                  {% if r.issue_count %}<div class="rpt-issue-bar"><div class="rpt-issue-fill" style="width:100%"></div></div>{% endif %}
+                  <span class="rpt-issue-num">{{ r.issue_count }}</span>
+                </div>
+              </td>
+              <td>
+                {% if r.stock_status == "out-stock" %}<span class="rpt-badge rpt-badge--out">Out</span>
+                {% elif r.stock_status == "low-stock" %}<span class="rpt-badge rpt-badge--low">Low</span>
+                {% else %}<span class="rpt-badge rpt-badge--ok">OK</span>{% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="rpt-table-empty">No books found</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="rpt-card" style="align-self:start">
+      <div class="rpt-card-head rpt-card-head--alert"><span class="rpt-card-icon"><i class="fas fa-bookmark"></i></span>Never Borrowed</div>
+      {% for b in least_borrow %}
+      <div class="rpt-unread-item"><div class="rpt-unread-title">{{ b.title }}</div><div class="rpt-unread-meta">{{ b.author }}{% if b.category %} · {{ b.category.name }}{% endif %}</div></div>
+      {% empty %}
+      <div class="rpt-unread-empty"><i class="fas fa-check-circle"></i>All books borrowed at least once!</div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

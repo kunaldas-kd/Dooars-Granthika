@@ -1,0 +1,334 @@
+{% extends "superuser/superuser_dashboard_base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block breadcrumb %}Dashboard{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle">
+      Welcome back, {{ request.user.username }}.
+      {% if requesting_staff %}
+        <span class="badge badge-neutral" style="margin-left:6px; vertical-align:middle;">
+          L{{ requesting_staff.primary_role.level }} — {{ requesting_staff.primary_role.name }}
+        </span>
+      {% else %}
+        <span class="badge badge-accent" style="margin-left:6px; vertical-align:middle;">Superuser</span>
+      {% endif %}
+    </p>
+  </div>
+  <div class="page-actions">
+    {% if request.user.is_superuser %}
+    <a href="{% url 'superuser:revenue_report' %}" class="btn btn-secondary">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Revenue Report
+    </a>
+    <a href="{% url 'superuser:plan_create' %}" class="btn btn-primary">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Plan
+    </a>
+    {% else %}
+    <a href="{% url 'superuser:tasks_list' %}" class="btn btn-secondary">My Tasks</a>
+    {% if requesting_staff.primary_role.can_add_staff %}
+    <a href="{% url 'superuser:staff_add' %}" class="btn btn-primary">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add Staff
+    </a>
+    {% endif %}
+    {% endif %}
+  </div>
+</div>
+
+
+{# ================================================================ #}
+{#  SUPERUSER VIEW                                                    #}
+{# ================================================================ #}
+{% if request.user.is_superuser %}
+
+<div class="stats-grid">
+  <div class="stat-card accent-success">
+    <div class="stat-icon success-icon">💳</div>
+    <div class="stat-label">Active Subscriptions</div>
+    <div class="stat-value">{{ active_subs }}</div>
+  </div>
+  <div class="stat-card accent-blue">
+    <div class="stat-icon accent-icon">💰</div>
+    <div class="stat-label">MRR (₹)</div>
+    <div class="stat-value">₹{{ mrr }}</div>
+  </div>
+  <div class="stat-card accent-warning">
+    <div class="stat-icon warning-icon">⏰</div>
+    <div class="stat-label">Expired</div>
+    <div class="stat-value">{{ expired_subs }}</div>
+  </div>
+  <div class="stat-card accent-info">
+    <div class="stat-icon info-icon">🏛</div>
+    <div class="stat-label">Total Libraries</div>
+    <div class="stat-value">{{ total_libraries }}</div>
+  </div>
+  <div class="stat-card accent-success">
+    <div class="stat-icon success-icon">👥</div>
+    <div class="stat-label">Total Members</div>
+    <div class="stat-value">{{ total_members }}</div>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px;">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Monthly Revenue</span>
+      <span class="badge badge-accent">Last 12 months</span>
+    </div>
+    <div class="card-body" style="padding: 20px;">
+      <div class="chart-container"><canvas id="revenueChart"></canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-title">Subscriptions by Plan</span></div>
+    <div class="card-body" style="padding: 20px;">
+      {% if plan_dist %}
+      <div class="chart-container">
+        <canvas id="subsChart"
+          data-labels='[{% for p in plan_dist %}"{{ p.plan|capfirst }}"{% if not forloop.last %},{% endif %}{% endfor %}]'
+          data-values='[{% for p in plan_dist %}{{ p.count }}{% if not forloop.last %},{% endif %}{% endfor %}]'>
+        </canvas>
+      </div>
+      {% else %}
+      <div class="empty-state" style="padding:30px;">
+        <div class="empty-icon">📊</div>
+        <div class="empty-text">No subscription data yet.</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Expiring Soon</span>
+      <span class="badge badge-warning">Next 7 days</span>
+    </div>
+    <div class="table-wrapper" style="border:none; border-radius:0;">
+      <table>
+        <thead><tr><th>Library</th><th>Plan</th><th>Expires</th></tr></thead>
+        <tbody>
+          {% for sub in expiring_soon %}
+          <tr data-href="{% url 'superuser:subscription_detail' sub.pk %}">
+            <td class="td-name">{{ sub.library.library_name }}</td>
+            <td>{{ sub.plan|capfirst }}</td>
+            <td class="td-mono">{{ sub.expiry_date|date:"M d, Y" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="3">
+            <div class="empty-state" style="padding:24px;">
+              <div class="empty-text">No subscriptions expiring in the next 7 days.</div>
+            </div>
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Recent Transactions</span>
+      <a href="{% url 'superuser:transactions_list' %}" class="btn btn-ghost btn-sm">View all →</a>
+    </div>
+    <div class="table-wrapper" style="border:none; border-radius:0;">
+      <table>
+        <thead><tr><th>Ref</th><th>Library</th><th>Amount</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for tx in recent_transactions %}
+          <tr data-href="{% url 'superuser:transaction_detail' tx.pk %}">
+            <td class="td-mono">{{ tx.reference }}</td>
+            <td class="td-name">{{ tx.library.library_name }}</td>
+            <td class="td-mono">₹{{ tx.amount }}</td>
+            <td><span class="badge badge-{{ tx.status }}">{{ tx.get_status_display }}</span></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4">
+            <div class="empty-state" style="padding:24px;">
+              <div class="empty-text">No transactions recorded yet.</div>
+            </div>
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+
+{# ================================================================ #}
+{#  STAFF / MANAGER VIEW                                             #}
+{# ================================================================ #}
+{% else %}
+
+{# Personal task stats ─────────────────────────────────────────── #}
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr);">
+  <div class="stat-card accent-info">
+    <div class="stat-icon info-icon">📋</div>
+    <div class="stat-label">My To Do</div>
+    <div class="stat-value">{{ my_task_stats.todo|default:0 }}</div>
+  </div>
+  <div class="stat-card accent-blue">
+    <div class="stat-icon accent-icon">▶</div>
+    <div class="stat-label">In Progress</div>
+    <div class="stat-value">{{ my_task_stats.in_progress|default:0 }}</div>
+  </div>
+  <div class="stat-card accent-success">
+    <div class="stat-icon success-icon">✓</div>
+    <div class="stat-label">Done</div>
+    <div class="stat-value">{{ my_task_stats.done|default:0 }}</div>
+  </div>
+  <div class="stat-card accent-danger">
+    <div class="stat-icon danger-icon">⚠</div>
+    <div class="stat-label">Overdue</div>
+    <div class="stat-value">{{ my_task_stats.overdue|default:0 }}</div>
+  </div>
+</div>
+
+{# Manager team KPIs (only if role has can_add_staff) ─────────── #}
+{% if managed_staff_count is not None %}
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr);">
+  <div class="stat-card">
+    <div class="stat-icon" style="background:var(--bg-overlay);">👥</div>
+    <div class="stat-label">Team Size</div>
+    <div class="stat-value">{{ managed_staff_count }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:var(--bg-overlay);">⏸</div>
+    <div class="stat-label">Team To Do</div>
+    <div class="stat-value">{{ managed_task_stats.todo|default:0 }}</div>
+  </div>
+  <div class="stat-card accent-blue">
+    <div class="stat-icon accent-icon">▶</div>
+    <div class="stat-label">Team Active</div>
+    <div class="stat-value">{{ managed_task_stats.in_progress|default:0 }}</div>
+  </div>
+  <div class="stat-card accent-danger">
+    <div class="stat-icon danger-icon">⚠</div>
+    <div class="stat-label">Team Overdue</div>
+    <div class="stat-value">{{ managed_task_stats.overdue|default:0 }}</div>
+  </div>
+</div>
+{% endif %}
+
+{# Main content row ───────────────────────────────────────────── #}
+<div style="display:grid; grid-template-columns:{% if managed_staff_count is not None %}1fr 1fr{% else %}1fr{% endif %}; gap:20px;">
+
+  {# My Recent Tasks ─────────────────────────────────────────── #}
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">My Recent Tasks</span>
+      <a href="{% url 'superuser:tasks_list' %}" class="btn btn-ghost btn-sm">View all →</a>
+    </div>
+    <div class="table-wrapper" style="border:none; border-radius:0;">
+      <table>
+        <thead><tr><th>Task</th><th>Priority</th><th>Due</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for task in my_recent_tasks %}
+          <tr>
+            <td>
+              <div style="font-weight:600; font-size:13px; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ task.title }}">{{ task.title }}</div>
+              <div style="font-size:11px; color:var(--text-muted);">{{ task.get_category_display }}</div>
+            </td>
+            <td>
+              <span class="badge badge-{% if task.priority == 'urgent' %}danger{% elif task.priority == 'high' %}warning{% elif task.priority == 'medium' %}info{% else %}neutral{% endif %}">
+                {{ task.get_priority_display }}
+              </span>
+            </td>
+            <td class="td-mono {% if task.is_overdue %}text-danger{% endif %}" style="font-size:12px;">
+              {% if task.due_date %}{{ task.due_date|date:"M d" }}{% if task.is_overdue %} ⚠{% endif %}{% else %}—{% endif %}
+            </td>
+            <td>
+              <span class="badge badge-{% if task.status == 'done' %}active{% elif task.status == 'in_progress' %}info{% else %}neutral{% endif %}">
+                {{ task.get_status_display }}
+              </span>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4">
+            <div class="empty-state" style="padding:24px;">
+              <div class="empty-text">No tasks assigned to you yet.</div>
+            </div>
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {# Team tasks panel (managers only) ──────────────────────────── #}
+  {% if managed_staff_count is not None %}
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Team Overview</span>
+      <a href="{% url 'superuser:staff_list' %}" class="btn btn-ghost btn-sm">View team →</a>
+    </div>
+    <div class="card-body">
+      {% with total=managed_task_stats.todo|add:managed_task_stats.in_progress|add:managed_task_stats.done %}
+      {% if total %}
+      <div style="margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">
+          <span>Task completion</span>
+          <span>{{ managed_task_stats.done }}/{{ total }}</span>
+        </div>
+        <div style="background:var(--bg-overlay); border-radius:99px; height:8px; overflow:hidden;">
+          <div style="background:var(--success); height:100%; border-radius:99px; width:{% widthratio managed_task_stats.done total 100 %}%; transition:width .4s ease;"></div>
+        </div>
+      </div>
+      {% endif %}
+      {% endwith %}
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <div style="padding:12px; background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius-md);">
+          <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">To Do</div>
+          <div style="font-size:22px; font-weight:800; font-family:'Syne',sans-serif;">{{ managed_task_stats.todo|default:0 }}</div>
+        </div>
+        <div style="padding:12px; background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius-md);">
+          <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">In Progress</div>
+          <div style="font-size:22px; font-weight:800; font-family:'Syne',sans-serif; color:var(--info);">{{ managed_task_stats.in_progress|default:0 }}</div>
+        </div>
+        <div style="padding:12px; background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius-md);">
+          <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Done</div>
+          <div style="font-size:22px; font-weight:800; font-family:'Syne',sans-serif; color:var(--success);">{{ managed_task_stats.done|default:0 }}</div>
+        </div>
+        <div style="padding:12px; background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius-md);">
+          <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Overdue</div>
+          <div style="font-size:22px; font-weight:800; font-family:'Syne',sans-serif; color:var(--danger);">{{ managed_task_stats.overdue|default:0 }}</div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:12.5px; color:var(--text-secondary);">{{ managed_staff_count }} staff member{{ managed_staff_count|pluralize }}</span>
+        <a href="{% url 'superuser:tasks_list' %}" class="btn btn-secondary btn-sm">All tasks</a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{# Profile summary card ──────────────────────────────────────── #}
+<div class="card" style="margin-top:20px;">
+  <div class="card-header"><span class="card-title">Your Profile</span>
+    <a href="{% url 'superuser:staff_detail' requesting_staff.pk %}" class="btn btn-ghost btn-sm">Full profile →</a>
+  </div>
+  <div class="dl-grid">
+    <div class="dl-item"><div class="dl-label">Employee ID</div><div class="dl-value mono">{{ requesting_staff.employee_id }}</div></div>
+    <div class="dl-item"><div class="dl-label">Primary Role</div><div class="dl-value"><span style="color:var(--accent); font-weight:600;">{{ requesting_staff.primary_role.name }}</span></div></div>
+    <div class="dl-item"><div class="dl-label">Level</div><div class="dl-value mono">L{{ requesting_staff.primary_role.level }}</div></div>
+    <div class="dl-item"><div class="dl-label">Department</div><div class="dl-value">{{ requesting_staff.primary_role.get_department_display }}</div></div>
+    <div class="dl-item"><div class="dl-label">Status</div>
+      <div class="dl-value"><span class="badge badge-{% if requesting_staff.status == 'active' %}active{% else %}danger{% endif %}">{{ requesting_staff.get_status_display }}</span></div>
+    </div>
+    <div class="dl-item"><div class="dl-label">Joined</div><div class="dl-value mono">{{ requesting_staff.joined_date|date:"M d, Y" }}</div></div>
+  </div>
+</div>
+
+{% endif %}{# end superuser / staff branch #}
+
+{% endblock %}

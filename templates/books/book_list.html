@@ -1,0 +1,116 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Books — Dooars Granthika{% endblock %}
+{% block nav_books %}active{% endblock %}
+{% block page_heading %}Book Catalogue{% endblock %}
+{% block page_subheading %}Manage the entire library book inventory — add, edit, track stock.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/books/books.css' %}" />
+{% endblock %}
+
+{% block content %}
+
+  <nav class="breadcrumb">
+    <a href="{% url 'accounts:admin_dashboard' %}"><i class="fas fa-home"></i> Dashboard</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>Books</span>
+  </nav>
+
+  <div class="books-page-header animate-in">
+    <div class="header-text">
+      <h1><i class="fas fa-book-open"></i> Book Catalogue</h1>
+      <p>Manage the entire library book inventory — add, edit, track stock.</p>
+    </div>
+    <div class="header-actions">
+      <a href="{% url 'books:stock_dashboard' %}" class="btn btn-ghost btn-sm">
+        <i class="fas fa-chart-bar"></i> Stock Dashboard
+      </a>
+      <a href="{% url 'books:export_books' %}" class="btn btn-ghost btn-sm">
+        <i class="fas fa-file-export"></i> Export
+      </a>
+      <a href="{% url 'books:book_create' %}" class="btn btn-primary btn-sm">
+        <i class="fas fa-plus"></i> Add New Book
+      </a>
+    </div>
+  </div>
+
+  <div class="card animate-in">
+    <div class="card-header">
+      <span class="card-title">
+        <i class="fas fa-list" style="color:var(--ink-accent);"></i>
+        All Books
+        <span style="background:var(--blue-100);color:var(--blue-700);border-radius:99px;padding:2px 10px;font-size:.73rem;font-weight:700;">
+          {{ paginator.count }}
+        </span>
+      </span>
+      <div class="d-flex gap-2">
+        <a href="{% url 'books:export_books_excel' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+           class="btn btn-outline btn-sm" data-tooltip="Export to Excel">
+          <i class="fas fa-file-excel"></i> Export
+        </a>
+        <button class="btn btn-outline btn-sm" id="refreshBtn" data-tooltip="Refresh">
+          <i class="fas fa-sync-alt"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="card-body" style="padding-bottom:0;">
+      {% include "books/partials/book_filters.html" %}
+      {% include "books/partials/book_table.html" %}
+    </div>
+
+    {% if paginator.num_pages > 1 %}
+    <div class="pagination-wrap">
+      <span class="pagination-info">
+        Showing <strong>{{ page_obj.start_index }}–{{ page_obj.end_index }}</strong>
+        of <strong>{{ paginator.count }}</strong> books
+      </span>
+      <ul class="pagination-list">
+
+        {# Build a query string without the page param so we can append it #}
+        {% with q=request.GET.q category=request.GET.category stock=request.GET.stock %}
+
+        <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+          {% if page_obj.has_previous %}
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if category %}&category={{ category }}{% endif %}{% if stock %}&stock={{ stock }}{% endif %}">
+              <i class="fas fa-chevron-left"></i>
+            </a>
+          {% else %}
+            <span class="page-link"><i class="fas fa-chevron-left"></i></span>
+          {% endif %}
+        </li>
+
+        {% for num in paginator.page_range %}
+          {% if num == page_obj.number %}
+            <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+          {% else %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ num }}{% if q %}&q={{ q }}{% endif %}{% if category %}&category={{ category }}{% endif %}{% if stock %}&stock={{ stock }}{% endif %}">{{ num }}</a>
+            </li>
+          {% endif %}
+        {% endfor %}
+
+        <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+          {% if page_obj.has_next %}
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if category %}&category={{ category }}{% endif %}{% if stock %}&stock={{ stock }}{% endif %}">
+              <i class="fas fa-chevron-right"></i>
+            </a>
+          {% else %}
+            <span class="page-link"><i class="fas fa-chevron-right"></i></span>
+          {% endif %}
+        </li>
+
+        {% endwith %}
+
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/books/books.js' %}"></script>
+{% endblock %}

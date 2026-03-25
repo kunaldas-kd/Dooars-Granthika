@@ -1,0 +1,44 @@
+{% extends "superuser/superuser_dashboard_base.html" %}
+{% block title %}Activate Subscription{% endblock %}
+{% block breadcrumb %}Activate Subscription{% endblock %}
+{% block nav_subscriptions %}active{% endblock %}
+
+{% block content %}
+<div class="confirm-page" style="margin: -28px; min-height: calc(100vh - 64px);">
+  <div class="confirm-card">
+    <div class="confirm-icon success">✓</div>
+    <h2 class="confirm-title">Activate Subscription</h2>
+    <p class="confirm-desc">
+      This will reactivate the subscription and restore full platform access for the library.
+      If the subscription has expired, the expiry date will be extended by 30 days from today.
+    </p>
+
+    <div class="confirm-target">
+      <div class="label">Library</div>
+      <div class="value">{{ subscription.library.library_name }}</div>
+      <div style="margin-top:6px; font-size:12.5px; color:var(--text-secondary); font-family:'JetBrains Mono',monospace;">
+        {{ subscription.library.library_code }} · Plan: {{ subscription.plan|capfirst }} · Expires {{ subscription.expiry_date|date:"M d, Y" }}
+      </div>
+    </div>
+
+    <div class="alert alert-success" style="margin-bottom:20px;">
+      <span class="alert-icon">ℹ</span>
+      <div class="alert-text">
+        <div class="alert-title">Access will be restored immediately</div>
+        The library's admin and all users will regain platform access.
+      </div>
+    </div>
+
+    <form method="post" data-confirm>
+      {% csrf_token %}
+      <div class="confirm-actions">
+        <a href="{% url 'superuser:subscription_detail' subscription.pk %}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-success">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          Activate Subscription
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,83 @@
+<div class="books-table-wrap">
+  <table class="books-table">
+    <thead>
+      <tr>
+        <th data-sort="sn" class="col-left">#<span class="sort-icon">▲</span></th>
+        <th data-sort="copy_id_range" class="col-left">Copy ID Range <span class="sort-icon">▲</span></th>
+        <th data-sort="title" class="col-left">Book Title <span class="sort-icon">▲</span></th>
+        <th data-sort="author" class="col-left">Author <span class="sort-icon">▲</span></th>
+        <th data-sort="isbn" class="col-center">ISBN <span class="sort-icon">▲</span></th>
+        <th data-sort="category" class="col-center">Category <span class="sort-icon">▲</span></th>
+        <th data-sort="total" class="col-center">Total Copies <span class="sort-icon">▲</span></th>
+        <th data-sort="price" class="col-center">Price (₹) <span class="sort-icon">▲</span></th>
+        <th data-sort="status" class="col-center col-sticky-status">Stock Status <span class="sort-icon">▲</span></th>
+        <th class="col-center col-sticky-actions">Actions</th>
+      </tr>
+    </thead>
+    <tbody id="booksTableBody">
+      {% for book in books %}
+      <tr>
+        <td class="text-muted text-sm col-left">{{ page_obj.start_index|add:forloop.counter0 }}</td>
+        <td class="text-muted text-sm col-left" style="font-family:monospace;letter-spacing:.03em;">
+          {% with first_copy=book.copies.first last_copy=book.copies.last %}
+            {% if first_copy %}
+              {% if first_copy.copy_id == last_copy.copy_id %}
+                {{ first_copy.copy_id }}
+              {% else %}
+                {{ first_copy.copy_id }}<br>
+                <span style="display:block;text-align:center;color:var(--text-muted);font-size:.7rem;">↓</span><br>
+                {{ last_copy.copy_id }}
+              {% endif %}
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          {% endwith %}
+        </td>
+        <td class="book-title-cell col-left">{{ book.title }}</td>
+        <td class="col-left">{{ book.author }}</td>
+        <td class="text-muted text-sm col-center">{{ book.isbn }}</td>
+        <td class="col-center" data-category="{{ book.category.slug }}">{{ book.category.name }}</td>
+        <td class="col-center">{{ book.total_copies }}</td>
+        <td class="text-sm col-center">{% if book.price %}₹{{ book.price }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+        <td class="col-center col-sticky-status">
+          {% if book.available_copies == 0 %}
+            <span class="badge badge-out-stock">Out of Stock</span>
+          {% elif book.available_copies <= 3 %}
+            <span class="badge badge-low-stock">Low Stock</span>
+          {% else %}
+            <span class="badge badge-available">Available</span>
+          {% endif %}
+        </td>
+        <td class="col-center col-sticky-actions">
+          <div class="action-btns" style="justify-content:center;">
+            <a href="{% url 'books:book_detail' book.pk %}" class="action-btn action-btn-view" data-tooltip="View">
+              <i class="fas fa-eye"></i>
+            </a>
+            <a href="{% url 'books:book_update' book.pk %}" class="action-btn action-btn-edit" data-tooltip="Edit">
+              <i class="fas fa-pen"></i>
+            </a>
+            <a href="{% url 'books:book_delete' book.pk %}" class="action-btn action-btn-delete" data-tooltip="Delete">
+              <i class="fas fa-trash"></i>
+            </a>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="10">
+          <div class="empty-state">
+            <i class="fas fa-book-open"></i>
+            <h3>No books found</h3>
+            <p class="text-sm">Try adjusting your search or filters.</p>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div id="noResults" class="empty-state no-results-hidden">
+    <i class="fas fa-search"></i>
+    <h3>No matching books</h3>
+    <p class="text-sm">No books match your search query.</p>
+  </div>
+</div>

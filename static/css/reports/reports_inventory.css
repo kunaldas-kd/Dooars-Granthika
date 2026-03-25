@@ -1,0 +1,121 @@
+/* ════════════════════════════════════════════════════════════════
+   reports_inventory.css
+   Self-contained — loaded only on the Inventory Report page.
+════════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+
+:root {
+  --r-blue-50:  #eff6ff;
+  --r-blue-100: #dbeafe;
+  --r-blue-200: #bfdbfe;
+  --r-blue-500: #3b82f6;
+  --r-blue-600: #2563eb;
+  --r-blue-700: #1d4ed8;
+  --r-blue-800: #1e40af;
+  --r-white:    #ffffff;
+  --r-bg:       #f0f5ff;
+  --r-border:   #dde8fb;
+  --r-text:     #0f1f3d;
+  --r-mid:      #3d5070;
+  --r-soft:     #6b7fa8;
+  --r-green:    #059669;
+  --r-amber:    #d97706;
+  --r-red:      #dc2626;
+  --r-radius:   12px;
+  --r-radius-s: 8px;
+  --r-shadow:   0 1px 3px rgba(15,31,61,.06), 0 4px 12px rgba(37,99,235,.07);
+  --r-font:     'Plus Jakarta Sans', sans-serif;
+  --r-mono:     'JetBrains Mono', monospace;
+}
+
+.rpt-page { font-family: var(--r-font); background: var(--r-bg); padding: 28px 28px 56px; min-height: 100%; color: var(--r-text); }
+
+/* ── Header / nav ───────────────────────────────────────────── */
+.rpt-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+.rpt-title  { font-size: 1.5rem; font-weight: 800; color: var(--r-blue-800); letter-spacing: -.03em; margin: 0 0 3px; }
+.rpt-sub    { font-size: .8125rem; color: var(--r-soft); font-weight: 500; }
+.rpt-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.rpt-btn-back { display: inline-flex; align-items: center; gap: 6px; font-family: var(--r-font); font-size: .8125rem; font-weight: 600; color: var(--r-blue-600); text-decoration: none; padding: 7px 16px; border: 1.5px solid var(--r-blue-200); border-radius: 50px; background: var(--r-white); transition: all .18s; }
+.rpt-btn-back:hover { background: var(--r-blue-600); border-color: var(--r-blue-600); color: #fff; }
+.rpt-btn-export { display: inline-flex; align-items: center; gap: 6px; font-family: var(--r-font); font-size: .8125rem; font-weight: 600; color: var(--r-green); text-decoration: none; padding: 7px 16px; border: 1.5px solid #a7f3d0; border-radius: 50px; background: #f0fdf4; transition: all .18s; }
+.rpt-btn-export:hover { background: var(--r-green); border-color: var(--r-green); color: #fff; }
+
+/* ── Filter bar ─────────────────────────────────────────────── */
+.rpt-filter { background: var(--r-white); border: 1px solid var(--r-border); border-radius: var(--r-radius); box-shadow: var(--r-shadow); padding: 14px 18px; display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 22px; }
+.rpt-filter-group { display: flex; flex-direction: column; gap: 4px; }
+.rpt-filter-label { font-size: .67rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--r-soft); }
+.rpt-filter-select { font-family: var(--r-font); font-size: .8125rem; font-weight: 500; color: var(--r-text); background: var(--r-bg); border: 1.5px solid var(--r-blue-200); border-radius: var(--r-radius-s); padding: 6px 11px; height: 36px; outline: none; transition: border-color .15s, box-shadow .15s; }
+.rpt-filter-select:focus { border-color: var(--r-blue-500); box-shadow: 0 0 0 3px rgba(59,130,246,.12); background: var(--r-white); }
+.rpt-filter-actions { display: flex; gap: 6px; align-items: flex-end; }
+.rpt-filter-submit { font-family: var(--r-font); font-size: .8125rem; font-weight: 700; color: #fff; background: var(--r-blue-600); border: none; border-radius: var(--r-radius-s); padding: 6px 20px; height: 36px; cursor: pointer; transition: background .15s; }
+.rpt-filter-submit:hover { background: var(--r-blue-700); }
+.rpt-filter-reset { font-family: var(--r-font); font-size: .8125rem; font-weight: 600; color: var(--r-mid); background: transparent; border: 1.5px solid var(--r-border); border-radius: var(--r-radius-s); padding: 6px 14px; height: 36px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; transition: all .15s; }
+.rpt-filter-reset:hover { border-color: #60a5fa; color: var(--r-blue-600); }
+
+/* ── Stats grid ─────────────────────────────────────────────── */
+.rpt-stats {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 16px; margin-bottom: 18px;
+}
+@media (max-width: 1000px) { .rpt-stats { grid-template-columns: repeat(2, 1fr); } }
+
+.rpt-stat { background: var(--r-white); border: 1px solid var(--r-border); border-radius: var(--r-radius); padding: 18px 20px 16px; box-shadow: var(--r-shadow); position: relative; overflow: hidden; transition: transform .18s; }
+.rpt-stat:hover { transform: translateY(-2px); }
+.rpt-stat::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--s-color, var(--r-blue-500)); }
+.rpt-stat-label { font-size: .69rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--r-soft); margin-bottom: 7px; }
+.rpt-stat-value { font-size: 2rem; font-weight: 800; font-family: var(--r-mono); letter-spacing: -.05em; color: var(--s-color, var(--r-blue-700)); line-height: 1; }
+.rpt-stat-sub   { font-size: .75rem; color: var(--r-soft); margin-top: 5px; }
+.rpt-stat--blue  { --s-color: var(--r-blue-600); }
+.rpt-stat--green { --s-color: var(--r-green); }
+.rpt-stat--amber { --s-color: var(--r-amber); }
+.rpt-stat--red   { --s-color: var(--r-red); }
+
+/* ── Donut chart card ───────────────────────────────────────── */
+.rpt-donut-card { background: var(--r-white); border: 1px solid var(--r-border); border-radius: var(--r-radius); box-shadow: var(--r-shadow); overflow: hidden; margin-bottom: 20px; }
+.rpt-donut-head { display: flex; align-items: center; gap: 10px; padding: 14px 20px 12px; font-size: .71rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--r-blue-700); border-bottom: 1px solid var(--r-border); background: linear-gradient(135deg, var(--r-blue-50), var(--r-white)); }
+.rpt-donut-icon { width: 26px; height: 26px; border-radius: 6px; background: var(--r-blue-100); color: var(--r-blue-600); display: flex; align-items: center; justify-content: center; font-size: .8rem; flex-shrink: 0; }
+.rpt-donut-body { display: flex; align-items: center; gap: 28px; padding: 22px 24px; }
+.rpt-donut-legend { display: flex; flex-direction: column; gap: 10px; }
+.rpt-donut-leg-item { display: flex; align-items: center; gap: 8px; font-size: .8rem; font-weight: 500; color: var(--r-mid); }
+.rpt-donut-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.rpt-donut-dot--ok  { background: var(--r-green); }
+.rpt-donut-dot--low { background: var(--r-amber); }
+.rpt-donut-dot--out { background: var(--r-red); }
+
+/* ── Main card ──────────────────────────────────────────────── */
+.rpt-card { background: var(--r-white); border: 1px solid var(--r-border); border-radius: var(--r-radius); box-shadow: var(--r-shadow); overflow: hidden; }
+.rpt-card-head { display: flex; align-items: center; gap: 10px; padding: 14px 20px 12px; font-size: .71rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--r-blue-700); border-bottom: 1px solid var(--r-border); background: linear-gradient(135deg, var(--r-blue-50), var(--r-white)); }
+.rpt-card-icon { width: 26px; height: 26px; border-radius: 6px; background: var(--r-blue-100); color: var(--r-blue-600); display: flex; align-items: center; justify-content: center; font-size: .8rem; flex-shrink: 0; }
+
+/* ── Table ──────────────────────────────────────────────────── */
+.rpt-table-wrap { overflow-x: auto; }
+.rpt-table { width: 100%; border-collapse: collapse; font-size: .8125rem; font-family: var(--r-font); }
+.rpt-table thead th { background: linear-gradient(135deg, var(--r-blue-50), #eef3ff); color: var(--r-blue-800); font-size: .67rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; padding: 10px 16px; border-bottom: 2px solid var(--r-blue-200); white-space: nowrap; }
+.rpt-table tbody td { padding: 10px 16px; border-bottom: 1px solid var(--r-border); vertical-align: middle; }
+.rpt-table tbody tr:last-child td { border-bottom: none; }
+.rpt-table tbody tr:hover td { background: var(--r-blue-50); }
+.rpt-cell-name  { font-weight: 600; }
+.rpt-cell-sub   { font-size: .7rem; color: var(--r-soft); margin-top: 1px; }
+.rpt-cell-muted { color: var(--r-soft); }
+.rpt-cell-mono  { font-family: var(--r-mono); font-size: .78rem; }
+.rpt-cell-center { text-align: center; }
+.rpt-table-empty { text-align: center; padding: 52px 20px; color: var(--r-soft); font-size: .875rem; }
+
+/* ── Book ID chip ───────────────────────────────────────────── */
+.rpt-book-id { font-family: var(--r-mono); font-size: .7rem; font-weight: 600; color: var(--r-blue-600); background: var(--r-blue-50); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--r-blue-200); white-space: nowrap; display: inline-block; }
+
+/* ── Stock badge ────────────────────────────────────────────── */
+.rpt-badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 50px; font-size: .68rem; font-weight: 700; }
+.rpt-badge--available { background: #dcfce7; color: #166534; }
+.rpt-badge--low-stock { background: #fef9c3; color: #92400e; }
+.rpt-badge--out-stock { background: #fee2e2; color: #991b1b; }
+
+/* ── Copy split display ─────────────────────────────────────── */
+.rpt-copies { display: flex; align-items: center; gap: 3px; font-family: var(--r-mono); font-size: .8rem; font-weight: 600; justify-content: center; }
+.rpt-copies-avail { color: var(--r-green); }
+.rpt-copies-sep   { color: var(--r-soft); }
+.rpt-copies-total { color: var(--r-soft); }
+
+/* ── Shelf cell ─────────────────────────────────────────────── */
+.rpt-shelf { font-family: var(--r-mono); font-size: .74rem; color: var(--r-soft); background: var(--r-bg); padding: 2px 8px; border-radius: 4px; display: inline-block; }

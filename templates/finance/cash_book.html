@@ -1,0 +1,173 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Cash Book — Dooars Granthika{% endblock %}
+{% block nav_finance %}active{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboards/finance_dashboard.css' %}" />
+<link rel="stylesheet" href="{% static 'css/dashboards/audit_log.css' %}" />
+{% endblock %}
+
+{% block content %}
+<div class="al-wrapper">
+
+  <!-- Page Header -->
+  <div class="al-page-header">
+    <div class="al-page-header__left">
+      <div class="al-page-header__icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      </div>
+      <div>
+        <div class="al-page-title">Cash Book</div>
+        <div class="al-page-sub">Chronological ledger of all income and expenses</div>
+      </div>
+    </div>
+    <div class="al-page-header__actions">
+      <a href="?export=csv" class="al-btn al-btn--ghost">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </a>
+      <a href="{% url 'finance:overview' %}" class="al-btn al-btn--ghost">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Finance Overview
+      </a>
+    </div>
+  </div>
+
+  <!-- Summary Strip -->
+  <div class="al-summary-strip" style="grid-template-columns:repeat(3,1fr);margin-bottom:22px;">
+
+    <div class="al-summary-card">
+      <div class="al-summary-card__icon al-summary-card__icon--green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      </div>
+      <div>
+        <div class="al-summary-card__label">Total Credits</div>
+        <div class="al-summary-card__value">&#8377;{{ total_credits|floatformat:2 }}</div>
+      </div>
+    </div>
+
+    <div class="al-summary-card">
+      <div class="al-summary-card__icon al-summary-card__icon--red">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+      </div>
+      <div>
+        <div class="al-summary-card__label">Total Debits</div>
+        <div class="al-summary-card__value">&#8377;{{ total_debits|floatformat:2 }}</div>
+      </div>
+    </div>
+
+    <div class="al-summary-card">
+      <div class="al-summary-card__icon {% if closing_balance >= 0 %}al-summary-card__icon--green{% else %}al-summary-card__icon--red{% endif %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+      <div>
+        <div class="al-summary-card__label">Closing Balance</div>
+        <div class="al-summary-card__value"
+             style="color:{% if closing_balance >= 0 %}var(--success-text){% else %}var(--danger-text){% endif %}">
+          &#8377;{{ closing_balance|floatformat:2 }}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Cash Book Table -->
+  <div class="al-table-card">
+    <div class="al-table-card__header">
+      <div class="al-table-card__title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;color:var(--blue-600);"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Ledger Entries
+        <span class="al-count">{{ entries|length }} rows</span>
+      </div>
+    </div>
+
+    <div class="al-table-responsive">
+      <table class="al-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Reference</th>
+            <th style="text-align:right;">Debit (&#8377;)</th>
+            <th style="text-align:right;">Credit (&#8377;)</th>
+            <th style="text-align:right;">Balance (&#8377;)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in entries %}
+          <tr class="al-row">
+            <td>
+              <div class="al-date">{{ entry.date|date:"d M Y" }}</div>
+            </td>
+            <td>
+              {% if entry.entry_type == 'credit' %}
+              <span class="al-status al-status--success">
+                <span class="al-status__dot"></span> Credit
+              </span>
+              {% else %}
+              <span class="al-status al-status--failed">
+                <span class="al-status__dot"></span> Debit
+              </span>
+              {% endif %}
+            </td>
+            <td>
+              <div style="font-size:13px;font-weight:500;color:var(--grey-700);">
+                {{ entry.description }}
+              </div>
+            </td>
+            <td>
+              <span class="al-ref">{{ entry.ref|default:"—" }}</span>
+            </td>
+            <td style="text-align:right;">
+              {% if entry.entry_type == 'debit' %}
+              <span class="al-amount" style="color:var(--danger-text);">{{ entry.amount|floatformat:2 }}</span>
+              {% else %}
+              <span style="color:var(--grey-300);">—</span>
+              {% endif %}
+            </td>
+            <td style="text-align:right;">
+              {% if entry.entry_type == 'credit' %}
+              <span class="al-amount al-amount--success">{{ entry.amount|floatformat:2 }}</span>
+              {% else %}
+              <span style="color:var(--grey-300);">—</span>
+              {% endif %}
+            </td>
+            <td style="text-align:right;">
+              <span class="al-amount {% if entry.running_balance >= 0 %}al-amount--success{% else %}" style="color:var(--danger-text);">{% endif %}">
+                {{ entry.running_balance|floatformat:2 }}
+              </span>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7">
+              <div class="al-empty">
+                <div class="al-empty__icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                </div>
+                <div class="al-empty__title">No Entries Yet</div>
+                <div class="al-empty__sub">Income and expense records will appear here.</div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        {% if entries %}
+        <tfoot>
+          <tr style="background:var(--grey-50);border-top:2px solid var(--grey-200);">
+            <td colspan="4" style="padding:12px 14px;font-weight:700;font-size:13px;color:var(--grey-700);">Totals</td>
+            <td style="text-align:right;padding:12px 14px;font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--danger-text);">{{ total_debits|floatformat:2 }}</td>
+            <td style="text-align:right;padding:12px 14px;font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--success-text);">{{ total_credits|floatformat:2 }}</td>
+            <td style="text-align:right;padding:12px 14px;font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:{% if closing_balance >= 0 %}var(--success-text){% else %}var(--danger-text){% endif %};">{{ closing_balance|floatformat:2 }}</td>
+          </tr>
+        </tfoot>
+        {% endif %}
+      </table>
+    </div>
+  </div>
+
+</div><!-- /.al-wrapper -->
+{% endblock %}

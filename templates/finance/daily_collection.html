@@ -1,0 +1,175 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Daily Collection — Dooars Granthika{% endblock %}
+{% block nav_finance %}active{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/finance/finance_dashboard.css' %}" />
+{% endblock %}
+
+{% block content %}
+<div class="fin-wrapper">
+
+  <!-- Page Header -->
+  <div class="fin-page-header">
+    <div class="fin-page-header__left">
+      <div class="fin-page-header__icon">
+        <i class="fas fa-calendar-day"></i>
+      </div>
+      <div>
+        <div class="fin-page-title">Daily Collection</div>
+        <div class="fin-page-sub">Fine payments collected on {{ selected_date|date:"d F Y" }}</div>
+      </div>
+    </div>
+    <div class="fin-page-header__actions">
+      <!-- Date picker -->
+      <form method="get" action="" style="display:flex;align-items:center;gap:8px;">
+        <input type="date" name="date" value="{{ report_date }}"
+               class="fin-form-input" style="padding:8px 12px;font-size:13px;"
+               onchange="this.form.submit()">
+        <button type="submit" class="fin-btn fin-btn--primary" style="padding:9px 14px;">
+          <i class="fas fa-search"></i>
+        </button>
+      </form>
+      <a href="{% url 'finance:overview' %}" class="fin-btn fin-btn--ghost">
+        <i class="fas fa-arrow-left"></i> Overview
+      </a>
+    </div>
+  </div>
+
+  <!-- KPI Strip -->
+  <div class="fin-kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">
+
+    <div class="fin-kpi-card fin-kpi-card--income">
+      <div class="fin-kpi-header">
+        <div class="fin-kpi-icon fin-kpi-icon--income"><i class="fas fa-coins"></i></div>
+        <span class="fin-kpi-trend fin-kpi-trend--up">Today</span>
+      </div>
+      <div class="fin-kpi-label">Day Total</div>
+      <div class="fin-kpi-value"><span class="fin-rupee">&#8377;</span>{{ day_total|floatformat:2 }}</div>
+      <div class="fin-kpi-sub">{{ payments|length }} transaction(s)</div>
+    </div>
+
+    <div class="fin-kpi-card fin-kpi-card--profit">
+      <div class="fin-kpi-header">
+        <div class="fin-kpi-icon fin-kpi-icon--profit"><i class="fas fa-hand-holding-dollar"></i></div>
+        <span class="fin-kpi-trend fin-kpi-trend--flat">Cash</span>
+      </div>
+      <div class="fin-kpi-label">Cash</div>
+      <div class="fin-kpi-value"><span class="fin-rupee">&#8377;</span>{{ cash_total|floatformat:2 }}</div>
+      <div class="fin-kpi-sub">Physical payments</div>
+    </div>
+
+    <div class="fin-kpi-card fin-kpi-card--fines">
+      <div class="fin-kpi-header">
+        <div class="fin-kpi-icon fin-kpi-icon--fines"><i class="fas fa-wifi"></i></div>
+        <span class="fin-kpi-trend fin-kpi-trend--flat">Online</span>
+      </div>
+      <div class="fin-kpi-label">Online / UPI</div>
+      <div class="fin-kpi-value"><span class="fin-rupee">&#8377;</span>{{ online_total|floatformat:2 }}</div>
+      <div class="fin-kpi-sub">Digital payments</div>
+    </div>
+
+  </div>
+
+  <!-- Payments Table -->
+  <div class="fin-panel">
+    <div class="fin-panel__head">
+      <div class="fin-panel__title">
+        <i class="fas fa-list"></i>
+        Transactions on {{ selected_date|date:"d M Y" }}
+        <span class="fin-count">{{ payments|length }}</span>
+      </div>
+    </div>
+    <div class="fin-table-wrap">
+      <table class="fin-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Receipt #</th>
+            <th>Member</th>
+            <th>Book</th>
+            <th>Fine Type</th>
+            <th>Method</th>
+            <th>Collected By</th>
+            <th style="text-align:right;">Amount</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in payments %}
+          <tr>
+            <td>
+              <span style="font-size:13px;font-weight:500;color:var(--fin-ink-soft);">
+                {{ p.transaction_date|time:"H:i" }}
+              </span>
+            </td>
+            <td><span class="fin-mono">{{ p.receipt_number|default:"—" }}</span></td>
+            <td>
+              <div class="fin-member">
+                <div class="fin-member__avatar">
+                  {{ p.member_name|default:"?"|first|upper }}
+                </div>
+                <div>
+                  <div class="fin-member__name">
+                    {{ p.member_name|default:"—" }}
+                  </div>
+                  <div class="fin-member__id">{{ p.member_id_snapshot|default:"" }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div style="font-size:12.5px;color:var(--fin-ink-soft);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                {{ p.book_title|default:"—" }}
+              </div>
+            </td>
+            <td>
+              <span class="fin-badge fin-badge--online">{{ p.fine_type_snapshot|default:"Fine" }}</span>
+            </td>
+            <td>
+              {% if p.method == 'cash' %}
+              <span class="fin-badge fin-badge--cash"><i class="fas fa-money-bill"></i> Cash</span>
+              {% else %}
+              <span class="fin-badge fin-badge--online"><i class="fas fa-wifi"></i> {{ p.get_method_display }}</span>
+              {% endif %}
+            </td>
+            <td>
+              <span style="font-size:12.5px;color:var(--fin-muted);">{{ p.collected_by|default:"—" }}</span>
+            </td>
+            <td style="text-align:right;">
+              <span class="fin-amount fin-amount--positive">&#8377;{{ p.amount|floatformat:2 }}</span>
+            </td>
+            <td>
+              <a href="{% url 'finance:payment_receipt' p.pk %}" class="fin-action-btn" title="Receipt">
+                <i class="fas fa-receipt"></i>
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="9">
+              <div class="fin-empty">
+                <i class="fas fa-calendar-xmark"></i>
+                <div class="fin-empty__title">No collections on this date</div>
+                <div class="fin-empty__sub">Try selecting a different date or collect a payment.</div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        {% if payments %}
+        <tfoot>
+          <tr style="background:var(--fin-bg);border-top:2px solid var(--fin-rule);">
+            <td colspan="7" style="padding:12px 14px;font-weight:700;font-size:13px;color:var(--fin-ink-soft);">Day Total</td>
+            <td style="text-align:right;padding:12px 14px;font-family:'Sora',sans-serif;font-size:15px;font-weight:800;color:var(--fin-green-mid);">&#8377;{{ day_total|floatformat:2 }}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+        {% endif %}
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

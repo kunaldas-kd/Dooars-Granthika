@@ -1,0 +1,164 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Profit &amp; Loss — Dooars Granthika{% endblock %}
+{% block nav_finance %}active{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboards/finance_dashboard.css' %}" />
+{% endblock %}
+
+{% block content %}
+<div class="fin-wrapper">
+
+  <!-- Page Header -->
+  <div class="fin-page-header">
+    <div class="fin-page-header__left">
+      <div class="fin-page-header__icon">
+        <i class="fas fa-chart-bar"></i>
+      </div>
+      <div>
+        <div class="fin-page-title">Profit &amp; Loss</div>
+        <div class="fin-page-sub">Full income vs expense breakdown with 12-month trend</div>
+      </div>
+    </div>
+    <div class="fin-page-header__actions">
+      <a href="{% url 'finance:overview' %}" class="fin-btn fin-btn--ghost">
+        <i class="fas fa-arrow-left"></i> Finance Overview
+      </a>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="fin-kpi-grid">
+
+    <div class="fin-kpi-card fin-kpi-card--income">
+      <div class="fin-kpi-header">
+        <div class="fin-kpi-icon fin-kpi-icon--income"><i class="fas fa-arrow-trend-up"></i></div>
+        <span class="fin-kpi-trend fin-kpi-trend--up"><i class="fas fa-arrow-up"></i> Income</span>
+      </div>
+      <div class="fin-kpi-label">Total Income</div>
+      <div class="fin-kpi-value"><span class="fin-rupee">&#8377;</span>{{ total_income|floatformat:2 }}</div>
+      <div class="fin-kpi-sub">All-time fine collections</div>
+    </div>
+
+    <div class="fin-kpi-card fin-kpi-card--expense">
+      <div class="fin-kpi-header">
+        <div class="fin-kpi-icon fin-kpi-icon--expense"><i class="fas fa-arrow-trend-down"></i></div>
+        <span class="fin-kpi-trend fin-kpi-trend--down"><i class="fas fa-arrow-down"></i> Expense</span>
+      </div>
+      <div class="fin-kpi-label">Total Expenses</div>
+      <div class="fin-kpi-value"><span class="fin-rupee">&#8377;</span>{{ total_expense|floatformat:2 }}</div>
+      <div class="fin-kpi-sub">All-time operational costs</div>
+    </div>
+
+    <div class="fin-kpi-card fin-kpi-card--profit" style="grid-column:span 2;">
+      <div class="fin-kpi-header">
+        <div class="fin-kpi-icon fin-kpi-icon--profit"><i class="fas fa-scale-balanced"></i></div>
+        {% if net_surplus >= 0 %}
+        <span class="fin-kpi-trend fin-kpi-trend--up"><i class="fas fa-circle-check"></i> Surplus</span>
+        {% else %}
+        <span class="fin-kpi-trend fin-kpi-trend--down"><i class="fas fa-circle-exclamation"></i> Deficit</span>
+        {% endif %}
+      </div>
+      <div class="fin-kpi-label">Net Surplus / Deficit</div>
+      <div class="fin-kpi-value"><span class="fin-rupee">&#8377;</span>{{ net_surplus|floatformat:2 }}</div>
+      <div class="fin-kpi-sub">Income minus all expenses</div>
+    </div>
+
+  </div>
+
+  <!-- 12-month line chart + breakdowns -->
+  <div class="fin-charts-row" style="grid-template-columns:2fr 1fr;">
+
+    <!-- Line chart -->
+    <div class="fin-panel">
+      <div class="fin-panel__head">
+        <div class="fin-panel__title">
+          <i class="fas fa-chart-line"></i>
+          12-Month Income vs Expenses
+        </div>
+      </div>
+      <div class="fin-panel__body">
+        <div class="fin-chart-canvas" style="height:280px;">
+          <canvas id="plChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Breakdowns column -->
+    <div style="display:flex;flex-direction:column;gap:18px;">
+
+      <!-- Income breakdown -->
+      <div class="fin-panel">
+        <div class="fin-panel__head">
+          <div class="fin-panel__title"><i class="fas fa-arrow-trend-up"></i> Income Breakdown</div>
+        </div>
+        <div class="fin-panel__body" style="padding:16px 22px;">
+          {% if income_breakdown %}
+            {% for item in income_breakdown %}
+            <div class="fin-progress-wrap" style="margin-bottom:12px;">
+              <div class="fin-progress-label">
+                <span>{{ item.label }}</span>
+                <span>&#8377;{{ item.amount|floatformat:0 }}</span>
+              </div>
+              <div class="fin-progress-track">
+                <div class="fin-progress-fill fin-progress-fill--income"
+                     {% if total_income > 0 %}
+                     style="width:{% widthratio item.amount total_income 100 %}%;"
+                     {% else %}style="width:0%;"{% endif %}
+                ></div>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <p style="font-size:13px;color:var(--fin-faint);text-align:center;padding:16px 0;">No income data yet.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Expense breakdown -->
+      <div class="fin-panel">
+        <div class="fin-panel__head">
+          <div class="fin-panel__title"><i class="fas fa-arrow-trend-down"></i> Expense Breakdown</div>
+        </div>
+        <div class="fin-panel__body" style="padding:16px 22px;">
+          {% if expense_breakdown %}
+            {% for item in expense_breakdown %}
+            <div class="fin-progress-wrap" style="margin-bottom:12px;">
+              <div class="fin-progress-label">
+                <span>{{ item.label }}</span>
+                <span>&#8377;{{ item.amount|floatformat:0 }}</span>
+              </div>
+              <div class="fin-progress-track">
+                <div class="fin-progress-fill fin-progress-fill--expense"
+                     {% if total_expense > 0 %}
+                     style="width:{% widthratio item.amount total_expense 100 %}%;"
+                     {% else %}style="width:0%;"{% endif %}
+                ></div>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <p style="font-size:13px;color:var(--fin-faint);text-align:center;padding:16px 0;">No expense data yet.</p>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /.fin-wrapper -->
+{% endblock %}
+
+
+{% block extra_js %}
+<script id="pl-data" type="application/json">
+{
+  "labels":   {{ chart_labels|safe }},
+  "income":   {{ chart_income|safe }},
+  "expenses": {{ chart_expenses|safe }}
+}
+</script>
+<script src="{% static 'js/finance/profit_loss.js' %}"></script>
+{% endblock %}

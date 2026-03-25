@@ -1,0 +1,47 @@
+{# ── Partial: book_filters.html ── #}
+
+<form method="GET" action="{% url 'books:book_list' %}" class="filters-bar" id="filtersForm">
+
+  {# Search #}
+  <div class="search-wrapper">
+    <i class="fas fa-search search-icon"></i>
+    <input
+      type="text"
+      id="bookSearch"
+      name="q"
+      class="search-input"
+      placeholder="Search books, authors, ISBN…"
+      autocomplete="off"
+      value="{{ request.GET.q }}"
+    />
+  </div>
+
+  {# Category Filter — populated from DB via context `categories` #}
+  <select id="categoryFilter" name="category" class="filter-select">
+    <option value="">All Categories</option>
+    {% for category in categories %}
+      <option value="{{ category.slug }}" {% if request.GET.category == category.slug %}selected{% endif %}>
+        {{ category.name }}
+      </option>
+    {% endfor %}
+  </select>
+
+  {# Stock Status Filter #}
+  <select id="stockFilter" name="stock" class="filter-select">
+    <option value="">All Stock Status</option>
+    <option value="available"  {% if request.GET.stock == 'available'  %}selected{% endif %}>Available</option>
+    <option value="low-stock"  {% if request.GET.stock == 'low-stock'  %}selected{% endif %}>Low Stock</option>
+    <option value="out-stock"  {% if request.GET.stock == 'out-stock'  %}selected{% endif %}>Out of Stock</option>
+  </select>
+
+  {# Submit #}
+  <button type="submit" class="btn btn-primary btn-sm">
+    <i class="fas fa-filter"></i> Filter
+  </button>
+
+  {# Reset #}
+  <a href="{% url 'books:book_list' %}" class="btn btn-outline btn-sm" data-tooltip="Clear filters">
+    <i class="fas fa-times"></i> Reset
+  </a>
+
+</form>

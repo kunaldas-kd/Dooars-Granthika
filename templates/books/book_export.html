@@ -1,0 +1,352 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Export Books — Dooars Granthika{% endblock %}
+{% block nav_books %}active{% endblock %}
+{% block page_heading %}Export Books{% endblock %}
+{% block page_subheading %}Choose how you want to export your library data.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/books/books.css' %}" />
+<style>
+  .export-options {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+
+  .export-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-xl, 16px);
+    padding: 28px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: relative;
+    overflow: hidden;
+    transition: box-shadow .2s, transform .2s;
+  }
+  .export-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+  .export-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .export-card--db::before { background: linear-gradient(90deg, #1a6fd4, #60b4ff); }
+
+  .export-card-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem;
+  }
+  .export-card--db .export-card-icon { background: rgba(26,111,212,.12); color: #1a6fd4; }
+
+  .export-card-title { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+  .export-card-desc  { font-size: .85rem; color: var(--text-secondary); line-height: 1.6; }
+
+  .feature-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    font-size: .8rem;
+    color: var(--text-secondary);
+  }
+  .feature-list li { display: flex; align-items: center; gap: 8px; }
+  .feature-list li i { font-size: .68rem; width: 14px; text-align: center; }
+  .export-card--db .feature-list li i { color: #1a6fd4; }
+
+  .btn-export-db {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 18px;
+    border: none; border-radius: 12px;
+    font-weight: 700; font-size: .9rem;
+    text-decoration: none;
+    transition: all .25s;
+    margin-top: auto; color: #fff;
+    background: linear-gradient(135deg, #1a6fd4, #60b4ff);
+  }
+  .btn-export-db:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(26,111,212,.35); color: #fff; }
+
+  .filter-strip {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    padding: 11px 15px;
+    background: rgba(26,111,212,.05);
+    border: 1px solid rgba(26,111,212,.15);
+    border-radius: 10px;
+    font-size: .78rem;
+    margin-bottom: 22px;
+  }
+  .filter-strip-label { font-weight: 700; color: var(--ink-accent); margin-right: 4px; }
+  .filter-tag {
+    background: rgba(26,111,212,.1); color: var(--ink-accent);
+    border-radius: 99px; padding: 2px 10px;
+    font-weight: 600; display: flex; align-items: center; gap: 4px;
+  }
+
+  .sheet-preview {
+    background: var(--bg-main);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .sheet-preview-header {
+    padding: 10px 16px;
+    font-size: .77rem; font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: .05em; text-transform: uppercase;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .sheet-tabs { display: flex; background: #e8edf4; border-bottom: 1px solid var(--border-light); }
+  .sheet-tab {
+    padding: 7px 16px; font-size: .76rem; font-weight: 600;
+    color: var(--text-muted); border-right: 1px solid var(--border-light);
+    display: flex; align-items: center; gap: 6px;
+    cursor: pointer; user-select: none;
+    transition: background .15s, color .15s;
+  }
+  .sheet-tab:hover { background: #f1f5f9; color: var(--ink-accent); }
+  .sheet-tab.active {
+    background: #fff; color: var(--ink-accent);
+    border-bottom: 2px solid var(--ink-accent); margin-bottom: -1px;
+  }
+
+  .mini-table-wrap { overflow-x: auto; }
+  .mini-table { width: 100%; border-collapse: collapse; font-size: .7rem; }
+  .mini-table thead th {
+    background: #0a1628; color: #fff;
+    padding: 7px 10px; text-align: left;
+    white-space: nowrap; font-weight: 700;
+    font-size: .66rem; letter-spacing: .04em;
+  }
+  .mini-table tbody td {
+    padding: 6px 10px; border-bottom: 1px solid #eef2f7;
+    white-space: nowrap; color: #334155;
+  }
+  .mini-table tbody tr:nth-child(even) td { background: #f8fafc; }
+  .mini-badge {
+    display: inline-block; padding: 1px 7px; border-radius: 99px;
+    font-size: .63rem; font-weight: 700;
+  }
+  .mini-badge--green  { background: #dcfce7; color: #166534; }
+  .mini-badge--orange { background: #fff7ed; color: #9a3412; }
+  .mini-badge--red    { background: #fee2e2; color: #991b1b; }
+  .mini-totals td { background: #0a1628 !important; color: #fff !important; font-weight: 700; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+  <nav class="breadcrumb">
+    <a href="{% url 'accounts:admin_dashboard' %}"><i class="fas fa-home"></i> Dashboard</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="{% url 'books:book_list' %}">Books</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>Export</span>
+  </nav>
+
+  <div class="books-page-header animate-in" style="margin-bottom:24px;">
+    <div class="header-text">
+      <h1><i class="fas fa-file-export"></i> Export Books</h1>
+      <p>Choose how you want to export your library data.</p>
+    </div>
+    <div class="header-actions">
+      <a href="{% url 'books:book_list' %}" class="btn btn-ghost btn-sm">
+        <i class="fas fa-arrow-left"></i> Back to List
+      </a>
+    </div>
+  </div>
+
+  {% if request.GET.q or request.GET.category or request.GET.stock %}
+  <div class="filter-strip">
+    <span class="filter-strip-label"><i class="fas fa-filter"></i> Active filters:</span>
+    {% if request.GET.q %}<span class="filter-tag"><i class="fas fa-search"></i> "{{ request.GET.q }}"</span>{% endif %}
+    {% if request.GET.category %}<span class="filter-tag"><i class="fas fa-tag"></i> {{ request.GET.category }}</span>{% endif %}
+    {% if request.GET.stock %}<span class="filter-tag"><i class="fas fa-boxes"></i> {{ request.GET.stock }}</span>{% endif %}
+    <span style="color:var(--text-muted);font-size:.76rem;margin-left:4px;">— Export will reflect these filters</span>
+  </div>
+  {% endif %}
+
+  <div class="export-options">
+    <div class="export-card export-card--db animate-in">
+      <div>
+        <div class="export-card-icon"><i class="fas fa-database"></i></div>
+      </div>
+      <div>
+        <div class="export-card-title">Export Book Catalogue</div>
+        <div class="export-card-desc">
+          Download all manually entered books from the database as a formatted Excel file.
+          {% if total_count is not None %}
+            <strong style="color:var(--ink-accent);">{{ total_count }} book{{ total_count|pluralize }} ready.</strong>
+          {% endif %}
+        </div>
+      </div>
+      <ul class="feature-list">
+        <li><i class="fas fa-check-circle"></i> Two sheets — Book Catalogue &amp; Stock Summary</li>
+        <li><i class="fas fa-check-circle"></i> Colour-coded stock availability</li>
+        <li><i class="fas fa-check-circle"></i> Auto-filter &amp; frozen headers</li>
+        <li><i class="fas fa-check-circle"></i> Totals row with SUM formulas</li>
+        <li><i class="fas fa-check-circle"></i> Respects active search &amp; filters</li>
+      </ul>
+      <a href="{% url 'books:export_books_excel' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}" class="btn-export-db">
+        <i class="fas fa-download"></i> Download Excel (.xlsx)
+      </a>
+    </div>
+  </div><!-- /.export-options -->
+
+  <div class="sheet-preview animate-in">
+    <div class="sheet-preview-header">
+      <i class="fas fa-eye" style="margin-right:6px;"></i>Export Preview — what your .xlsx will look like
+    </div>
+
+    <div class="sheet-tabs">
+      <div class="sheet-tab active" data-tab="catalogue">
+        <i class="fas fa-table"></i> Book Catalogue
+      </div>
+      {% comment %} <div class="sheet-tab" data-tab="stock">
+        <i class="fas fa-chart-pie"></i> Stock Summary
+      </div> {% endcomment %}
+    </div>
+
+    <!-- Panel: Book Catalogue -->
+    <div class="sheet-panel" id="panel-catalogue">
+      <div class="mini-table-wrap">
+        <table class="mini-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Title</th><th>Author</th><th>ISBN</th><th>Category</th>
+              <th>Publisher</th><th>Language</th><th>Edition</th>
+              <th>Price (₹)</th><th>Total</th><th>Available</th><th>Issued</th><th>Shelf</th><th>Added On</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for book in preview_books %}
+            <tr>
+              <td style="color:#94a3b8;">{{ forloop.counter }}</td>
+              <td><strong>{{ book.title }}</strong></td>
+              <td>{{ book.author }}</td>
+              <td style="color:#94a3b8;font-size:.66rem;">{{ book.isbn }}</td>
+              <td>{{ book.category }}</td>
+              <td>{{ book.publisher }}</td>
+              <td>{{ book.language }}</td>
+              <td>{{ book.edition }}</td>
+              <td style="text-align:right;">{% if book.price %}₹{{ book.price }}{% else %}—{% endif %}</td>
+              <td style="text-align:center;">{{ book.total_copies }}</td>
+              <td style="text-align:center;">
+                {% if book.available_copies == 0 %}
+                  <span class="mini-badge mini-badge--red">{{ book.available_copies }}</span>
+                {% elif book.available_copies <= 3 %}
+                  <span class="mini-badge mini-badge--orange">{{ book.available_copies }}</span>
+                {% else %}
+                  <span class="mini-badge mini-badge--green">{{ book.available_copies }}</span>
+                {% endif %}
+              </td>
+              <td style="text-align:center;">{{ book.issued_copies }}</td>
+              <td>{{ book.shelf_location }}</td>
+              <td style="color:#94a3b8;">{{ book.created_at|date:"d/m/Y" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="13" style="text-align:center;padding:24px;color:#94a3b8;">
+                <i class="fas fa-book-open" style="margin-right:6px;"></i>No books match the current filters.
+              </td>
+            </tr>
+            {% endfor %}
+            {% if preview_books %}
+            <tr class="mini-totals">
+              <td colspan="9" style="text-align:right;padding-right:12px;font-size:.66rem;letter-spacing:.06em;">TOTALS</td>
+              <td style="text-align:center;">{{ total_copies_sum }}</td>
+              <td style="text-align:center;">{{ available_copies_sum }}</td>
+              <td style="text-align:center;">{{ issued_copies_sum }}</td>
+              <td colspan="2"></td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+      {% if preview_more > 0 %}
+      <div style="padding:10px 16px;font-size:.76rem;color:var(--text-muted);border-top:1px solid var(--border-light);">
+        <i class="fas fa-ellipsis-h" style="margin-right:6px;"></i>
+        … and <strong>{{ preview_more }}</strong> more row{{ preview_more|pluralize }} in the downloaded file.
+      </div>
+      {% endif %}
+    </div><!-- /#panel-catalogue -->
+
+    <!-- Panel: Stock Summary -->
+    {% comment %} <div class="sheet-panel" id="panel-stock" style="display:none;">
+      <div class="mini-table-wrap">
+        <table class="mini-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Category</th>
+              <th>Total Books</th>
+              <th>Available</th>
+              <th>Issued</th>
+              <th>Out of Stock</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in stock_summary %}
+            <tr>
+              <td style="color:#94a3b8;">{{ forloop.counter }}</td>
+              <td><strong>{{ row.category }}</strong></td>
+              <td style="text-align:center;">{{ row.total }}</td>
+              <td style="text-align:center;">
+                {% if row.available == 0 %}
+                  <span class="mini-badge mini-badge--red">{{ row.available }}</span>
+                {% elif row.available < row.total %}
+                  <span class="mini-badge mini-badge--orange">{{ row.available }}</span>
+                {% else %}
+                  <span class="mini-badge mini-badge--green">{{ row.available }}</span>
+                {% endif %}
+              </td>
+              <td style="text-align:center;">{{ row.issued }}</td>
+              <td style="text-align:center;">
+                {% if row.out_of_stock > 0 %}
+                  <span class="mini-badge mini-badge--red">{{ row.out_of_stock }}</span>
+                {% else %}
+                  <span class="mini-badge mini-badge--green">{{ row.out_of_stock }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" style="text-align:center;padding:24px;color:#94a3b8;">
+                <i class="fas fa-chart-pie" style="margin-right:6px;"></i>No stock data available.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div><!-- /#panel-stock --> {% endcomment %}
+
+  </div><!-- /.sheet-preview -->
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/books/books.js' %}"></script>
+<script>
+  document.querySelectorAll('.sheet-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.sheet-tab').forEach(function(t) {
+        t.classList.remove('active');
+      });
+      tab.classList.add('active');
+
+      var target = tab.dataset.tab;
+      document.querySelectorAll('.sheet-panel').forEach(function(panel) {
+        panel.style.display = 'none';
+      });
+      document.getElementById('panel-' + target).style.display = 'block';
+    });
+  });
+</script>
+{% endblock %}

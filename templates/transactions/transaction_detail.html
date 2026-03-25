@@ -1,0 +1,552 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/transactions/transaction_detail.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header__left">
+      <div class="page-header__breadcrumb">
+        <span class="breadcrumb-item">Library</span>
+        <svg class="breadcrumb-sep" viewBox="0 0 6 10" fill="none"><path d="M1 1l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <a href="{% url 'transactions:transaction_list' %}" class="breadcrumb-item">Transactions</a>
+        <svg class="breadcrumb-sep" viewBox="0 0 6 10" fill="none"><path d="M1 1l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="breadcrumb-item breadcrumb-item--active">
+          {% if transaction.transaction_id %}{{ transaction.transaction_id }}{% else %}#{{ transaction.id }}{% endif %}
+        </span>
+      </div>
+      <div class="page-title-row">
+        <h1 class="page-title">
+          Transaction {% if transaction.transaction_id %}{{ transaction.transaction_id }}{% else %}#{{ transaction.id }}{% endif %}
+        </h1>
+        <span class="status-badge status-badge--{{ transaction.status }} status-badge--lg">
+          <span class="status-badge__dot"></span>
+          {{ transaction.get_status_display }}
+        </span>
+      </div>
+      <p class="page-subtitle">Created on {{ transaction.created_at|date:"d F Y, H:i" }}</p>
+    </div>
+    <div class="page-header__actions">
+      {% if transaction.status == 'issued' or transaction.status == 'overdue' or transaction.status == 'overdue_settled' %}
+      <a href="{% url 'transactions:return_book' transaction.id %}" class="btn btn--primary">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M4 10h10M10 6l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Process Return
+      </a>
+      <form method="POST" action="{% url 'transactions:renew_book' transaction.id %}" style="display:inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn--ghost">
+          <svg viewBox="0 0 20 20" fill="none"><path d="M4 10a6 6 0 0 1 6-6 6 6 0 0 1 4.24 1.76M16 6v4h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Renew Loan
+        </button>
+      </form>
+      {% endif %}
+      <button class="btn btn--ghost" onclick="window.print()">
+        <svg viewBox="0 0 20 20" fill="none"><rect x="4" y="2" width="12" height="4" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="8" width="16" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M6 14h8M6 17h5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>
+        Print
+      </button>
+      <a href="{% url 'transactions:transaction_list' %}" class="btn btn--ghost">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M12 4l-6 6 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back
+      </a>
+    </div>
+  </div>
+
+  <!-- Main Content Grid -->
+  <div class="detail-grid">
+
+    <!-- Left Column -->
+    <div class="detail-grid__main">
+
+      <!-- Member Info Card -->
+      <div class="info-card">
+        <div class="info-card__header">
+          <div class="info-card__icon info-card__icon--member">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.75"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+          </div>
+          <div>
+            <h2 class="info-card__title">Member Information</h2>
+            <p class="info-card__subtitle">Borrower details</p>
+          </div>
+          <a href="{% url 'members:member_detail' transaction.member.id %}" class="info-card__link">View Profile →</a>
+        </div>
+        <div class="info-card__body">
+          <div class="member-profile">
+            <div class="member-profile__avatar" style="position:relative;overflow:hidden;">
+              <img
+                src="{% url 'transactions:member_photo_image' transaction.member.pk %}"
+                alt="{{ transaction.member.first_name }}"
+                style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;"
+                onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+              >
+              <span style="display:none;
+                           width:100%;height:100%;border-radius:50%;
+                           align-items:center;justify-content:center;
+                           background:linear-gradient(135deg,#6366f1,#8b5cf6);
+                           color:#fff;font-size:1.5rem;font-weight:700;text-transform:uppercase;">
+                {{ transaction.member.first_name|first|upper }}
+              </span>
+            </div>
+            <div class="member-profile__details">
+              <h3 class="member-profile__name">{{ transaction.member.first_name }} {{ transaction.member.last_name }}</h3>
+              <span class="member-profile__type">{{ transaction.member.get_role_display }}</span>
+            </div>
+          </div>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-item__label">Member ID</span>
+              <span class="info-item__value">{{ transaction.member.member_id }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-item__label">Email</span>
+              <span class="info-item__value">{{ transaction.member.email }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-item__label">Phone</span>
+              <span class="info-item__value">{{ transaction.member.phone }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-item__label">Department</span>
+              <span class="info-item__value">{{ transaction.member.department|default:"—" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-item__label">Active Loans</span>
+              <span class="info-item__value">
+                {{ active_loans_count }}{% if borrow_limit %} / {{ borrow_limit }}{% else %} / ∞{% endif %}
+              </span>
+            </div>
+            <div class="info-item">
+              <span class="info-item__label">Outstanding Fine</span>
+              <span class="info-item__value {% if outstanding_fine > 0 %}info-item__value--danger{% endif %}">
+                ₹{{ outstanding_fine|floatformat:2 }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Book Info Card -->
+      <div class="info-card">
+        <div class="info-card__header">
+          <div class="info-card__icon info-card__icon--book">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 4h12a2 2 0 0 1 2 2v14l-7-3.5L4 20V6a2 2 0 0 1 0-2z" stroke="currentColor" stroke-width="1.75"/></svg>
+          </div>
+          <div>
+            <h2 class="info-card__title">Book Information</h2>
+            <p class="info-card__subtitle">Issued copy details</p>
+          </div>
+          <a href="{% url 'books:book_detail' transaction.book.id %}" class="info-card__link">View Book →</a>
+        </div>
+        <div class="info-card__body">
+          <div class="book-profile">
+
+            <!-- Cover image — read-only, served via book_cover_image view -->
+            <div class="book-profile__cover"
+                 style="position:relative;overflow:hidden;border-radius:6px;background:linear-gradient(135deg,#1e3a5f,#2d5a8e);">
+              <img
+                id="bookCoverImg"
+                src="{% url 'transactions:book_cover_image' transaction.book.id %}"
+                alt="{{ transaction.book.title }}"
+                style="width:100%;height:100%;object-fit:cover;display:block;border-radius:6px;"
+                onerror="this.style.display='none';document.getElementById('bookCoverFallback').style.display='flex';"
+              >
+              <div id="bookCoverFallback"
+                   style="display:none;position:absolute;inset:0;flex-direction:column;
+                          align-items:center;justify-content:center;
+                          background:linear-gradient(135deg,#1e3a5f,#2d5a8e);
+                          padding:8px;text-align:center;">
+                <span style="font-size:2rem;font-weight:800;color:#fff;line-height:1;
+                             text-transform:uppercase;letter-spacing:1px;
+                             text-shadow:0 2px 8px rgba(0,0,0,.3);">
+                  {{ transaction.book.title|first|upper }}
+                </span>
+                <span style="font-size:0.6rem;color:rgba(255,255,255,0.7);margin-top:6px;
+                             font-weight:600;letter-spacing:0.05em;text-transform:uppercase;
+                             word-break:break-word;max-width:100%;line-height:1.3;">
+                  {{ transaction.book.title|truncatechars:28 }}
+                </span>
+              </div>
+            </div>
+
+            <div class="book-profile__info">
+              <h3 class="book-profile__title">{{ transaction.book.title }}</h3>
+              <p class="book-profile__author">by {{ transaction.book.author }}</p>
+            </div>
+          </div>
+
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-item__label">ISBN</span>
+              <span class="info-item__value">{{ transaction.book.isbn|default:"—" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-item__label">Category</span>
+              <span class="info-item__value">{{ transaction.book.category|default:"—" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-item__label">Publisher</span>
+              <span class="info-item__value">{{ transaction.book.publisher|default:"—" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-item__label">Copy No.</span>
+              <span class="info-item__value">{{ transaction.book_copy.copy_id|default:"—" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-item__label">Location</span>
+              <span class="info-item__value">{{ transaction.book.shelf_location|default:"—" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-item__label">Available Copies</span>
+              <span class="info-item__value">{{ transaction.book.available_copies }} / {{ transaction.book.total_copies }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.detail-grid__main -->
+
+    <!-- Right Column -->
+    <div class="detail-grid__sidebar">
+
+      <!-- Timeline Card -->
+      <div class="timeline-card">
+        <div class="timeline-card__header">
+          <h2 class="timeline-card__title">Transaction Timeline</h2>
+          <span class="txn-id-chip" title="Transaction ID">
+            {% if transaction.transaction_id %}{{ transaction.transaction_id }}{% else %}#{{ transaction.id }}{% endif %}
+          </span>
+        </div>
+        <div class="timeline">
+
+          <!-- Issued -->
+          <div class="timeline-step timeline-step--done">
+            <div class="timeline-step__indicator">
+              <div class="timeline-step__icon">
+                <svg viewBox="0 0 16 16" fill="none"><path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div class="timeline-step__line"></div>
+            </div>
+            <div class="timeline-step__content">
+              <h4 class="timeline-step__label">Book Issued</h4>
+              <p class="timeline-step__date">{{ transaction.issue_date|date:"d F Y" }}</p>
+              <p class="timeline-step__meta">by {{ transaction.issued_by|default:"—" }}</p>
+            </div>
+          </div>
+
+          <!-- Due Date -->
+          <div class="timeline-step {% if transaction.is_overdue and transaction.status != 'returned' %}timeline-step--danger{% elif transaction.status == 'returned' %}timeline-step--done{% else %}timeline-step--pending{% endif %}">
+            <div class="timeline-step__indicator">
+              <div class="timeline-step__icon">
+                <svg viewBox="0 0 16 16" fill="none"><path d="M8 4v4l3 3" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.75"/></svg>
+              </div>
+              <div class="timeline-step__line"></div>
+            </div>
+            <div class="timeline-step__content">
+              <h4 class="timeline-step__label">Due Date</h4>
+              <p class="timeline-step__date">{{ transaction.due_date|date:"d F Y" }}</p>
+              {% if transaction.is_overdue and transaction.status != 'returned' %}
+              <p class="timeline-step__meta timeline-step__meta--danger">{{ transaction.overdue_days }} days overdue</p>
+              {% endif %}
+              {% if transaction.renewal_count %}
+              <p class="timeline-step__meta">Renewed {{ transaction.renewal_count }}×</p>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Returned / Lost -->
+          <div class="timeline-step {% if transaction.status == 'returned' %}timeline-step--done{% elif transaction.status == 'lost' %}timeline-step--lost{% else %}timeline-step--future{% endif %}">
+            <div class="timeline-step__indicator">
+              <div class="timeline-step__icon">
+                {% if transaction.status == 'returned' %}
+                  <svg viewBox="0 0 16 16" fill="none"><path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                {% elif transaction.status == 'lost' %}
+                  <svg viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                {% else %}
+                  <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.75"/></svg>
+                {% endif %}
+              </div>
+            </div>
+            <div class="timeline-step__content">
+              {% if transaction.status == 'returned' %}
+              <h4 class="timeline-step__label">Book Returned</h4>
+              <p class="timeline-step__date">{{ transaction.return_date|date:"d F Y" }}</p>
+              <p class="timeline-step__meta">to {{ transaction.returned_to|default:"—" }}</p>
+              {% if transaction.return_condition %}
+              <p class="timeline-step__meta">Condition: {{ transaction.get_return_condition_display }}</p>
+              {% endif %}
+              {% elif transaction.status == 'lost' %}
+              <h4 class="timeline-step__label">Reported Lost</h4>
+              <p class="timeline-step__date">{{ transaction.lost_date|date:"d F Y"|default:"—" }}</p>
+              {% else %}
+              <h4 class="timeline-step__label">Pending Return</h4>
+              <p class="timeline-step__date">Not returned yet</p>
+              {% endif %}
+            </div>
+          </div>
+
+        </div><!-- /.timeline -->
+      </div>
+
+      <!-- Fine Calculation Card -->
+      <div class="fine-card">
+        <div class="fine-card__header">
+          <h2 class="fine-card__title">Fine Details</h2>
+          {% if unpaid_fine_amount > 0 %}
+            <span class="fine-status-badge fine-status-badge--unpaid">Unpaid</span>
+          {% elif paid_fine_amount > 0 and unpaid_fine_amount == 0 and waived_fine_amount == 0 %}
+            <span class="fine-status-badge fine-status-badge--paid">Paid</span>
+          {% elif waived_fine_amount > 0 and unpaid_fine_amount == 0 and paid_fine_amount == 0 %}
+            <span class="fine-status-badge fine-status-badge--waived">Waived</span>
+          {% elif paid_fine_amount > 0 or waived_fine_amount > 0 %}
+            <span class="fine-status-badge fine-status-badge--paid">Settled</span>
+          {% else %}
+            <span class="fine-status-badge fine-status-badge--nil">No Fine</span>
+          {% endif %}
+        </div>
+        <div class="fine-card__body">
+          <div class="fine-calc">
+
+            <div class="fine-calc__row">
+              <span class="fine-calc__label">Daily Fine Rate</span>
+              <span class="fine-calc__value">₹{{ transaction.fine_rate_per_day|floatformat:2 }} / day</span>
+            </div>
+
+            <div class="fine-calc__row">
+              <span class="fine-calc__label">Overdue Days</span>
+              <span class="fine-calc__value {% if transaction.overdue_days > 0 %}fine-calc__value--danger{% endif %}">
+                {{ transaction.overdue_days }} day{{ transaction.overdue_days|pluralize }}
+              </span>
+            </div>
+
+            {% if db_overdue_fine > 0 %}
+            <div class="fine-calc__row">
+              <span class="fine-calc__label">Overdue Fine</span>
+              <span class="fine-calc__value fine-calc__value--danger">₹{{ db_overdue_fine|floatformat:2 }}</span>
+            </div>
+            {% elif transaction.overdue_days > 0 and transaction.status != 'returned' and transaction.status != 'lost' %}
+            <div class="fine-calc__row">
+              <span class="fine-calc__label">Accruing Fine</span>
+              <span class="fine-calc__value fine-calc__value--danger">₹{{ transaction.fine_amount|floatformat:2 }}</span>
+            </div>
+            {% endif %}
+
+            {% if db_damage_charge > 0 %}
+            <div class="fine-calc__row">
+              <span class="fine-calc__label">Damage Charge</span>
+              <span class="fine-calc__value fine-calc__value--danger">₹{{ db_damage_charge|floatformat:2 }}</span>
+            </div>
+            {% endif %}
+
+            {% if db_lost_penalty > 0 %}
+            <div class="fine-calc__row">
+              <span class="fine-calc__label">Lost Book Penalty</span>
+              <span class="fine-calc__value fine-calc__value--danger">₹{{ db_lost_penalty|floatformat:2 }}</span>
+            </div>
+            {% endif %}
+
+            {% if paid_fine_amount > 0 %}
+            <div class="fine-calc__row">
+              <span class="fine-calc__label">Already Paid</span>
+              <span class="fine-calc__value fine-calc__value--success">−₹{{ paid_fine_amount|floatformat:2 }}</span>
+            </div>
+            {% endif %}
+
+            {% if waived_fine_amount > 0 %}
+            <div class="fine-calc__row">
+              <span class="fine-calc__label">Waived</span>
+              <span class="fine-calc__value fine-calc__value--muted">−₹{{ waived_fine_amount|floatformat:2 }}</span>
+            </div>
+            {% endif %}
+
+            <div class="fine-calc__divider"></div>
+            <div class="fine-calc__row fine-calc__row--total">
+              <span class="fine-calc__label">Amount Due</span>
+              <span class="fine-calc__total {% if unpaid_fine_amount %}fine-calc__total--danger{% else %}fine-calc__total--nil{% endif %}">
+                ₹{{ unpaid_fine_amount|floatformat:2 }}
+              </span>
+            </div>
+
+          </div><!-- /.fine-calc -->
+          {% if unpaid_fine_amount > 0 %}
+            {% with first_unpaid=fines|dictsort:"id"|first %}
+            {% for fine in fines %}{% if fine.status == 'unpaid' and forloop.first %}
+            <a href="{% url 'finance:process_payment' %}?fine_id={{ fine.fine_id }}"
+               class="btn btn--primary btn--block"
+               style="margin-top:1rem;">
+              <svg viewBox="0 0 20 20" fill="none" width="15" height="15"><rect x="2" y="5" width="16" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M2 9h16" stroke="currentColor" stroke-width="1.5"/><path d="M6 13h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Collect ₹{{ unpaid_fine_amount|floatformat:2 }}
+            </a>
+            {% endif %}{% endfor %}
+            {% endwith %}
+          {% endif %}
+          {% if paid_fine_amount > 0 and unpaid_fine_amount == 0 %}
+          <div class="fine-paid-info" style="margin-top:0.75rem;">
+            <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Fine fully paid{% for fine in fines %}{% if fine.status == 'paid' %} · {{ fine.paid_date|date:"d M Y" }}{% if fine.payment_method %} via {{ fine.get_payment_method_display }}{% endif %}{% endif %}{% endfor %}
+          </div>
+          {% endif %}
+
+          {% if waived_fine_amount > 0 and unpaid_fine_amount == 0 and paid_fine_amount == 0 %}
+          <div class="fine-paid-info" style="margin-top:0.75rem;">
+            <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Fine waived
+          </div>
+          {% endif %}
+
+        </div>
+      </div>
+
+      <!-- Notes Card -->
+      {% if transaction.notes or transaction.return_notes %}
+      <div class="notes-card">
+        <div class="notes-card__header">
+          <svg viewBox="0 0 20 20" fill="none"><path d="M4 4h12v12H4z" stroke="currentColor" stroke-width="1.5"/><path d="M8 8h4M8 11h4M8 14h2" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>
+          <h3 class="notes-card__title">Notes</h3>
+        </div>
+        {% if transaction.notes %}
+        <p class="notes-card__text">{{ transaction.notes }}</p>
+        {% endif %}
+        {% if transaction.return_notes %}
+        <p class="notes-card__label">Return notes:</p>
+        <p class="notes-card__text">{{ transaction.return_notes }}</p>
+        {% endif %}
+      </div>
+      {% endif %}
+
+    </div><!-- /.detail-grid__sidebar -->
+
+  </div><!-- /.detail-grid -->
+
+  <!-- Fine Records Table -->
+  <div class="table-card" style="margin-top:1.5rem;">
+    <div class="table-card__header" style="display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <h3 style="font-size:1rem;font-weight:600;margin:0;color:var(--text-primary,#0f2240);">Fine Records</h3>
+        <p style="font-size:0.8125rem;color:var(--text-muted,#64748b);margin:3px 0 0;">All fine entries for this transaction</p>
+      </div>
+      {% if unpaid_fine_amount > 0 %}
+      <span style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;padding:3px 12px;border-radius:999px;font-size:0.8125rem;font-weight:600;">
+        ₹{{ unpaid_fine_amount|floatformat:2 }} outstanding
+      </span>
+      {% endif %}
+    </div>
+    <div class="table-responsive">
+      <table class="data-table" style="font-size:0.875rem;">
+        <thead>
+          <tr>
+            <th>Fine ID</th>
+            <th>Type</th>
+            <th>Generated On</th>
+            <th>Amount (₹)</th>
+            <th>Status</th>
+            <th>Paid On</th>
+            <th>Method / Ref</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for fine in fines %}
+          <tr class="table-row" id="fine-row-{{ fine.id }}">
+
+            <td>
+              <span class="fine-id" title="{{ fine.fine_id }}">{{ fine.fine_id }}</span>
+            </td>
+
+            <td>
+              {% if fine.fine_type == 'overdue' %}
+                <span class="fine-type-badge fine-type-badge--overdue">
+                  <svg viewBox="0 0 14 14" fill="none" width="11" height="11"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M7 4v3.5l2 2" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>
+                  Overdue Fine
+                </span>
+              {% elif fine.fine_type == 'lost' %}
+                <span class="fine-type-badge fine-type-badge--lost">
+                  <svg viewBox="0 0 14 14" fill="none" width="11" height="11"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  Lost Book
+                </span>
+              {% elif fine.fine_type == 'damage' %}
+                <span class="fine-type-badge fine-type-badge--damage">
+                  <svg viewBox="0 0 14 14" fill="none" width="11" height="11"><path d="M7 1l1.5 4h4l-3.25 2.5 1.25 4L7 9.5 3.5 11.5l1.25-4L1.5 5h4z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/></svg>
+                  Damage
+                </span>
+              {% else %}
+                {{ fine.get_fine_type_display }}
+              {% endif %}
+            </td>
+
+            <td style="color:var(--text-secondary,#475569);">{{ fine.created_at|date:"d M Y" }}</td>
+
+            <td>
+              <span class="fine-amount {% if fine.status == 'unpaid' %}fine-amount--unpaid{% endif %}"
+                    style="font-weight:700;{% if fine.status == 'unpaid' %}color:#b91c1c;{% elif fine.status == 'paid' %}color:#16a34a;{% else %}color:#64748b;{% endif %}">
+                ₹{{ fine.amount|floatformat:2 }}
+              </span>
+            </td>
+
+            <td>
+              <span class="payment-badge payment-badge--{{ fine.status }}">
+                <span class="payment-badge__dot"></span>
+                {{ fine.get_status_display }}
+              </span>
+            </td>
+
+            <td style="color:var(--text-secondary,#475569);">
+              {{ fine.paid_date|date:"d M Y"|default:"—" }}
+            </td>
+
+            <td style="color:var(--text-secondary,#475569);max-width:140px;">
+              {% if fine.payment_ref %}
+                <span title="{{ fine.payment_ref }}" style="font-size:0.8rem;word-break:break-all;">
+                  {{ fine.payment_ref|truncatechars:18 }}
+                </span>
+                {% if fine.payment_method %}
+                  <br><span style="font-size:0.75rem;color:#94a3b8;">{{ fine.get_payment_method_display }}</span>
+                {% endif %}
+              {% elif fine.payment_method %}
+                {{ fine.get_payment_method_display }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+
+            <td>
+              {% if fine.status == 'unpaid' %}
+                <span style="display:flex;align-items:center;gap:4px;color:#b91c1c;font-size:0.8125rem;font-weight:600;">
+                  <span style="width:7px;height:7px;border-radius:50%;background:#b91c1c;display:inline-block;"></span>
+                  Unpaid
+                </span>
+              {% elif fine.status == 'paid' %}
+                <span style="display:flex;align-items:center;gap:4px;color:#16a34a;font-size:0.8125rem;">
+                  <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  Collected
+                </span>
+              {% elif fine.status == 'waived' %}
+                <span style="color:#64748b;font-size:0.8125rem;">Waived</span>
+              {% endif %}
+            </td>
+
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" style="text-align:center;padding:2.5rem;color:#94a3b8;">
+              <svg viewBox="0 0 48 48" fill="none" style="width:36px;height:36px;display:block;margin:0 auto 8px;opacity:.3;">
+                <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="2"/>
+                <path d="M16 24h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              No fine records for this transaction.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /.page-wrapper -->
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/transactions/transaction_detail.js' %}"></script>
+{% endblock %}

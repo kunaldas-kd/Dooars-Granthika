@@ -1,0 +1,58 @@
+{% extends "superuser/superuser_dashboard_base.html" %}
+{% block title %}Delete Plan{% endblock %}
+{% block breadcrumb %}Delete Plan{% endblock %}
+{% block nav_plans %}active{% endblock %}
+
+{% block content %}
+<div class="confirm-page" style="margin: -28px; min-height: calc(100vh - 64px);">
+  <div class="confirm-card">
+    <div class="confirm-icon danger">🗑</div>
+    <h2 class="confirm-title">Delete Plan</h2>
+    <p class="confirm-desc">
+      This will permanently delete the plan. This action cannot be undone.
+    </p>
+
+    <div class="confirm-target">
+      <div class="label">Plan to delete</div>
+      <div class="value">{{ plan.name|default:"Pro Plan" }}</div>
+      <div style="margin-top:6px; font-size:12.5px; color:var(--text-secondary); font-family:'JetBrains Mono',monospace;">
+        ₹{{ plan.price }}/mo · {{ plan.active_subscription_count }} active subscription{{ plan.active_subscription_count|pluralize }}
+      </div>
+    </div>
+
+    {% if plan.active_subscription_count %}
+    <div class="alert alert-danger" style="margin-bottom:20px;">
+      <span class="alert-icon">⚠</span>
+      <div class="alert-text">
+        <div class="alert-title">Active subscriptions exist</div>
+        <div style="font-size:12.5px;">There are {{ plan.active_subscription_count }} active subscriptions on this plan. You must migrate or cancel them before deleting.</div>
+      </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning" style="margin-bottom:20px;">
+      <span class="alert-icon">⚠</span>
+      <div class="alert-text">
+        <div class="alert-title">Irreversible deletion</div>
+        All plan configuration will be permanently removed.
+      </div>
+    </div>
+    {% endif %}
+
+    <form method="post" data-confirm>
+      {% csrf_token %}
+      <div class="confirm-actions">
+        <a href="{% url 'superuser:plan_edit' plan.pk %}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-danger" {% if plan.active_subscription_count %}disabled{% endif %}>
+          Delete Plan
+        </button>
+      </div>
+      {% if plan.active_subscription_count %}
+      <p style="text-align:center; margin-top:12px; font-size:12px; color:var(--text-muted);">
+        Cannot delete while active subscriptions exist.
+        <a href="{% url 'superuser:subscriptions_list' %}?plan={{ plan.slug }}">Manage subscriptions →</a>
+      </p>
+      {% endif %}
+    </form>
+  </div>
+</div>
+{% endblock %}

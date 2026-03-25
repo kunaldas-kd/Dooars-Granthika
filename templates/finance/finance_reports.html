@@ -1,0 +1,357 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Finance — Dooars Granthika{% endblock %}
+
+{% block nav_finance %}active{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/finance/finance_dashboard.css' %}" />
+{% endblock %}
+
+{% block content %}
+<div class="fin-wrapper">
+
+  {% comment %} {# ══════════════════════════════════════════════════════
+     PAGE HEADER
+  ══════════════════════════════════════════════════════ #} {% endcomment %}
+  <div class="fin-page-header">
+
+    <div class="fin-page-header__left">
+      <div class="fin-page-header__icon">
+        <i class="fas fa-coins"></i>
+      </div>
+      <div>
+        <div class="fin-page-title">Finance Overview</div>
+        <div class="fin-page-sub">Track income, expenses &amp; fine collections</div>
+      </div>
+    </div>
+
+    <div class="fin-page-header__actions">
+      <div class="fin-period-tabs">
+        <a href="?period=this_month"
+           class="fin-period-tab {% if period == 'this_month' %}fin-period-tab--active{% endif %}">
+          This Month
+        </a>
+        <a href="?period=last_month"
+           class="fin-period-tab {% if period == 'last_month' %}fin-period-tab--active{% endif %}">
+          Last Month
+        </a>
+        <a href="?period=this_year"
+           class="fin-period-tab {% if period == 'this_year' %}fin-period-tab--active{% endif %}">
+          This Year
+        </a>
+      </div>
+      <a href="?period={{ period }}&export=csv" class="fin-btn fin-btn--ghost">
+        <i class="fas fa-download"></i> Export
+      </a>
+    </div>
+
+  </div><!-- /.fin-page-header -->
+
+{% comment %} 
+  {# ══════════════════════════════════════════════════════
+     KPI CARDS
+  ══════════════════════════════════════════════════════ #} {% endcomment %}
+  <div class="fin-kpi-grid">
+
+    <!-- Income -->
+    <div class="fin-kpi-card fin-kpi-card--income">
+      <div class="fin-kpi-header">
+        <div class="fin-kpi-icon fin-kpi-icon--income">
+          <i class="fas fa-arrow-trend-up"></i>
+        </div>
+        <span class="fin-kpi-trend fin-kpi-trend--up">
+          <i class="fas fa-arrow-up"></i> Income
+        </span>
+      </div>
+      <div class="fin-kpi-label">Total Income</div>
+      <div class="fin-kpi-value">
+        <span class="fin-rupee">&#8377;</span>{{ total_income|floatformat:2 }}
+      </div>
+      <div class="fin-kpi-sub">Fine payments collected</div>
+    </div>
+
+    <!-- Expenses -->
+    <div class="fin-kpi-card fin-kpi-card--expense">
+      <div class="fin-kpi-header">
+        <div class="fin-kpi-icon fin-kpi-icon--expense">
+          <i class="fas fa-arrow-trend-down"></i>
+        </div>
+        <span class="fin-kpi-trend fin-kpi-trend--down">
+          <i class="fas fa-arrow-down"></i> Expense
+        </span>
+      </div>
+      <div class="fin-kpi-label">Total Expenses</div>
+      <div class="fin-kpi-value">
+        <span class="fin-rupee">&#8377;</span>{{ total_expenses|floatformat:2 }}
+      </div>
+      <div class="fin-kpi-sub">Operational costs</div>
+    </div>
+
+    <!-- Net Surplus / Deficit -->
+    <div class="fin-kpi-card fin-kpi-card--profit">
+      <div class="fin-kpi-header">
+        <div class="fin-kpi-icon fin-kpi-icon--profit">
+          <i class="fas fa-scale-balanced"></i>
+        </div>
+        {% if net_surplus >= 0 %}
+          <span class="fin-kpi-trend fin-kpi-trend--up">
+            <i class="fas fa-circle-check"></i> Surplus
+          </span>
+        {% else %}
+          <span class="fin-kpi-trend fin-kpi-trend--down">
+            <i class="fas fa-circle-exclamation"></i> Deficit
+          </span>
+        {% endif %}
+      </div>
+      <div class="fin-kpi-label">Net Surplus</div>
+      <div class="fin-kpi-value">
+        <span class="fin-rupee">&#8377;</span>{{ net_surplus|floatformat:2 }}
+      </div>
+      <div class="fin-kpi-sub">Income minus expenses</div>
+    </div>
+
+    <!-- Pending Fines -->
+    <div class="fin-kpi-card fin-kpi-card--fines">
+      <div class="fin-kpi-header">
+        <div class="fin-kpi-icon fin-kpi-icon--fines">
+          <i class="fas fa-clock"></i>
+        </div>
+        <span class="fin-kpi-trend fin-kpi-trend--flat">
+          <i class="fas fa-hourglass-half"></i> Pending
+        </span>
+      </div>
+      <div class="fin-kpi-label">Uncollected Fines</div>
+      <div class="fin-kpi-value">
+        <span class="fin-rupee">&#8377;</span>{{ pending_fines|floatformat:2 }}
+      </div>
+      <div class="fin-kpi-sub">Outstanding fine balance</div>
+    </div>
+
+  </div><!-- /.fin-kpi-grid -->
+
+
+  {% comment %} {# ══════════════════════════════════════════════════════
+     QUICK ACTION LINKS
+  ══════════════════════════════════════════════════════ #} {% endcomment %}
+  <div class="fin-quick-row">
+
+    <a href="{% url 'finance:process_payment' %}" class="fin-quick-link">
+      <div class="fin-quick-link__icon fin-quick-link__icon--green">
+        <i class="fas fa-hand-holding-dollar"></i>
+      </div>
+      <span class="fin-quick-link__label">Process Payment</span>
+    </a>
+
+    <a href="{% url 'finance:add_expense' %}" class="fin-quick-link">
+      <div class="fin-quick-link__icon fin-quick-link__icon--amber">
+        <i class="fas fa-receipt"></i>
+      </div>
+      <span class="fin-quick-link__label">Add Expense</span>
+    </a>
+
+    <a href="{% url 'finance:income_list' %}" class="fin-quick-link">
+      <div class="fin-quick-link__icon fin-quick-link__icon--blue">
+        <i class="fas fa-list-check"></i>
+      </div>
+      <span class="fin-quick-link__label">Income List</span>
+    </a>
+
+    <a href="{% url 'finance:audit_log' %}" class="fin-quick-link">
+      <div class="fin-quick-link__icon fin-quick-link__icon--indigo">
+        <i class="fas fa-shield-halved"></i>
+      </div>
+      <span class="fin-quick-link__label">Audit Log</span>
+    </a>
+
+  </div><!-- /.fin-quick-row -->
+
+
+  {% comment %} {# ══════════════════════════════════════════════════════
+     CHARTS ROW
+  ══════════════════════════════════════════════════════ #} {% endcomment %}
+  <div class="fin-charts-row">
+
+    <!-- Left: Monthly Collection Bar Chart -->
+    <div class="fin-panel">
+      <div class="fin-panel__head">
+        <div class="fin-panel__title">
+          <i class="fas fa-chart-area"></i>
+          Monthly Collection — Last 12 Months
+        </div>
+        <div class="fin-panel__head-links">
+          <a href="{% url 'finance:cash_book' %}" class="fin-panel-link">
+            <i class="fas fa-book-open"></i> Cash Book
+          </a>
+          <a href="{% url 'finance:profit_loss' %}" class="fin-panel-link">
+            <i class="fas fa-chart-bar"></i> P&amp;L
+          </a>
+        </div>
+      </div>
+      <div class="fin-panel__body">
+        <div class="fin-chart-canvas">
+          <canvas id="monthlyChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Period Breakdown Donut -->
+    <div class="fin-panel">
+      <div class="fin-panel__head">
+        <div class="fin-panel__title">
+          <i class="fas fa-chart-pie"></i>
+          Period Breakdown
+        </div>
+      </div>
+      <div class="fin-panel__body">
+        <div class="fin-donut-wrap">
+
+          <div class="fin-donut-canvas">
+            <canvas id="breakdownChart"></canvas>
+          </div>
+
+          <div class="fin-donut-legend">
+            <div class="fin-legend-row">
+              <span class="fin-legend-dot fin-legend-dot--income"></span>
+              <span class="fin-legend-label">Income</span>
+              <span class="fin-legend-val">&#8377;{{ total_income|floatformat:0 }}</span>
+            </div>
+            <div class="fin-legend-row">
+              <span class="fin-legend-dot fin-legend-dot--expense"></span>
+              <span class="fin-legend-label">Expenses</span>
+              <span class="fin-legend-val">&#8377;{{ total_expenses|floatformat:0 }}</span>
+            </div>
+            <div class="fin-legend-row">
+              <span class="fin-legend-dot fin-legend-dot--fines"></span>
+              <span class="fin-legend-label">Pending Fines</span>
+              <span class="fin-legend-val">&#8377;{{ pending_fines|floatformat:0 }}</span>
+            </div>
+          </div>
+
+          <!-- Progress Bars -->
+          <div class="fin-progress-section">
+
+            <div class="fin-progress-wrap">
+              <div class="fin-progress-label">
+                <span>Income</span>
+                <span>&#8377;{{ total_income|floatformat:0 }}</span>
+              </div>
+              <div class="fin-progress-track">
+                <div class="fin-progress-fill fin-progress-fill--income" style="width:100%;"></div>
+              </div>
+            </div>
+
+            <div class="fin-progress-wrap">
+              <div class="fin-progress-label">
+                <span>Expenses</span>
+                <span>
+                  {% if total_income > 0 %}
+                    &#8377;{{ total_expenses|floatformat:0 }}
+                  {% else %}
+                    &mdash;
+                  {% endif %}
+                </span>
+              </div>
+              <div class="fin-progress-track">
+                <div class="fin-progress-fill fin-progress-fill--expense"
+                  {% if total_income > 0 %}
+                    style="width: {% widthratio total_expenses total_income 100 %}%;"
+                  {% else %}
+                    style="width:0%;"
+                  {% endif %}
+                ></div>
+              </div>
+            </div>
+
+            <div class="fin-progress-wrap">
+              <div class="fin-progress-label">
+                <span>Pending</span>
+                <span>&#8377;{{ pending_fines|floatformat:0 }}</span>
+              </div>
+              <div class="fin-progress-track">
+                {% with denom=total_income|add:pending_fines %}
+                <div class="fin-progress-fill fin-progress-fill--fines"
+                  {% if denom > 0 %}
+                    style="width: {% widthratio pending_fines denom 100 %}%;"
+                  {% else %}
+                    style="width:0%;"
+                  {% endif %}
+                ></div>
+                {% endwith %}
+              </div>
+            </div>
+
+          </div><!-- /.fin-progress-section -->
+
+        </div><!-- /.fin-donut-wrap -->
+      </div><!-- /.fin-panel__body -->
+    </div><!-- /.fin-panel -->
+
+  </div><!-- /.fin-charts-row -->
+
+
+  {% comment %} {# ══════════════════════════════════════════════════════
+     REPORT SHORTCUT CARDS
+  ══════════════════════════════════════════════════════ #} {% endcomment %}
+  <div class="fin-report-links">
+
+    <a href="{% url 'finance:daily_collection' %}" class="fin-report-link">
+      <div class="fin-report-link__icon fin-report-link__icon--blue">
+        <i class="fas fa-calendar-day"></i>
+      </div>
+      <div class="fin-report-link__text">
+        <div class="fin-report-link__label">Daily Collection</div>
+        <div class="fin-report-link__cta">View Today <i class="fas fa-arrow-right"></i></div>
+      </div>
+    </a>
+
+    <a href="{% url 'finance:cash_book' %}" class="fin-report-link">
+      <div class="fin-report-link__icon fin-report-link__icon--green">
+        <i class="fas fa-book-open"></i>
+      </div>
+      <div class="fin-report-link__text">
+        <div class="fin-report-link__label">Cash Book</div>
+        <div class="fin-report-link__cta">View Ledger <i class="fas fa-arrow-right"></i></div>
+      </div>
+    </a>
+
+    <a href="{% url 'finance:profit_loss' %}" class="fin-report-link">
+      <div class="fin-report-link__icon fin-report-link__icon--amber">
+        <i class="fas fa-chart-bar"></i>
+      </div>
+      <div class="fin-report-link__text">
+        <div class="fin-report-link__label">Profit &amp; Loss</div>
+        <div class="fin-report-link__cta">Full Report <i class="fas fa-arrow-right"></i></div>
+      </div>
+    </a>
+
+    <a href="{% url 'finance:expense_list' %}" class="fin-report-link">
+      <div class="fin-report-link__icon fin-report-link__icon--red">
+        <i class="fas fa-file-invoice"></i>
+      </div>
+      <div class="fin-report-link__text">
+        <div class="fin-report-link__label">Expenses</div>
+        <div class="fin-report-link__cta">View All <i class="fas fa-arrow-right"></i></div>
+      </div>
+    </a>
+
+  </div><!-- /.fin-report-links -->
+
+</div><!-- /.fin-wrapper -->
+{% endblock %}
+
+
+{# ── Pass Django context data to JS via a JSON script tag ─────────────────── #}
+{% block extra_js %}
+<script id="fin-data" type="application/json">
+{
+  "monthlyLabels": {{ monthly_labels|safe }},
+  "monthlyData":   {{ monthly_data|safe }},
+  "totalIncome":   {{ total_income }},
+  "totalExpenses": {{ total_expenses }},
+  "pendingFines":  {{ pending_fines }}
+}
+</script>
+<script src="{% static 'js/finance/finance_reports.js' %}"></script>
+{% endblock %}

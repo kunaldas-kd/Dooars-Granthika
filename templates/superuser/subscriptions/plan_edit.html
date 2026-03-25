@@ -1,0 +1,140 @@
+{% extends "superuser/superuser_dashboard_base.html" %}
+{% block title %}Edit Plan — {{ plan.name|default:"Pro" }}{% endblock %}
+{% block breadcrumb %}Edit Plan{% endblock %}
+{% block nav_plans %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Edit Plan: {{ plan.name|default:"Pro Plan" }}</h1>
+    <p class="page-subtitle">Update pricing, features, and settings for this plan.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'superuser:plan_delete' plan.pk|default:1 %}" class="btn btn-danger">Delete Plan</a>
+    <a href="{% url 'superuser:plans_list' %}" class="btn btn-secondary">← Back</a>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns: 1fr 360px; gap: 20px;">
+  <form method="post" data-confirm>
+    {% csrf_token %}
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Plan Information</span>
+        <span class="badge badge-{% if plan.is_active %}active{% else %}neutral{% endif %}">
+          {% if plan.is_active %}Active{% else %}Inactive{% endif %}
+        </span>
+      </div>
+      <div class="card-body">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Plan Name <span class="required">*</span></label>
+            <input type="text" name="name" class="form-control" required value="{{ plan.name|default:'Pro' }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Slug</label>
+            <input type="text" name="slug" class="form-control" value="{{ plan.slug|default:'pro' }}">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea name="description" class="form-control" rows="3">{{ plan.description|default:'Advanced features for growing library networks.' }}</textarea>
+        </div>
+
+        <div class="form-row-3">
+          <div class="form-group">
+            <label class="form-label">Price (₹/mo) <span class="required">*</span></label>
+            <div class="input-group">
+              <span class="input-prefix">₹</span>
+              <input type="number" name="price" class="form-control" step="0.01" min="0" required value="{{ plan.price|default:'249' }}">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Billing Cycle</label>
+            <select name="billing_cycle" class="form-control">
+              <option value="monthly" {% if plan.billing_cycle == 'monthly' or not plan.billing_cycle %}selected{% endif %}>Monthly</option>
+              <option value="quarterly" {% if plan.billing_cycle == 'quarterly' %}selected{% endif %}>Quarterly</option>
+              <option value="annual" {% if plan.billing_cycle == 'annual' %}selected{% endif %}>Annual</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Trial Days</label>
+            <input type="number" name="trial_days" class="form-control" min="0" value="{{ plan.trial_days|default:'14' }}">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Max Members</label>
+            <input type="number" name="max_members" class="form-control" placeholder="Unlimited" value="{{ plan.max_members|default:'' }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Storage (GB)</label>
+            <div class="input-group">
+              <input type="number" name="storage_gb" class="form-control" value="{{ plan.storage_gb|default:'50' }}">
+              <span class="input-suffix">GB</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Features (one per line)</label>
+          <textarea name="features_text" class="form-control" rows="5">{{ plan.features_text|default:'Unlimited patrons\nAdvanced analytics\nPriority support\nAPI access' }}</textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <div style="display:flex; align-items:center; gap:10px; padding:10px 0;">
+            <input type="checkbox" name="is_active" id="is_active" {% if plan.is_active or not plan %}checked{% endif %} style="width:16px; height:16px; accent-color:var(--accent); cursor:pointer;">
+            <label for="is_active" style="cursor:pointer; font-size:13.5px; color:var(--text-secondary);">Active — visible and available for new subscriptions</label>
+          </div>
+        </div>
+
+      </div>
+      <div class="card-footer" style="display:flex; justify-content:flex-end; gap:10px;">
+        <a href="{% url 'superuser:plans_list' %}" class="btn btn-ghost">Cancel</a>
+        <button type="submit" class="btn btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          Save Changes
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Stats sidebar -->
+  <div>
+    <div class="card mb-2">
+      <div class="card-header"><span class="card-title">Plan Stats</span></div>
+      <div class="card-body">
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <div>
+            <div class="dl-label">Active Subscriptions</div>
+            <div style="font-family:'Syne',sans-serif; font-size:28px; font-weight:800; color:var(--text-primary); margin-top:4px;">{{ plan.active_subscription_count }}</div>
+          </div>
+          <div>
+            <div class="dl-label">Monthly Revenue (MRR)</div>
+            <div style="font-family:'JetBrains Mono',monospace; font-size:20px; font-weight:700; color:var(--success); margin-top:4px;">₹{{ plan.mrr|floatformat:2 }}</div>
+          </div>
+          <div>
+            <div class="dl-label">Created</div>
+            <div class="dl-value mono" style="margin-top:4px;">{{ plan.created_at|date:"M d, Y"|default:"Jan 01, 2024" }}</div>
+          </div>
+          <div>
+            <div class="dl-label">Last Updated</div>
+            <div class="dl-value mono" style="margin-top:4px;">{{ plan.updated_at|date:"M d, Y"|default:"Mar 01, 2025" }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="alert alert-warning">
+      <span class="alert-icon">⚠</span>
+      <div class="alert-text">
+        <div class="alert-title">Price changes</div>
+        <div style="font-size:12.5px;">Price changes only affect new subscriptions. Existing subscribers keep their current rate until renewal.</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

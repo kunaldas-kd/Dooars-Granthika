@@ -1,0 +1,371 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/transactions/fine_list.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header__left">
+      <div class="page-header__breadcrumb">
+        <span class="breadcrumb-item">Library</span>
+        <svg class="breadcrumb-sep" viewBox="0 0 6 10" fill="none"><path d="M1 1l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <a href="{% url 'transactions:transaction_list' %}" class="breadcrumb-item">Transactions</a>
+        <svg class="breadcrumb-sep" viewBox="0 0 6 10" fill="none"><path d="M1 1l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="breadcrumb-item breadcrumb-item--active">Fines</span>
+      </div>
+      <h1 class="page-title">Fine Management</h1>
+      <p class="page-subtitle">Track and collect library fines from members</p>
+    </div>
+    <div class="page-header__actions">
+      <button class="btn btn--ghost" id="exportBtn" type="button">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M4 14l6 4 6-4M10 2v12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Export
+      </button>
+    </div>
+  </div>
+
+  <!-- Fine Summary Cards -->
+  <div class="fine-summary-row">
+    <div class="fine-summary-tile fine-summary-tile--total">
+      <div class="fine-summary-tile__icon">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.75"/><path d="M12 8v8M9 11h6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+      </div>
+      <div class="fine-summary-tile__body">
+        <span class="fine-summary-tile__amount">₹{{ total_fine|floatformat:2 }}</span>
+        <span class="fine-summary-tile__label">Total Fines</span>
+        <span class="fine-summary-tile__count">{{ total_fine_count }} record{{ total_fine_count|pluralize }}</span>
+      </div>
+    </div>
+    <div class="fine-summary-tile fine-summary-tile--unpaid">
+      <div class="fine-summary-tile__icon">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.75"/><path d="M12 8v5M12 15v.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+      </div>
+      <div class="fine-summary-tile__body">
+        <span class="fine-summary-tile__amount">₹{{ unpaid_fine|floatformat:2 }}</span>
+        <span class="fine-summary-tile__label">Unpaid Fines</span>
+        <span class="fine-summary-tile__count">{{ unpaid_count }} record{{ unpaid_count|pluralize }}</span>
+      </div>
+    </div>
+    <div class="fine-summary-tile fine-summary-tile--paid">
+      <div class="fine-summary-tile__icon">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.75"/><path d="M8 12l3 3 6-6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="fine-summary-tile__body">
+        <span class="fine-summary-tile__amount">₹{{ paid_fine|floatformat:2 }}</span>
+        <span class="fine-summary-tile__label">Collected</span>
+        <span class="fine-summary-tile__count">{{ paid_count }} record{{ paid_count|pluralize }}</span>
+      </div>
+    </div>
+    <div class="fine-summary-tile fine-summary-tile--waived">
+      <div class="fine-summary-tile__icon">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.75"/><path d="M9 9l6 6M15 9l-6 6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+      </div>
+      <div class="fine-summary-tile__body">
+        <span class="fine-summary-tile__amount">₹{{ waived_fine|floatformat:2 }}</span>
+        <span class="fine-summary-tile__label">Waived</span>
+        <span class="fine-summary-tile__count">{{ waived_count }} record{{ waived_count|pluralize }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Panel -->
+  <div class="filter-panel">
+    <form method="GET" action="" class="filter-form" id="fineFilterForm">
+      <div class="filter-panel__search">
+        <svg class="search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.75"/><path d="M13.5 13.5l3 3" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+        <input
+          type="text"
+          name="q"
+          value="{{ request.GET.q }}"
+          class="search-input"
+          placeholder="Search by member name or transaction ID…"
+          autocomplete="off">
+      </div>
+      <div class="filter-panel__filters">
+        <div class="filter-group">
+          <label class="filter-label">Payment Status</label>
+          <select name="status" class="filter-select">
+            <option value="">All Status</option>
+            <option value="unpaid" {% if request.GET.status == 'unpaid' %}selected{% endif %}>Unpaid</option>
+            <option value="paid"   {% if request.GET.status == 'paid'   %}selected{% endif %}>Paid</option>
+            <option value="waived" {% if request.GET.status == 'waived' %}selected{% endif %}>Waived</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Fine Type</label>
+          <select name="type" class="filter-select">
+            <option value="">All Types</option>
+            <option value="overdue" {% if request.GET.type == 'overdue' %}selected{% endif %}>Overdue Fine</option>
+            <option value="lost"    {% if request.GET.type == 'lost'    %}selected{% endif %}>Lost Book Penalty</option>
+            <option value="damage"  {% if request.GET.type == 'damage'  %}selected{% endif %}>Damage Charge</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Date From</label>
+          <input type="date" name="date_from" value="{{ request.GET.date_from }}" class="filter-input filter-input--date">
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Date To</label>
+          <input type="date" name="date_to" value="{{ request.GET.date_to }}" class="filter-input filter-input--date">
+        </div>
+        <button type="submit" class="btn btn--filter">
+          <svg viewBox="0 0 20 20" fill="none"><path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+          Apply
+        </button>
+        {% if request.GET.q or request.GET.status or request.GET.type or request.GET.date_from or request.GET.date_to %}
+          <a href="{% url 'transactions:fine_list' %}" class="btn btn--reset">Clear</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  <!-- Table Card -->
+  <div class="table-card">
+    <div class="table-card__header">
+      <div class="table-card__info">
+        Showing <strong>{{ fines|length }}</strong> of <strong>{{ fines.paginator.count }}</strong> record{{ fines.paginator.count|pluralize }}
+      </div>
+      <div class="table-card__controls">
+        <div class="tab-toggle" id="fineViewToggle">
+          <button class="tab-toggle__btn tab-toggle__btn--active" data-filter="all" type="button">All</button>
+          <button class="tab-toggle__btn" data-filter="unpaid" type="button">Unpaid</button>
+          <button class="tab-toggle__btn" data-filter="paid" type="button">Paid</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="data-table fine-table" id="fineTable">
+        <thead>
+          <tr>
+            <th class="th-check">
+              <label class="checkbox-label">
+                <input type="checkbox" id="selectAll" class="checkbox-input">
+                <span class="checkbox-custom"></span>
+              </label>
+            </th>
+            <th>Fine ID</th>
+            <th>Txn ID</th>
+            <th>Member</th>
+            <th>Book</th>
+            <th class="th-sortable" data-sort="fine_type">
+              <span>Type</span>
+              <svg class="sort-icon" viewBox="0 0 10 14" fill="none"><path d="M5 1v12M1 9l4 4 4-4" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </th>
+            <th class="th-sortable" data-sort="fine_amount">
+              <span>Fine (₹)</span>
+              <svg class="sort-icon" viewBox="0 0 10 14" fill="none"><path d="M5 1v12M1 9l4 4 4-4" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </th>
+            <th class="th-sortable" data-sort="created_at">
+              <span>Generated</span>
+              <svg class="sort-icon" viewBox="0 0 10 14" fill="none"><path d="M5 1v12M1 9l4 4 4-4" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </th>
+            <th>Paid Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for fine in fines %}
+          <tr class="table-row fine-row" data-fine-status="{{ fine.status }}" data-fine-id="{{ fine.id }}">
+            <td class="td-check">
+              <label class="checkbox-label">
+                <input type="checkbox" class="checkbox-input row-check" value="{{ fine.id }}">
+                <span class="checkbox-custom"></span>
+              </label>
+            </td>
+            <td class="td-id">
+              <span class="fine-id">#F{{ fine.id|stringformat:"04d" }}</span>
+            </td>
+            <td class="td-id">
+              <a href="{% url 'transactions:transaction_detail' fine.transaction.id %}" class="txn-id-link">#{{ fine.transaction.id }}</a>
+            </td>
+            <td class="td-member">
+              <div class="member-cell">
+                <div class="member-avatar">
+                  {% if fine.transaction.member.photo_mime_type %}
+                  <img
+                    src="{% url 'transactions:member_photo_image' fine.transaction.member.pk %}"
+                    alt="{{ fine.transaction.member.first_name }}"
+                    class="member-avatar__photo"
+                    onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+                  >
+                  {% endif %}
+                  <span class="member-avatar__initial" {% if fine.transaction.member.photo_mime_type %}style="display:none"{% endif %}>
+                    {{ fine.transaction.member.first_name|first|upper }}
+                  </span>
+                </div>
+                <div class="member-info">
+                  <span class="member-name">{{ fine.transaction.member.first_name }} {{ fine.transaction.member.last_name }}</span>
+                  <span class="member-id">{{ fine.transaction.member.member_id }}</span>
+                </div>
+              </div>
+            </td>
+            <td class="td-book">
+              <div class="book-cell">
+                <span class="book-title">{{ fine.transaction.book.title }}</span>
+                <span class="book-author">{{ fine.transaction.book.author }}</span>
+              </div>
+            </td>
+            <td class="td-type">
+              <span class="fine-type-badge fine-type-badge--{{ fine.fine_type }}">
+                {% if fine.fine_type == 'overdue' %}
+                  <svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M7 4v3.5l2 2" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  Overdue
+                {% elif fine.fine_type == 'lost' %}
+                  <svg viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  Lost Book
+                {% elif fine.fine_type == 'damage' %}
+                  <svg viewBox="0 0 14 14" fill="none"><path d="M7 2l1.5 4h4l-3.25 2.5 1.25 4L7 10.5 3.5 12.5l1.25-4L1.5 6h4z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/></svg>
+                  Damage
+                {% endif %}
+              </span>
+            </td>
+            <td class="td-fine">
+              <span class="fine-amount-cell fine-amount-cell--{{ fine.status }}">₹{{ fine.amount|floatformat:2 }}</span>
+            </td>
+            <td class="td-date">{{ fine.created_at|date:"d M Y" }}</td>
+            <td class="td-date">{{ fine.paid_date|date:"d M Y"|default:"—" }}</td>
+            <td class="td-status">
+              <span class="payment-badge payment-badge--{{ fine.status }}">
+                <span class="payment-badge__dot"></span>
+                {{ fine.get_status_display }}
+              </span>
+            </td>
+            <td class="td-actions">
+              <div class="action-group">
+                {% if fine.status == 'unpaid' %}
+                <button
+                  class="action-btn action-btn--pay"
+                  type="button"
+                  data-id="{{ fine.id }}"
+                  data-amount="{{ fine.amount|floatformat:2 }}"
+                  title="Mark as paid">
+                  <svg viewBox="0 0 20 20" fill="none"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  Mark Paid
+                </button>
+                <form method="POST" action="{% url 'transactions:waive_fine' fine.id %}" style="display:inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{{ request.path }}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">
+                  <button type="submit" class="action-btn action-btn--waive" title="Waive this fine">
+                    <svg viewBox="0 0 20 20" fill="none"><path d="M4 4l12 12M16 4L4 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    Waive
+                  </button>
+                </form>
+                {% endif %}
+                <a href="{% url 'transactions:transaction_detail' fine.transaction.id %}" class="action-btn action-btn--view" title="View transaction">
+                  <svg viewBox="0 0 20 20" fill="none"><path d="M10 4C5.5 4 2 10 2 10s3.5 6 8 6 8-6 8-6-3.5-6-8-6z" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr class="table-row--empty">
+            <td colspan="11">
+              <div class="empty-state">
+                <div class="empty-state__icon">
+                  <svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="2"/><path d="M24 32h16M32 24v16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </div>
+                <h3 class="empty-state__title">No fines found</h3>
+                <p class="empty-state__text">No fines match your current filter criteria.</p>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Bulk Actions & Pagination Footer -->
+    <div class="table-card__footer">
+      <div class="bulk-actions-bar" id="bulkActionsBar" hidden>
+        <span class="bulk-selected-count"><span id="selectedCount">0</span> selected</span>
+        <button class="btn btn--sm btn--success" id="bulkMarkPaidBtn" type="button">Mark All Paid</button>
+        <button class="btn btn--sm btn--ghost" id="bulkWaiveBtn" type="button">Waive Selected</button>
+      </div>
+
+      {% if fines.has_other_pages %}
+      <nav class="pagination" aria-label="Pagination">
+        {% if fines.has_previous %}
+        <a href="?page={{ fines.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}" class="pagination__btn">
+          <svg viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Prev
+        </a>
+        {% endif %}
+        {% for num in fines.paginator.page_range %}
+          {% if fines.number == num %}
+            <span class="pagination__page pagination__page--active">{{ num }}</span>
+          {% elif num > fines.number|add:'-3' and num < fines.number|add:'3' %}
+            <a href="?page={{ num }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}" class="pagination__page">{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if fines.has_next %}
+        <a href="?page={{ fines.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}" class="pagination__btn">
+          Next
+          <svg viewBox="0 0 8 14" fill="none"><path d="M1 1l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        {% endif %}
+      </nav>
+      {% endif %}
+
+    </div><!-- /.table-card__footer -->
+
+  </div><!-- /.table-card -->
+
+  <!-- Mark Paid Confirmation Modal -->
+  <div class="modal" id="markPaidModal" aria-hidden="true" aria-modal="true" role="dialog">
+    <div class="modal__backdrop" id="markPaidBackdrop"></div>
+    <div class="modal__dialog modal__dialog--sm">
+      <div class="modal__header">
+        <h3 class="modal__title">Confirm Fine Payment</h3>
+        <button class="modal__close" id="closeMarkPaidModal" type="button" aria-label="Close">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <form method="POST" action="{% url 'transactions:mark_fine_paid' %}" id="markPaidForm">
+        {% csrf_token %}
+        <input type="hidden" name="fine_id" id="markPaidFineId">
+        <input type="hidden" name="next" value="{{ request.path }}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">
+        <div class="modal__body">
+          <div class="payment-confirm-display">
+            <div class="payment-confirm-display__amount" id="markPaidAmountDisplay">₹0</div>
+            <div class="payment-confirm-display__label">Fine Amount to Collect</div>
+          </div>
+          <div class="form-group">
+            <label for="paymentMethod" class="form-label">Payment Method</label>
+            <select name="payment_method" id="paymentMethod" class="form-select">
+              <option value="cash">Cash</option>
+              <option value="upi">UPI</option>
+              <option value="card">Card</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="paymentRef" class="form-label">
+              Reference / Receipt No. <span style="font-weight:400">(optional)</span>
+            </label>
+            <input type="text" name="payment_ref" id="paymentRef" class="form-input" placeholder="e.g. UPI transaction ID">
+          </div>
+        </div>
+        <div class="modal__footer">
+          <button type="button" class="btn btn--ghost" id="cancelMarkPaid">Cancel</button>
+          <button type="submit" class="btn btn--success">
+            <svg viewBox="0 0 20 20" fill="none"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Confirm Payment
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div><!-- /.page-wrapper -->
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/transactions/fine_list.js' %}"></script>
+{% endblock %}

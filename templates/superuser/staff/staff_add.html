@@ -1,0 +1,152 @@
+{% extends "superuser/superuser_dashboard_base.html" %}
+{% block title %}Add Staff{% endblock %}
+{% block breadcrumb %}Add Staff{% endblock %}
+{% block nav_staff %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Add Staff Member</h1>
+    <p class="page-subtitle">Create a new team member and assign roles.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'superuser:staff_list' %}" class="btn btn-secondary">← Back</a>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 320px; gap:20px;">
+  <form method="post" action="{% url 'superuser:staff_add' %}">
+    {% csrf_token %}
+    <div class="card mb-2">
+      <div class="card-header"><span class="card-title">Account Details</span></div>
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">First Name</label>
+            <input type="text" name="first_name" class="form-control" value="{{ post.first_name|default:'' }}" placeholder="John">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name</label>
+            <input type="text" name="last_name" class="form-control" value="{{ post.last_name|default:'' }}" placeholder="Doe">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Username <span style="color:var(--text-muted); font-weight:400;">(auto-generated if blank)</span></label>
+            <input type="text" name="username" class="form-control" value="{{ post.username|default:'' }}" placeholder="e.g. DG58219301 — leave blank to auto-generate">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email <span class="required">*</span></label>
+            <input type="email" name="email" class="form-control" required value="{{ post.email|default:'' }}" placeholder="john@company.com">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Password <span style="color:var(--text-muted); font-weight:400;">(auto-generated if blank)</span></label>
+            <input type="password" name="password" class="form-control" placeholder="Leave blank to auto-generate a secure password">
+            <div class="form-hint">A strong password will be generated and emailed to the staff member if you leave this blank.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone</label>
+            <input type="tel" name="phone" class="form-control" value="{{ post.phone|default:'' }}" placeholder="+91 XXXXX XXXXX">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-2">
+      <div class="card-header"><span class="card-title">Role Assignment</span></div>
+      <div class="card-body">
+        <div class="form-group">
+          <label class="form-label">Primary Role <span class="required">*</span></label>
+          <select name="primary_role" class="form-control" required id="primary-role-select">
+            <option value="">— Select primary role —</option>
+            {% for role in assignable_roles %}
+            <option value="{{ role.pk }}"
+              data-level="{{ role.level }}"
+              data-dept="{{ role.get_department_display }}"
+              {% if post.primary_role == role.pk|stringformat:'s' %}selected{% endif %}>
+              L{{ role.level }} — {{ role.name }} ({{ role.get_department_display }})
+            </option>
+            {% endfor %}
+          </select>
+          <div class="form-hint">Your level determines which roles you can assign.</div>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Secondary Roles</label>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:4px;">
+            {% for role in assignable_roles %}
+            <label style="display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius-sm); cursor:pointer; font-size:13px; transition:border-color var(--transition);">
+              <input type="checkbox" name="secondary_roles" value="{{ role.pk }}"
+                {% if role.pk|stringformat:'s' in post.secondary_roles %}checked{% endif %}
+                style="accent-color:var(--accent);">
+              <span>{{ role.name }}</span>
+              <span style="margin-left:auto; font-size:10px; color:var(--text-muted); font-family:'JetBrains Mono',monospace;">L{{ role.level }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">Additional Info</span></div>
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Joined Date</label>
+            <input type="date" name="joined_date" class="form-control" value="{{ post.joined_date|default:'' }}">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Bio</label>
+          <textarea name="bio" class="form-control" rows="2" placeholder="Short bio…">{{ post.bio|default:'' }}</textarea>
+        </div>
+        {% if request.user.is_superuser %}
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Private Notes (Superuser only)</label>
+          <textarea name="notes" class="form-control" rows="2" placeholder="Internal notes…">{{ post.notes|default:'' }}</textarea>
+        </div>
+        {% endif %}
+      </div>
+      <div class="card-footer" style="display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap;">
+        <div class="alert alert-info" style="margin:0; flex:1; min-width:200px;">
+          <span class="alert-icon">✉</span>
+          <div class="alert-text" style="font-size:12.5px;">Login credentials will be emailed to the staff member automatically on account creation.</div>
+        </div>
+        <a href="{% url 'superuser:staff_list' %}" class="btn btn-ghost">Cancel</a>
+        <button type="submit" class="btn btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          Create Staff Member
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Hierarchy Preview -->
+  <div>
+    <div class="card" style="position:sticky; top:calc(var(--topbar-h) + 16px);">
+      <div class="card-header"><span class="card-title">Hierarchy</span></div>
+      <div class="card-body" style="padding:0;">
+        {% for role in assignable_roles %}
+        <div style="display:flex; align-items:center; gap:10px; padding:10px 16px; border-bottom:1px solid var(--border);">
+          <div style="width:28px; height:28px; border-radius:50%; background:var(--accent-glow); border:1px solid var(--accent); display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; color:var(--accent); flex-shrink:0;">L{{ role.level }}</div>
+          <div>
+            <div style="font-size:13px; font-weight:600; color:var(--text-primary);">{{ role.name }}</div>
+            <div style="font-size:11px; color:var(--text-muted);">{{ role.get_department_display }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% if requesting_staff %}
+      <div class="card-footer">
+        <div class="alert alert-info" style="margin:0; font-size:12px;">
+          <span class="alert-icon">ℹ</span>
+          <div class="alert-text">You (L{{ requesting_staff.hierarchy_level }}) can add staff at levels above {{ requesting_staff.hierarchy_level }}.</div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

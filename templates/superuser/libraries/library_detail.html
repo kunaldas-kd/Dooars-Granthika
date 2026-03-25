@@ -1,0 +1,159 @@
+{% extends "superuser/superuser_dashboard_base.html" %}
+{% block title %}{{ library.library_name }}{% endblock %}
+{% block breadcrumb %}Library Detail{% endblock %}
+{% block nav_libraries %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      {{ library.library_name }}
+      {% if library.subscription and library.subscription.is_active %}
+        <span class="badge badge-active" style="margin-left:12px; vertical-align:middle;">Active</span>
+      {% elif library.subscription %}
+        <span class="badge badge-danger" style="margin-left:12px; vertical-align:middle;">Expired</span>
+      {% else %}
+        <span class="badge badge-neutral" style="margin-left:12px; vertical-align:middle;">No Plan</span>
+      {% endif %}
+    </h1>
+    <p class="page-subtitle">{{ library.library_code }} · {{ library.institute_email }}</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'superuser:libraries_list' %}" class="btn btn-secondary">← Libraries</a>
+    {% if library.subscription %}
+      {% if library.subscription.is_active %}
+        <a href="{% url 'superuser:library_suspend' library.pk %}" class="btn btn-warning">Suspend</a>
+      {% else %}
+        <a href="{% url 'superuser:library_activate' library.pk %}" class="btn btn-success">Activate</a>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+
+<div class="detail-grid">
+  <div>
+    <div class="card mb-2">
+      <div class="card-header"><span class="card-title">Library Information</span></div>
+      <div class="dl-grid">
+        <div class="dl-item"><div class="dl-label">Library Code</div><div class="dl-value mono">{{ library.library_code }}</div></div>
+        <div class="dl-item"><div class="dl-label">Type</div><div class="dl-value">{{ library.get_institute_type_display }}</div></div>
+        <div class="dl-item"><div class="dl-label">Library Name</div><div class="dl-value">{{ library.library_name }}</div></div>
+        <div class="dl-item"><div class="dl-label">Institute Name</div><div class="dl-value">{{ library.institute_name }}</div></div>
+        <div class="dl-item"><div class="dl-label">Email</div><div class="dl-value mono" style="font-size:12.5px;">{{ library.institute_email }}</div></div>
+        <div class="dl-item"><div class="dl-label">Phone</div><div class="dl-value">{{ library.phone_number|default:"—" }}</div></div>
+        <div class="dl-item"><div class="dl-label">District</div><div class="dl-value">{{ library.district }}</div></div>
+        <div class="dl-item"><div class="dl-label">State</div><div class="dl-value">{{ library.state }}</div></div>
+        <div class="dl-item"><div class="dl-label">Country</div><div class="dl-value">{{ library.country }}</div></div>
+        <div class="dl-item"><div class="dl-label">Registered</div><div class="dl-value mono">{{ library.created_at|date:"M d, Y" }}</div></div>
+      </div>
+    </div>
+
+    <div class="card mb-2">
+      <div class="card-header"><span class="card-title">Usage Stats</span></div>
+      <div class="card-body">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div style="background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius-md); padding:16px; text-align:center;">
+            <div class="stat-label">Total Members</div>
+            <div style="font-family:'Syne',sans-serif; font-size:28px; font-weight:800; color:var(--text-primary); margin-top:6px;">{{ member_count }}</div>
+          </div>
+          <div style="background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius-md); padding:16px; text-align:center;">
+            <div class="stat-label">Book Copies</div>
+            <div style="font-family:'Syne',sans-serif; font-size:28px; font-weight:800; color:var(--text-primary); margin-top:6px;">{{ book_count }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Recent Billing</span>
+        <a href="{% url 'superuser:transactions_list' %}?q={{ library.library_code }}" class="btn btn-ghost btn-sm">View all</a>
+      </div>
+      <div class="table-wrapper" style="border:none; border-radius:0;">
+        <table>
+          <thead><tr><th>Ref</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for tx in recent_billing %}
+            <tr data-href="{% url 'superuser:transaction_detail' tx.pk %}">
+              <td class="td-mono">{{ tx.reference }}</td>
+              <td class="td-mono">{{ tx.created_at|date:"M d, Y" }}</td>
+              <td class="td-mono">₹{{ tx.amount }}</td>
+              <td><span class="badge badge-{{ tx.status }}">{{ tx.get_status_display }}</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">
+              <div class="empty-state" style="padding:24px;">
+                <div class="empty-text">No billing transactions yet.</div>
+              </div>
+            </td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    {% if library.subscription %}
+    <div class="card mb-2">
+      <div class="card-header"><span class="card-title">Current Subscription</span>
+        <a href="{% url 'superuser:subscription_detail' library.subscription.pk %}" class="btn btn-ghost btn-sm">Manage →</a>
+      </div>
+      <div class="card-body" style="text-align:center; padding:20px;">
+        <div style="font-family:'Syne',sans-serif; font-size:20px; font-weight:700; margin-bottom:4px;">{{ library.subscription.plan|capfirst }}</div>
+        {% with plan_def=library.subscription.plan %}
+        {% endwith %}
+        <div style="margin-top:10px;">
+          {% if library.subscription.is_active %}
+            <span class="badge badge-active">Active</span>
+          {% else %}
+            <span class="badge badge-danger">Expired</span>
+          {% endif %}
+        </div>
+        <div style="margin-top:10px; font-size:12px; color:var(--text-muted); font-family:'JetBrains Mono',monospace;">
+          Expires {{ library.subscription.expiry_date|date:"M d, Y" }}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if library.rules %}
+    <div class="card mb-2">
+      <div class="card-header"><span class="card-title">Library Rules</span></div>
+      <div class="card-body">
+        <div style="display:flex; flex-direction:column; gap:10px; font-size:13.5px;">
+          <div style="display:flex; justify-content:space-between;"><span class="text-muted">Late Fine</span><span class="text-mono">{{ library.rules.late_fine_display }}</span></div>
+          <div style="display:flex; justify-content:space-between;"><span class="text-muted">Borrowing Period</span><span class="text-mono">{{ library.rules.borrowing_period }} days</span></div>
+          <div style="display:flex; justify-content:space-between;"><span class="text-muted">Max Books / Member</span><span class="text-mono">{{ library.rules.max_books_per_member }}</span></div>
+          <div style="display:flex; justify-content:space-between;"><span class="text-muted">Max Renewals</span><span class="text-mono">{{ library.rules.max_renewal_count }}</span></div>
+          <div style="display:flex; justify-content:space-between;"><span class="text-muted">Auto Fine</span><span>{% if library.rules.auto_fine %}<span class="badge badge-success">On</span>{% else %}<span class="badge badge-neutral">Off</span>{% endif %}</span></div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">Activity Log</span></div>
+      <div class="card-body">
+        {% if activity_logs %}
+        <div class="timeline">
+          {% for log in activity_logs %}
+          <div class="timeline-item">
+            <div class="timeline-dot accent"></div>
+            <div class="timeline-time">{{ log.created_at|date:"M d, Y H:i" }}</div>
+            <div class="timeline-event">{{ log.action|title }}</div>
+            {% if log.notes %}<div class="timeline-meta">{{ log.notes }}</div>{% endif %}
+            {% if log.user %}<div class="timeline-meta">by {{ log.user.username }}</div>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state" style="padding:20px;">
+          <div class="empty-text">No activity logged yet.</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

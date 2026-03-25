@@ -1,0 +1,126 @@
+{% extends "superuser/superuser_dashboard_base.html" %}
+{% block title %}Roles{% endblock %}
+{% block breadcrumb %}Roles{% endblock %}
+{% block nav_roles %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div><h1 class="page-title">Staff Roles</h1><p class="page-subtitle">Define the company hierarchy and permissions.</p></div>
+  <div class="page-actions">
+    <button class="btn btn-primary" onclick="openRoleModal()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add Role
+    </button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-wrapper" style="border:none;">
+    <table>
+      <thead>
+        <tr><th data-sort>Level</th><th data-sort>Role Name</th><th data-sort>Department</th><th>Description</th><th data-sort>Primary Staff</th><th data-sort>Secondary Staff</th><th>Status</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for role in roles %}
+        <tr>
+          <td><span style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:var(--accent);">L{{ role.level }}</span></td>
+          <td class="td-name">{{ role.name }}</td>
+          <td><span class="badge badge-neutral">{{ role.get_department_display }}</span></td>
+          <td style="font-size:12.5px; color:var(--text-secondary); max-width:200px;">{{ role.description|default:"—"|truncatechars:60 }}</td>
+          <td class="td-mono">{{ role.primary_count }}</td>
+          <td class="td-mono">{{ role.secondary_count }}</td>
+          <td><span class="badge badge-{% if role.is_active %}active{% else %}neutral{% endif %}">{% if role.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+          <td>
+            <div class="td-actions">
+              <button class="btn btn-secondary btn-sm" onclick="openRoleModal({{ role.pk }}, '{{ role.name|escapejs }}', {{ role.level }}, '{{ role.department }}', '{{ role.description|escapejs }}', {{ role.is_active|lower }})">Edit</button>
+              <form method="post" action="{% url 'superuser:role_delete' role.pk %}" style="display:inline;" onsubmit="return confirm('Delete role {{ role.name }}?')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-ghost btn-sm btn-icon" {% if role.primary_count > 0 %}disabled title="Has active staff"{% endif %}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8">
+          <div class="empty-state" style="padding:40px;">
+            <div class="empty-icon">🏷</div>
+            <div class="empty-title">No Roles Defined</div>
+            <div class="empty-text">Create roles to build your company hierarchy.</div>
+            <button class="btn btn-primary mt-2" onclick="openRoleModal()">Add First Role</button>
+          </div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Role Modal -->
+<div id="role-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:500; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+  <div style="background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-xl); padding:32px; width:100%; max-width:520px; box-shadow:var(--shadow-lg);">
+    <h2 style="font-family:'Syne',sans-serif; font-size:20px; font-weight:700; margin-bottom:20px;" id="modal-title">Add Role</h2>
+    <form method="post" id="role-form">
+      {% csrf_token %}
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Role Name <span class="required">*</span></label>
+          <input type="text" name="name" id="role-name" class="form-control" required placeholder="e.g. Frontend Developer">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Level <span class="required">*</span></label>
+          <input type="number" name="level" id="role-level" class="form-control" min="0" max="20" required placeholder="0=CEO, 1=CTO…">
+          <div class="form-hint">0 = highest authority</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Department</label>
+          <select name="department" id="role-dept" class="form-control">
+            {% for val,label in dept_choices %}
+            <option value="{{ val }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <div style="display:flex; align-items:center; gap:10px; padding:10px 0;">
+            <label class="toggle"><input type="checkbox" name="is_active" id="role-active" checked><span class="toggle-slider"></span></label>
+            <span style="font-size:13px; color:var(--text-secondary);">Active</span>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea name="description" id="role-desc" class="form-control" rows="2" placeholder="What does this role do?"></textarea>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:8px;">
+        <button type="button" class="btn btn-ghost" onclick="closeRoleModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Role</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const modal = document.getElementById('role-modal');
+function openRoleModal(pk, name, level, dept, desc, active) {
+  document.getElementById('modal-title').textContent = pk ? 'Edit Role' : 'Add Role';
+  document.getElementById('role-form').action = pk
+    ? `/superuser/roles/${pk}/save/`
+    : `/superuser/roles/save/`;
+  document.getElementById('role-name').value  = name  || '';
+  document.getElementById('role-level').value = level !== undefined ? level : '';
+  document.getElementById('role-desc').value  = desc  || '';
+  document.getElementById('role-active').checked = active !== false;
+  if (dept) document.getElementById('role-dept').value = dept;
+  modal.style.display = 'flex';
+}
+function closeRoleModal() { modal.style.display = 'none'; }
+modal.addEventListener('click', e => { if (e.target === modal) closeRoleModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeRoleModal(); });
+</script>
+{% endblock %}

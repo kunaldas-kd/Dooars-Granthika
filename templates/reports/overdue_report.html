@@ -1,0 +1,73 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+{% block title %}Overdue Report — Dooars Granthika{% endblock %}
+{% block nav_reports %}active{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/reports/reports_overdue.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="rpt-page">
+
+  <div class="rpt-header">
+    <div>
+      <h1 class="rpt-title">Overdue Report</h1>
+      <p class="rpt-sub">As of {{ today }}</p>
+    </div>
+    <div class="rpt-actions">
+      <a href="{% url 'reports:export_overdue' %}" class="rpt-btn-export"><i class="fas fa-download"></i> Export CSV</a>
+      <a href="{% url 'reports:overview' %}" class="rpt-btn-back"><i class="fas fa-arrow-left"></i> Overview</a>
+    </div>
+  </div>
+
+  {% if overdues %}
+  <div class="rpt-alert">
+    <div class="rpt-alert-icon"><i class="fas fa-exclamation-triangle"></i></div>
+    <div class="rpt-alert-body">
+      <div class="rpt-alert-headline">{{ overdues|length }} overdue book{{ overdues|length|pluralize }}</div>
+      <div class="rpt-alert-note">Immediate follow-up recommended for severe items</div>
+    </div>
+    <div class="rpt-alert-total">₹{{ total_fine }}</div>
+  </div>
+  {% endif %}
+
+  <div class="rpt-card">
+    <div class="rpt-card-head"><span class="rpt-card-icon"><i class="fas fa-clock"></i></span>Overdue Transactions</div>
+    <div class="rpt-table-wrap">
+      <table class="rpt-table">
+        <thead>
+          <tr>
+            <th style="width:52px">#</th><th>Member</th><th>Book</th>
+            <th style="width:100px">Issue Date</th><th style="width:100px">Due Date</th>
+            <th class="rpt-cell-center" style="width:120px">Days Overdue</th>
+            <th class="rpt-cell-right" style="width:110px">Fine (₹)</th>
+            <th style="width:90px">Fine Paid</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in overdues %}
+          <tr class="rpt-row--{{ t.overdue_severity }}">
+            <td class="rpt-cell-mono rpt-cell-muted">{{ t.transaction_id }}</td>
+            <td>
+              <div class="rpt-cell-name">{{ t.member.first_name }} {{ t.member.last_name }}</div>
+              <div class="rpt-cell-sub">{{ t.member.member_id }}</div>
+              {% if t.member.phone %}<div class="rpt-phone"><i class="fas fa-phone" style="font-size:.6rem"></i>{{ t.member.phone }}</div>{% endif %}
+            </td>
+            <td><div class="rpt-cell-name">{{ t.book.title }}</div><div class="rpt-cell-sub">{{ t.book.isbn }}</div></td>
+            <td class="rpt-cell-mono rpt-cell-muted">{{ t.issue_date }}</td>
+            <td class="rpt-due">{{ t.due_date }}</td>
+            <td class="rpt-cell-center"><span class="rpt-badge rpt-days--{{ t.overdue_severity }}">{{ t.overdue_days }} days</span></td>
+            <td class="rpt-cell-right"><span class="rpt-fine-val">₹{{ t.fine_amount }}</span></td>
+            <td>{% if t.fine_paid %}<span class="rpt-badge rpt-paid-yes">Paid</span>{% else %}<span class="rpt-badge rpt-paid-no">Unpaid</span>{% endif %}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="8"><div class="rpt-clear"><i class="fas fa-check-circle"></i><div class="rpt-clear-text">No overdue books right now — great work!</div></div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

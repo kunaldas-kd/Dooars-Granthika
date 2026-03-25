@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Contact Us - Dooars Granthika{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/core/contact.css' %}" />
+{% endblock %}
+
+{% block content %}
+<!-- Django messages (success / warning) -->
+{% if messages %}
+  {% for message in messages %}
+    <div class="form-alert form-alert-{{ message.tags }}" role="alert">
+      {{ message }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<!-- Page Header -->
+<section class="page-header">
+  <h1>Get in Touch</h1>
+  <p>We're here to help! Reach out for inquiries, feedback, or support.</p>
+</section>
+
+<!-- Contact Section -->
+<section class="contact-section">
+  <div class="contact-container">
+    
+    <!-- Contact Form -->
+    <div class="contact-form-wrapper">
+      <h2>Send Us a Message</h2>
+
+      {% if form_submitted %}
+      <!-- Success state -->
+      <div class="form-success-state">
+        <div class="success-icon-wrap">✓</div>
+        <h3>Message Sent!</h3>
+        <p>Thank you for reaching out. We'll get back to you within 1–2 business days.</p>
+        <a href="{% url 'contact' %}" class="btn btn-primary" style="margin-top:1.5rem;">Send Another Message</a>
+      </div>
+
+      {% else %}
+      <form method="post" class="contact-form" id="contactForm" novalidate>
+        {% csrf_token %}
+
+        <div class="form-group" style="--group-index: 0">
+          <label for="name">Full Name <span style="color:#ef0000">*</span></label>
+          <input type="text" id="name" name="name" class="form-input {% if errors.name %}input-error{% endif %}"
+                 placeholder="Enter your full name"
+                 value="{{ form_data.name|default:'' }}"
+                 autocomplete="name" required />
+          {% if errors.name %}<span class="field-error">{{ errors.name }}</span>{% endif %}
+        </div>
+
+        <div class="form-group" style="--group-index: 1">
+          <label for="email">Email Address <span style="color:#ef0000">*</span></label>
+          <input type="email" id="email" name="email" class="form-input {% if errors.email %}input-error{% endif %}"
+                 placeholder="you@example.com"
+                 value="{{ form_data.email|default:'' }}"
+                 autocomplete="email" required />
+          {% if errors.email %}<span class="field-error">{{ errors.email }}</span>{% endif %}
+        </div>
+
+        <div class="form-group" style="--group-index: 2">
+          <label for="phone">Phone Number</label>
+          <input type="tel" id="phone" name="phone" class="form-input {% if errors.phone %}input-error{% endif %}"
+                 placeholder="+91-XXXX-XXXXXX"
+                 value="{{ form_data.phone|default:'' }}"
+                 autocomplete="tel" />
+          {% if errors.phone %}<span class="field-error">{{ errors.phone }}</span>{% endif %}
+        </div>
+
+        <div class="form-group" style="--group-index: 3">
+          <label for="organization">Organization / Institution</label>
+          <input type="text" id="organization" name="organization" class="form-input"
+                 placeholder="Your school or institution name"
+                 value="{{ form_data.organization|default:'' }}"
+                 autocomplete="organization" />
+        </div>
+
+        <div class="form-group" style="--group-index: 4">
+          <label for="subject">Subject <span style="color:#ef0000">*</span></label>
+          <select id="subject" name="subject" class="form-select {% if errors.subject %}input-error{% endif %}" required>
+            <option value="" disabled {% if not form_data.subject %}selected{% endif %}>Select a subject</option>
+            <option value="general"     {% if form_data.subject == "general"     %}selected{% endif %}>General Inquiry</option>
+            <option value="sales"       {% if form_data.subject == "sales"       %}selected{% endif %}>Sales &amp; Pricing</option>
+            <option value="support"     {% if form_data.subject == "support"     %}selected{% endif %}>Technical Support</option>
+            <option value="feature"     {% if form_data.subject == "feature"     %}selected{% endif %}>Feature Request</option>
+            <option value="bug"         {% if form_data.subject == "bug"         %}selected{% endif %}>Report a Bug</option>
+            <option value="partnership" {% if form_data.subject == "partnership" %}selected{% endif %}>Partnership Opportunity</option>
+          </select>
+          {% if errors.subject %}<span class="field-error">{{ errors.subject }}</span>{% endif %}
+        </div>
+
+        <div class="form-group" style="--group-index: 5">
+          <label for="message">Message <span style="color:#ef0000">*</span></label>
+          <textarea id="message" name="message" class="form-textarea {% if errors.message %}input-error{% endif %}"
+                    rows="6" placeholder="Tell us how we can help you…" required>{{ form_data.message|default:'' }}</textarea>
+          {% if errors.message %}<span class="field-error">{{ errors.message }}</span>{% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg" style="width:100%">
+          Send Message
+        </button>
+      </form>
+      {% endif %}
+
+    </div>
+    
+    <!-- Contact Information -->
+    <div class="contact-info-wrapper">
+      <h2>Contact Information</h2>
+      
+      <div class="contact-info-item" style="--info-index: 0">
+        <div class="contact-icon">📧</div>
+        <div>
+          <h3>Email</h3>
+          <p><a href="mailto:dooarsprajukti@gmail.com">support.Dooars Granthika</a></p>
+          <p class="text-muted">Support &amp; General Inquiries</p>
+        </div>
+      </div>
+      
+      <div class="contact-info-item" style="--info-index: 1">
+        <div class="contact-icon">📞</div>
+        <div>
+          <h3>Phone</h3>
+          <p>+91-XXXX-XXXXXX</p>
+          <p class="text-muted">Monday – Friday, 9:00 AM – 6:00 PM IST</p>
+        </div>
+      </div>
+      
+      <div class="contact-info-item" style="--info-index: 2">
+        <div class="contact-icon">📍</div>
+        <div>
+          <h3>Address</h3>
+          {% comment %} <p>Falakata Polytechnic</p> {% endcomment %}
+          <p>Rajabhatkhawa, Alipurduar</p>
+          <p> West Bengal, India</p>
+        </div>
+      </div>
+      
+      <div class="contact-info-item" style="--info-index: 3">
+        <div class="contact-icon">🕒</div>
+        <div>
+          <h3>Business Hours</h3>
+          <p>Monday – Friday: 9:00 AM – 6:00 PM</p>
+          <p>Saturday: 10:00 AM – 4:00 PM</p>
+          <p class="text-muted">Sunday: Closed</p>
+        </div>
+      </div>
+      
+      <div class="social-links">
+        <h3>Follow Us</h3>
+        <div class="social-icons">
+          <a href="#" target="_blank" rel="noopener" class="social-icon social-instagram">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+            Instagram
+          </a>
+          <a href="#" target="_blank" rel="noopener" class="social-icon social-facebook">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+            Facebook
+          </a>
+          <a href="#" target="_blank" rel="noopener" class="social-icon social-linkedin">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+            LinkedIn
+          </a>
+          <a href="#" target="_blank" rel="noopener" class="social-icon social-twitter">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
+            Twitter / X
+          </a>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+</section>
+
+<!-- Quick Links Section -->
+<section class="quick-help-section">
+  <div class="content-container">
+    <h2 class="section-title">Looking for Something Specific?</h2>
+    <div class="quick-help-grid">
+      <a href="{% url 'pricing' %}" class="quick-help-card" style="--help-index: 0">
+        <div class="help-icon">💰</div>
+        <h3>Pricing & Plans</h3>
+        <p>View our pricing options and choose the right plan for you</p>
+      </a>
+      
+      <a href="{% url 'about' %}" class="quick-help-card" style="--help-index: 1">
+        <div class="help-icon">ℹ️</div>
+        <h3>About Us</h3>
+        <p>Learn more about our mission and team</p>
+      </a>
+      
+      <a href="#" class="quick-help-card" style="--help-index: 2">
+        <div class="help-icon">📚</div>
+        <h3>Documentation</h3>
+        <p>Browse our comprehensive user guides</p>
+      </a>
+      
+      <a href="#" class="quick-help-card" style="--help-index: 3">
+        <div class="help-icon">❓</div>
+        <h3>FAQ</h3>
+        <p>Find answers to commonly asked questions</p>
+      </a>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/core/contact.js' %}"></script>
+{% endblock %}

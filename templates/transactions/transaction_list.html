@@ -1,0 +1,319 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/transactions/transaction_list.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header__left">
+      <div class="page-header__breadcrumb">
+        <span class="breadcrumb-item">Library</span>
+        <svg class="breadcrumb-sep" viewBox="0 0 6 10" fill="none"><path d="M1 1l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="breadcrumb-item breadcrumb-item--active">Transactions</span>
+      </div>
+      <h1 class="page-title">Transactions</h1>
+      <p class="page-subtitle">Manage all book issue and return records</p>
+    </div>
+    <div class="page-header__actions">
+      <a href="{% url 'transactions:issue_book' %}" class="btn btn--primary">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Issue Book
+      </a>
+      <a href="{% url 'transactions:export_transactions' %}" 
+          class="btn btn--ghost export-btn" id="exportBtn">
+
+          <svg viewBox="0 0 20 20" fill="none">
+            <path d="M4 14l6 4 6-4M10 2v12"
+            stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+
+          Export
+        </a>
+    </div>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="stats-bar">
+    <div class="stat-chip stat-chip--total">
+      <span class="stat-chip__value">{{ total_count }}</span>
+      <span class="stat-chip__label">Total</span>
+    </div>
+    <div class="stat-chip stat-chip--issued">
+      <span class="stat-chip__dot"></span>
+      <span class="stat-chip__value">{{ issued_count }}</span>
+      <span class="stat-chip__label">Issued</span>
+    </div>
+    <div class="stat-chip stat-chip--overdue">
+      <span class="stat-chip__dot"></span>
+      <span class="stat-chip__value">{{ overdue_count }}</span>
+      <span class="stat-chip__label">Overdue</span>
+    </div>
+    <div class="stat-chip stat-chip--returned">
+      <span class="stat-chip__dot"></span>
+      <span class="stat-chip__value">{{ returned_count }}</span>
+      <span class="stat-chip__label">Returned</span>
+    </div>
+    <div class="stat-chip stat-chip--lost">
+      <span class="stat-chip__dot"></span>
+      <span class="stat-chip__value">{{ lost_count }}</span>
+      <span class="stat-chip__label">Lost</span>
+    </div>
+  </div>
+
+  <!-- Filter & Search Panel -->
+  <div class="filter-panel">
+    <form method="GET" action="" class="filter-form" id="filterForm">
+
+      <div class="filter-panel__search">
+        <svg class="search-icon" viewBox="0 0 20 20" fill="none">
+          <circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.75"/>
+          <path d="M13.5 13.5l3 3" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+        </svg>
+        <input
+          type="text"
+          name="q"
+          value="{{ request.GET.q }}"
+          class="search-input"
+          placeholder="Search by member name, book title, or transaction ID…"
+          autocomplete="off"
+        >
+        {% if request.GET.q %}
+        <button type="button" class="search-clear" id="clearSearch">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+        {% endif %}
+      </div>
+
+      <div class="filter-panel__filters">
+        <div class="filter-group">
+          <label class="filter-label">Status</label>
+          <select name="status" class="filter-select" id="statusFilter">
+            <option value="">All Status</option>
+            <option value="issued" {% if request.GET.status == 'issued' %}selected{% endif %}>Issued</option>
+            <option value="returned" {% if request.GET.status == 'returned' %}selected{% endif %}>Returned</option>
+            <option value="overdue" {% if request.GET.status == 'overdue' %}selected{% endif %}>Overdue</option>
+            <option value="lost" {% if request.GET.status == 'lost' %}selected{% endif %}>Lost</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Issue Date From</label>
+          <input type="date" name="date_from" value="{{ request.GET.date_from }}" class="filter-input filter-input--date">
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Issue Date To</label>
+          <input type="date" name="date_to" value="{{ request.GET.date_to }}" class="filter-input filter-input--date">
+        </div>
+
+        <button type="submit" class="btn btn--filter">
+          <svg viewBox="0 0 20 20" fill="none"><path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+          Apply
+        </button>
+
+        {% if request.GET.q or request.GET.status or request.GET.date_from %}
+        <a href="{% url 'transactions:transaction_list' %}" class="btn btn--reset">Clear</a>
+        {% endif %}
+      </div>
+
+    </form>
+  </div>
+
+  <!-- Table Card -->
+  <div class="table-card">
+    <div class="table-card__header">
+      <div class="table-card__info">
+        Showing <strong>{{ transactions|length }}</strong> of <strong>{{ total_count }}</strong> transactions
+      </div>
+      <div class="table-card__controls">
+        <select class="per-page-select" name="per_page" id="perPageSelect">
+          <option value="7"   {% if request.GET.per_page == '7'   or not request.GET.per_page %}selected{% endif %}>7 / page</option>
+          <option value="25"  {% if request.GET.per_page == '25'  %}selected{% endif %}>25 / page</option>
+          <option value="50"  {% if request.GET.per_page == '50'  %}selected{% endif %}>50 / page</option>
+          <option value="100" {% if request.GET.per_page == '100' %}selected{% endif %}>100 / page</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="data-table" id="transactionsTable">
+        <thead>
+          <tr>
+            <th class="th-check">
+              <label class="checkbox-label">
+                <input type="checkbox" id="selectAll" class="checkbox-input">
+                <span class="checkbox-custom"></span>
+              </label>
+            </th>
+            <th class="th-sortable" data-sort="id">
+              <span>Txn ID</span>
+              <svg class="sort-icon" viewBox="0 0 10 14" fill="none"><path d="M5 1v12M1 9l4 4 4-4M1 5l4-4 4 4" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </th>
+            <th class="th-sortable" data-sort="member">
+              <span>Member</span>
+              <svg class="sort-icon" viewBox="0 0 10 14" fill="none"><path d="M5 1v12M1 9l4 4 4-4M1 5l4-4 4 4" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </th>
+            <th class="th-sortable" data-sort="book">
+              <span>Book</span>
+              <svg class="sort-icon" viewBox="0 0 10 14" fill="none"><path d="M5 1v12M1 9l4 4 4-4M1 5l4-4 4 4" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </th>
+            <th class="th-sortable" data-sort="issue_date">
+              <span>Issue Date</span>
+              <svg class="sort-icon" viewBox="0 0 10 14" fill="none"><path d="M5 1v12M1 9l4 4 4-4M1 5l4-4 4 4" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </th>
+            <th class="th-sortable" data-sort="due_date">
+              <span>Due Date</span>
+              <svg class="sort-icon" viewBox="0 0 10 14" fill="none"><path d="M5 1v12M1 9l4 4 4-4M1 5l4-4 4 4" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </th>
+            <th>Return Date</th>
+            <th>Fine</th>
+            <th class="th-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for txn in transactions %}
+          <tr class="table-row {% if txn.status == 'overdue' %}table-row--overdue{% elif txn.status == 'lost' %}table-row--lost{% endif %}" data-id="{{ txn.id }}">
+            <td class="td-check">
+              <label class="checkbox-label">
+                <input type="checkbox" class="checkbox-input row-check" value="{{ txn.id }}">
+                <span class="checkbox-custom"></span>
+              </label>
+            </td>
+            <td class="td-id">
+              <span class="txn-id">
+                {% if txn.transaction_id %}{{ txn.transaction_id }}{% else %}#{{ txn.id }}{% endif %}
+              </span>
+            </td>
+            <td class="td-member">
+              <div class="member-cell">
+                <div class="member-avatar">
+                  {% if txn.member.photo_mime_type %}
+                  <img
+                    src="{% url 'transactions:member_photo_image' txn.member.pk %}"
+                    alt="{{ txn.member.first_name }}"
+                    class="member-avatar__photo"
+                    onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+                  >
+                  {% endif %}
+                  <span class="member-avatar__initial" {% if txn.member.photo_mime_type %}style="display:none"{% endif %}>
+                    {{ txn.member.first_name|first|upper }}
+                  </span>
+                </div>
+                <div class="member-info">
+                  <span class="member-name">{{ txn.member.first_name }} {{ txn.member.last_name }}</span>
+                  <span class="member-id">ID: {{ txn.member.member_id }}</span>
+                </div>
+              </div>
+            </td>
+            <td class="td-book">
+              <div class="book-cell">
+                <span class="book-title">{{ txn.book.title }}</span>
+                <span class="book-author">{{ txn.book.author }}</span>
+              </div>
+            </td>
+            <td class="td-date">{{ txn.issue_date|date:"d M Y" }}</td>
+            <td class="td-date {% if txn.is_overdue %}td-date--overdue{% endif %}">
+              {{ txn.due_date|date:"d M Y" }}
+              {% if txn.is_overdue and txn.status != 'returned' %}
+              <span class="overdue-badge">{{ txn.overdue_days }}d</span>
+              {% endif %}
+            </td>
+            <td class="td-date">
+              {{ txn.return_date|date:"d M Y"|default:"—" }}
+            </td>
+            <td class="td-fine">
+              {% if txn.db_total_fine %}
+                <span class="fine-amount {% if not txn.fine_paid %}fine-amount--unpaid{% endif %}">
+                  ₹{{ txn.db_total_fine|floatformat:2 }}
+                </span>
+              {% else %}
+                <span class="fine-nil">—</span>
+              {% endif %}
+            </td>
+            <td class="td-actions">
+              <div class="action-group">
+                <span class="status-badge status-badge--{{ txn.status }}">
+                  <span class="status-badge__dot"></span>
+                  {{ txn.get_status_display }}
+                </span>
+                <div class="action-group__buttons">
+                  <a href="{% url 'transactions:transaction_detail' txn.id %}" class="action-btn action-btn--view" title="View Details">
+                    <svg viewBox="0 0 20 20" fill="none"><path d="M10 4C5.5 4 2 10 2 10s3.5 6 8 6 8-6 8-6-3.5-6-8-6z" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg>
+                    View
+                  </a>
+                  {% if txn.status == 'issued' or txn.status == 'overdue' or txn.status == 'overdue_settled' %}
+                  <a href="{% url 'transactions:return_book' txn.id %}" class="action-btn action-btn--return" title="Process Return">
+                    <svg viewBox="0 0 20 20" fill="none"><path d="M4 10h10M10 6l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Return
+                  </a>
+                  {% endif %}
+                </div>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr class="table-row--empty">
+            <td colspan="9">
+              <div class="empty-state">
+                <div class="empty-state__icon">
+                  <svg viewBox="0 0 64 64" fill="none">
+                    <rect x="8" y="12" width="48" height="40" rx="4" stroke="currentColor" stroke-width="2"/>
+                    <path d="M8 22h48" stroke="currentColor" stroke-width="2"/>
+                    <path d="M20 32h24M20 40h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <h3 class="empty-state__title">No transactions found</h3>
+                <p class="empty-state__text">Try adjusting your search or filter criteria</p>
+                <a href="{% url 'transactions:transaction_list' %}" class="btn btn--ghost">Clear Filters</a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if transactions.has_other_pages %}
+    <div class="table-card__footer">
+      <div class="pagination-info">
+        Page {{ transactions.number }} of {{ transactions.paginator.num_pages }}
+      </div>
+      <nav class="pagination" aria-label="Pagination">
+        {% if transactions.has_previous %}
+        <a href="?page={{ transactions.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" class="pagination__btn pagination__btn--prev">
+          <svg viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Prev
+        </a>
+        {% endif %}
+        {% for num in transactions.paginator.page_range %}
+          {% if transactions.number == num %}
+          <span class="pagination__page pagination__page--active">{{ num }}</span>
+          {% elif num > transactions.number|add:'-3' and num < transactions.number|add:'3' %}
+          <a href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" class="pagination__page">{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if transactions.has_next %}
+        <a href="?page={{ transactions.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" class="pagination__btn pagination__btn--next">
+          Next
+          <svg viewBox="0 0 8 14" fill="none"><path d="M1 1l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        {% endif %}
+      </nav>
+    </div>
+    {% endif %}
+
+  </div><!-- /.table-card -->
+
+</div><!-- /.page-wrapper -->
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/transactions/transaction_list.js' %}"></script>
+{% endblock %}

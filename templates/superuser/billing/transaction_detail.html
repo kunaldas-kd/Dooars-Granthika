@@ -1,0 +1,117 @@
+{% extends "superuser/superuser_dashboard_base.html" %}
+{% block title %}{{ transaction.reference }}{% endblock %}
+{% block breadcrumb %}Transaction Detail{% endblock %}
+{% block nav_transactions %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      {{ transaction.reference }}
+      <span class="badge badge-{{ transaction.status }}" style="margin-left:12px; vertical-align:middle;">{{ transaction.get_status_display }}</span>
+    </h1>
+    <p class="page-subtitle">{{ transaction.created_at|date:"F d, Y — H:i" }}</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'superuser:transactions_list' %}" class="btn btn-secondary">← Transactions</a>
+    {% if transaction.status == 'failed' %}
+    <form method="post" action="{% url 'superuser:transaction_retry' transaction.pk %}" style="display:inline;">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-warning">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
+        Retry Payment
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="detail-grid">
+  <div>
+    <div class="card mb-2">
+      <div class="card-header">
+        <span class="card-title">Transaction Details</span>
+        <span class="badge badge-neutral">{{ transaction.get_type_display }}</span>
+      </div>
+      <div class="dl-grid">
+        <div class="dl-item"><div class="dl-label">Reference</div><div class="dl-value mono">{{ transaction.reference }}</div></div>
+        <div class="dl-item"><div class="dl-label">Status</div><div class="dl-value"><span class="badge badge-{{ transaction.status }}">{{ transaction.get_status_display }}</span></div></div>
+        <div class="dl-item"><div class="dl-label">Amount</div><div class="dl-value mono" style="font-size:18px; font-weight:700; color:var(--success);">₹{{ transaction.amount }}</div></div>
+        <div class="dl-item"><div class="dl-label">Currency</div><div class="dl-value mono">{{ transaction.currency }}</div></div>
+        <div class="dl-item"><div class="dl-label">Type</div><div class="dl-value">{{ transaction.get_type_display }}</div></div>
+        <div class="dl-item"><div class="dl-label">Gateway</div><div class="dl-value">{{ transaction.gateway }}</div></div>
+        <div class="dl-item"><div class="dl-label">Gateway Ref</div><div class="dl-value mono" style="font-size:12px;">{{ transaction.gateway_reference|default:"—" }}</div></div>
+        <div class="dl-item"><div class="dl-label">Payment Method</div><div class="dl-value">{{ transaction.payment_method|default:"—" }}</div></div>
+        <div class="dl-item"><div class="dl-label">Date</div><div class="dl-value mono">{{ transaction.created_at|date:"M d, Y H:i" }}</div></div>
+        <div class="dl-item"><div class="dl-label">IP Address</div><div class="dl-value mono">{{ transaction.ip_address|default:"—" }}</div></div>
+      </div>
+    </div>
+
+    <div class="card mb-2">
+      <div class="card-header"><span class="card-title">Amount Breakdown</span></div>
+      <div class="card-body">
+        <table style="width:100%;">
+          <tbody>
+            <tr><td style="padding:8px 0; color:var(--text-secondary); font-size:13.5px;">Subtotal</td><td style="padding:8px 0; text-align:right; font-family:'JetBrains Mono',monospace;">₹{{ transaction.subtotal }}</td></tr>
+            <tr><td style="padding:8px 0; color:var(--text-secondary); font-size:13.5px;">Tax</td><td style="padding:8px 0; text-align:right; font-family:'JetBrains Mono',monospace; color:var(--text-muted);">₹{{ transaction.tax_amount }}</td></tr>
+            <tr><td style="padding:8px 0; color:var(--text-secondary); font-size:13.5px;">Gateway Fee</td><td style="padding:8px 0; text-align:right; font-family:'JetBrains Mono',monospace; color:var(--text-muted);">-₹{{ transaction.gateway_fee }}</td></tr>
+            <tr style="border-top:1px solid var(--border);"><td style="padding:12px 0 4px; font-weight:700; font-size:14px;">Net Amount</td><td style="padding:12px 0 4px; text-align:right; font-family:'JetBrains Mono',monospace; font-size:15px; font-weight:700; color:var(--success);">₹{{ transaction.net_amount }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {% if transaction.status == 'failed' and transaction.failure_code %}
+    <div class="card">
+      <div class="card-header"><span class="card-title">Failure Details</span></div>
+      <div class="card-body">
+        <div class="alert alert-danger" style="margin:0;">
+          <span class="alert-icon">✕</span>
+          <div class="alert-text">
+            <div class="alert-title">{{ transaction.failure_code }}</div>
+            {{ transaction.failure_message }}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div>
+    <div class="card mb-2">
+      <div class="card-header"><span class="card-title">Library</span></div>
+      <div class="card-body">
+        <div style="margin-bottom:12px;"><div class="dl-label">Name</div><a href="{% url 'superuser:library_detail' transaction.library.pk %}" style="font-weight:600; font-size:14px; display:block; margin-top:4px;">{{ transaction.library.library_name }}</a></div>
+        <div style="margin-bottom:12px;"><div class="dl-label">Code</div><div class="dl-value mono" style="margin-top:4px;">{{ transaction.library.library_code }}</div></div>
+        <div style="margin-bottom:12px;"><div class="dl-label">Email</div><div class="dl-value mono" style="margin-top:4px; font-size:12.5px;">{{ transaction.library.institute_email }}</div></div>
+        <div style="margin-bottom:12px;"><div class="dl-label">Plan</div><div class="dl-value" style="margin-top:4px;">{{ transaction.plan_name|capfirst|default:"—" }}</div></div>
+        {% if transaction.period_start %}
+        <div><div class="dl-label">Billing Period</div><div class="dl-value mono" style="margin-top:4px; font-size:12.5px;">{{ transaction.period_start|date:"M d, Y" }} – {{ transaction.period_end|date:"M d, Y" }}</div></div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">Related Transactions</span></div>
+      <div class="card-body" style="padding:0;">
+        {% for related in related_transactions %}
+        <a href="{% url 'superuser:transaction_detail' related.pk %}" style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border); text-decoration:none; transition:background var(--transition);" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--text-primary);">{{ related.reference }}</div>
+            <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">{{ related.created_at|date:"M d, Y" }}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--success);">₹{{ related.amount }}</div>
+            <span class="badge badge-{{ related.status }}" style="margin-top:3px;">{{ related.get_status_display }}</span>
+          </div>
+        </a>
+        {% empty %}
+        <div class="empty-state" style="padding:24px;">
+          <div class="empty-text">No other transactions for this library.</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

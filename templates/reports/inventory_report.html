@@ -1,0 +1,113 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+{% block title %}Inventory Report — Dooars Granthika{% endblock %}
+{% block nav_reports %}active{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/reports/reports_inventory.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="rpt-page">
+
+  <div class="rpt-header">
+    <div>
+      <h1 class="rpt-title">Inventory Report</h1>
+      <p class="rpt-sub">Full stock overview</p>
+    </div>
+    <div class="rpt-actions">
+      <a href="{% url 'reports:export_inventory' %}{% if category_id %}?category={{ category_id }}{% endif %}" class="rpt-btn-export"><i class="fas fa-download"></i> Export CSV</a>
+      <a href="{% url 'reports:overview' %}" class="rpt-btn-back"><i class="fas fa-arrow-left"></i> Overview</a>
+    </div>
+  </div>
+
+  <form method="get" class="rpt-filter">
+    <div class="rpt-filter-group">
+      <label class="rpt-filter-label">Category</label>
+      <select name="category" class="rpt-filter-select">
+        <option value="">All Categories</option>
+        {% for cat in categories %}<option value="{{ cat.pk }}" {% if cat.pk|stringformat:"s" == category_id %}selected{% endif %}>{{ cat.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="rpt-filter-actions">
+      <button type="submit" class="rpt-filter-submit">Filter</button>
+      <a href="?" class="rpt-filter-reset">Reset</a>
+    </div>
+  </form>
+
+  <div class="rpt-stats">
+    <div class="rpt-stat rpt-stat--blue"><div class="rpt-stat-label">Total Titles</div><div class="rpt-stat-value">{{ stock.total }}</div></div>
+    <div class="rpt-stat rpt-stat--green"><div class="rpt-stat-label">Good Stock</div><div class="rpt-stat-value">{{ stock.available }}</div></div>
+    <div class="rpt-stat rpt-stat--amber"><div class="rpt-stat-label">Low Stock</div><div class="rpt-stat-value">{{ stock.low_stock }}</div><div class="rpt-stat-sub">≤ 3 copies left</div></div>
+    <div class="rpt-stat rpt-stat--red"><div class="rpt-stat-label">Out of Stock</div><div class="rpt-stat-value">{{ stock.out_of_stock }}</div></div>
+  </div>
+
+  {% if stock.total %}
+  <div class="rpt-donut-card">
+    <div class="rpt-donut-head"><span class="rpt-donut-icon"><i class="fas fa-chart-pie"></i></span>Stock Distribution</div>
+    <div class="rpt-donut-body">
+      <canvas id="stockDonut" width="150" height="150" style="flex-shrink:0"></canvas>
+      <div class="rpt-donut-legend">
+        <div class="rpt-donut-leg-item"><span class="rpt-donut-dot rpt-donut-dot--ok"></span>Available — {{ stock.available }} titles</div>
+        <div class="rpt-donut-leg-item"><span class="rpt-donut-dot rpt-donut-dot--low"></span>Low stock — {{ stock.low_stock }} titles</div>
+        <div class="rpt-donut-leg-item"><span class="rpt-donut-dot rpt-donut-dot--out"></span>Out of stock — {{ stock.out_of_stock }} titles</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="rpt-card">
+    <div class="rpt-card-head"><span class="rpt-card-icon"><i class="fas fa-warehouse"></i></span>Full Inventory</div>
+    <div class="rpt-table-wrap">
+      <table class="rpt-table">
+        <thead>
+          <tr>
+            <th style="width:140px">Book ID</th><th>Title</th><th>Category</th>
+            <th style="width:130px">ISBN</th>
+            <th class="rpt-cell-center" style="width:100px">Copies</th>
+            <th style="width:110px">Status</th><th style="width:90px">Shelf</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in books %}
+          <tr>
+            <td><span class="rpt-book-id">{{ b.book_id }}</span></td>
+            <td><div class="rpt-cell-name">{{ b.title }}</div><div class="rpt-cell-sub">{{ b.author }}</div></td>
+            <td class="rpt-cell-muted">{{ b.category.name|default:"—" }}</td>
+            <td class="rpt-cell-mono rpt-cell-muted" style="font-size:.71rem">{{ b.isbn }}</td>
+            <td class="rpt-cell-center">
+              <div class="rpt-copies">
+                <span class="rpt-copies-avail">{{ b.available_copies }}</span>
+                <span class="rpt-copies-sep">/</span>
+                <span class="rpt-copies-total">{{ b.total_copies }}</span>
+              </div>
+            </td>
+            <td>
+              {% if b.stock_status == "out-stock" %}<span class="rpt-badge rpt-badge--out-stock">Out of Stock</span>
+              {% elif b.stock_status == "low-stock" %}<span class="rpt-badge rpt-badge--low-stock">Low Stock</span>
+              {% else %}<span class="rpt-badge rpt-badge--available">Available</span>{% endif %}
+            </td>
+            <td>{% if b.shelf_location %}<span class="rpt-shelf">{{ b.shelf_location }}</span>{% else %}<span class="rpt-cell-muted">—</span>{% endif %}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="rpt-table-empty">No books found</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if stock.total %}
+<script>
+  new Chart(document.getElementById("stockDonut"), {
+    type: "doughnut",
+    data: { datasets: [{ data: [{{ stock.available }}, {{ stock.low_stock }}, {{ stock.out_of_stock }}], backgroundColor: ["#059669","#d97706","#dc2626"], borderWidth: 0, hoverOffset: 4 }] },
+    options: { cutout: "72%", responsive: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.raw} title${ctx.raw !== 1 ? 's' : ''}` } } } }
+  });
+</script>
+{% endif %}
+{% endblock %}

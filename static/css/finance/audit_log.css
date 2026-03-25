@@ -1,0 +1,297 @@
+/* ═══════════════════════════════════════════════════════════
+   audit_log.css  —  Dooars Granthika Finance
+   Also used by cash_book.html (shares .al-* classes)
+   ═══════════════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --al-bg:      #f5f6fa;
+  --al-surface: #ffffff;
+  --al-border:  #e8eaf0;
+  --al-rule:    #eaecf2;
+  --al-ink:     #0d1117;
+  --al-soft:    #374151;
+  --al-muted:   #6b7280;
+  --al-faint:   #9ca3af;
+  --al-blue:    #2563eb;
+  --al-green:   #059669;
+  --al-amber:   #d97706;
+  --al-red:     #dc2626;
+  --al-indigo:  #4f46e5;
+  --r-xs: 4px; --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-full: 9999px;
+  --shadow-xs: 0 1px 3px rgba(0,0,0,.06);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,.07);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.09);
+  --font-d: 'Sora', sans-serif;
+  --font-b: 'DM Sans', sans-serif;
+  --font-m: 'DM Mono', monospace;
+  --grey-50: #f9fafb; --grey-200: #e5e7eb; --grey-300: #d1d5db;
+  --grey-700: #374151;
+  --success-text: #059669;
+  --danger-text: #dc2626;
+  --blue-600: #2563eb;
+}
+
+/* ── Wrapper ──────────────────────────────────────────────── */
+.al-wrapper { max-width: 1380px; margin: 0 auto; padding: 28px 32px 56px; }
+
+/* ── Page Header ──────────────────────────────────────────── */
+.al-page-header {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  gap: 16px; margin-bottom: 24px; flex-wrap: wrap;
+}
+.al-page-header__left { display: flex; align-items: center; gap: 16px; }
+.al-page-header__icon {
+  width: 48px; height: 48px;
+  border-radius: var(--r-md);
+  background: linear-gradient(135deg, var(--al-blue), #1e40af);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(37,99,235,.3);
+}
+.al-page-header__icon svg { width: 22px; height: 22px; }
+.al-page-title {
+  font-family: var(--font-d);
+  font-size: 22px; font-weight: 700;
+  color: var(--al-ink); letter-spacing: -.02em; line-height: 1.2;
+  margin: 0;
+}
+.al-page-sub  { font-size: 13px; color: var(--al-muted); margin-top: 2px; }
+.al-page-header__actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* ── Buttons ──────────────────────────────────────────────── */
+.al-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 18px;
+  border-radius: var(--r-sm);
+  font-family: var(--font-b); font-size: 13px; font-weight: 600;
+  cursor: pointer; text-decoration: none; border: none;
+  transition: all .18s ease; white-space: nowrap; line-height: 1;
+}
+.al-btn svg { width: 14px; height: 14px; }
+.al-btn--primary { background: var(--al-blue); color: #fff; box-shadow: 0 2px 8px rgba(37,99,235,.28); }
+.al-btn--primary:hover { background: #1d4ed8; transform: translateY(-1px); }
+.al-btn--ghost {
+  background: var(--al-surface); color: var(--al-soft);
+  border: 1.5px solid var(--al-border); box-shadow: var(--shadow-xs);
+}
+.al-btn--ghost:hover { background: var(--al-bg); border-color: #c8cdd8; }
+
+/* ── Summary Strip ────────────────────────────────────────── */
+.al-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.al-summary-card {
+  display: flex; align-items: center; gap: 14px;
+  padding: 18px 20px;
+  background: var(--al-surface);
+  border: 1.5px solid var(--al-border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-xs);
+}
+
+.al-summary-card__icon {
+  width: 38px; height: 38px;
+  border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; color: #fff;
+}
+.al-summary-card__icon svg { width: 17px; height: 17px; }
+.al-summary-card__icon--blue   { background: linear-gradient(135deg, var(--al-blue), #60a5fa); }
+.al-summary-card__icon--green  { background: linear-gradient(135deg, var(--al-green), #34d399); }
+.al-summary-card__icon--amber  { background: linear-gradient(135deg, var(--al-amber), #fbbf24); }
+.al-summary-card__icon--indigo { background: linear-gradient(135deg, var(--al-indigo), #818cf8); }
+.al-summary-card__icon--red    { background: linear-gradient(135deg, var(--al-red), #f87171); }
+
+.al-summary-card__label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--al-faint); }
+.al-summary-card__value { font-family: var(--font-d); font-size: 18px; font-weight: 800; color: var(--al-ink); letter-spacing: -.02em; margin-top: 2px; }
+
+/* ── Filter Bar ───────────────────────────────────────────── */
+.al-filter-bar {
+  display: flex; align-items: flex-end; gap: 12px;
+  background: var(--al-surface);
+  border: 1.5px solid var(--al-border);
+  border-radius: var(--r-md);
+  padding: 16px 20px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+  box-shadow: var(--shadow-xs);
+}
+
+.al-filter-group { display: flex; flex-direction: column; gap: 5px; }
+.al-filter-group--search { flex: 1; min-width: 180px; }
+.al-filter-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--al-faint); }
+.al-filter-input {
+  height: 36px; padding: 0 12px;
+  border: 1.5px solid var(--al-border);
+  border-radius: var(--r-sm);
+  font-family: var(--font-b); font-size: 13px;
+  color: var(--al-ink); background: var(--al-bg);
+  transition: border-color .15s, box-shadow .15s;
+  min-width: 110px;
+}
+.al-filter-input:focus { outline: none; border-color: var(--al-blue); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+.al-filter-actions { display: flex; gap: 8px; align-items: center; }
+
+/* ── Table Card ───────────────────────────────────────────── */
+.al-table-card {
+  background: var(--al-surface);
+  border: 1.5px solid var(--al-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.al-table-card__header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1.5px solid var(--al-rule);
+}
+.al-table-card__title {
+  font-size: 14px; font-weight: 700; color: var(--al-ink);
+  display: flex; align-items: center; gap: 8px;
+}
+
+.al-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 22px; height: 20px; padding: 0 7px;
+  background: #dbeafe; color: #1e40af;
+  border-radius: var(--r-full);
+  font-size: 11px; font-weight: 700;
+}
+
+/* ── Table ────────────────────────────────────────────────── */
+.al-table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+.al-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+}
+.al-table thead tr { background: #f9fafb; }
+.al-table th {
+  padding: 11px 16px; text-align: left;
+  font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .07em;
+  color: var(--al-muted);
+  border-bottom: 1.5px solid var(--al-rule);
+  white-space: nowrap;
+}
+.al-table td {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--al-rule);
+  vertical-align: middle; color: var(--al-soft);
+}
+.al-table tbody tr { transition: background .12s; }
+.al-table tbody tr:hover { background: #f8f9fe; }
+.al-table tbody tr:last-child td { border-bottom: none; }
+
+/* ── Table cell elements ──────────────────────────────────── */
+.al-date { font-size: 13px; font-weight: 500; color: var(--al-soft); }
+.al-time { font-size: 11px; color: var(--al-faint); margin-top: 1px; }
+.al-ref  { font-family: var(--font-m); font-size: 11.5px; color: var(--al-soft); background: var(--al-bg); padding: 2px 7px; border-radius: var(--r-xs); border: 1px solid var(--al-border); white-space: nowrap; }
+
+.al-member { display: flex; align-items: center; gap: 10px; }
+.al-member__avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--al-blue), var(--al-indigo));
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+.al-member__name { font-size: 13px; font-weight: 600; color: var(--al-ink); }
+.al-member__id   { font-size: 11px; color: var(--al-faint); }
+
+.al-book-title { font-size: 13px; font-weight: 500; color: var(--al-soft); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.al-txn-id     { font-size: 11px; color: var(--al-faint); font-family: var(--font-m); margin-top: 2px; }
+.al-staff      { font-size: 12.5px; color: var(--al-muted); }
+
+/* ── Badges ───────────────────────────────────────────────── */
+.al-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: var(--r-full);
+  font-size: 11.5px; font-weight: 600; white-space: nowrap;
+}
+.al-badge svg { width: 10px; height: 10px; }
+.al-badge--online { background: #ede9fe; color: #4338ca; }
+.al-badge--cash   { background: #d1fae5; color: #065f46; }
+
+/* ── Status pill ──────────────────────────────────────────── */
+.al-status {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border-radius: var(--r-full);
+  font-size: 12px; font-weight: 600;
+}
+.al-status__dot { width: 6px; height: 6px; border-radius: 50%; }
+.al-status--success { background: #d1fae5; color: #065f46; }
+.al-status--success .al-status__dot { background: #059669; }
+.al-status--pending { background: #fef3c7; color: #92400e; }
+.al-status--pending .al-status__dot { background: #d97706; }
+.al-status--failed  { background: #fee2e2; color: #991b1b; }
+.al-status--failed  .al-status__dot { background: #dc2626; }
+
+/* ── Amount ───────────────────────────────────────────────── */
+.al-amount { font-family: var(--font-d); font-weight: 700; font-size: 13.5px; color: var(--al-soft); }
+.al-amount--success { color: var(--al-green); }
+
+/* ── View button ──────────────────────────────────────────── */
+.al-view-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px;
+  border-radius: var(--r-sm);
+  background: var(--al-surface); border: 1.5px solid var(--al-border);
+  color: var(--al-muted); text-decoration: none; transition: all .15s;
+}
+.al-view-btn svg { width: 14px; height: 14px; }
+.al-view-btn:hover { background: #eff6ff; border-color: var(--al-blue); color: var(--al-blue); }
+
+/* ── Empty ────────────────────────────────────────────────── */
+.al-empty {
+  display: flex; flex-direction: column;
+  align-items: center; padding: 52px 20px; gap: 8px;
+}
+.al-empty__icon { width: 52px; height: 52px; opacity: .35; }
+.al-empty__icon svg { width: 100%; height: 100%; }
+.al-empty__title { font-size: 15px; font-weight: 700; color: var(--al-muted); }
+.al-empty__sub   { font-size: 13px; color: var(--al-faint); }
+
+/* ── Pagination ───────────────────────────────────────────── */
+.al-pagination {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; padding: 16px;
+  border-top: 1.5px solid var(--al-rule);
+}
+.al-page-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 34px; height: 34px; padding: 0 10px;
+  border-radius: var(--r-sm);
+  font-size: 13px; font-weight: 600;
+  text-decoration: none; color: var(--al-muted);
+  background: var(--al-surface); border: 1.5px solid var(--al-border);
+  transition: all .15s;
+}
+.al-page-btn svg { width: 14px; height: 14px; }
+.al-page-btn:hover { border-color: var(--al-blue); color: var(--al-blue); }
+.al-page-btn--active { background: var(--al-blue); border-color: var(--al-blue); color: #fff; }
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .al-summary-strip { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 900px) {
+  .al-wrapper { padding: 20px 18px 40px; }
+  .al-summary-strip { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .al-wrapper { padding: 14px 12px 28px; }
+  .al-summary-strip { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .al-page-header { flex-direction: column; align-items: flex-start; }
+  .al-page-header__actions { width: 100%; }
+  .al-page-title { font-size: 18px; }
+  .al-filter-bar { padding: 12px 14px; }
+}
+@media (max-width: 420px) {
+  .al-summary-strip { grid-template-columns: 1fr; }
+}

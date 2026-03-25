@@ -1,0 +1,166 @@
+{% extends "superuser/superuser_dashboard_base.html" %}
+{% block title %}Create Plan{% endblock %}
+{% block breadcrumb %}Create Plan{% endblock %}
+{% block nav_plan_create %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Create New Plan</h1>
+    <p class="page-subtitle">Define a new subscription tier for libraries.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'superuser:plans_list' %}" class="btn btn-secondary">← Back to Plans</a>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns: 1fr 360px; gap: 20px;">
+  <form method="post" data-confirm>
+    {% csrf_token %}
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Plan Information</span>
+      </div>
+      <div class="card-body">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Plan Name <span class="required">*</span></label>
+            <input type="text" name="name" class="form-control" placeholder="e.g. Pro, Enterprise…" required value="{{ form.name.value|default:'' }}">
+            <div class="form-hint">Will be displayed to libraries during signup.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Slug <span class="required">*</span></label>
+            <input type="text" name="slug" class="form-control" placeholder="e.g. pro-plan" required value="{{ form.slug.value|default:'' }}">
+            <div class="form-hint">URL-safe identifier. Auto-generated from name.</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea name="description" class="form-control" placeholder="Describe what this plan offers…" rows="3">{{ form.description.value|default:'' }}</textarea>
+        </div>
+
+        <div class="form-row-3">
+          <div class="form-group">
+            <label class="form-label">Price (₹/mo) <span class="required">*</span></label>
+            <div class="input-group">
+              <span class="input-prefix">₹</span>
+              <input type="number" name="price" class="form-control" placeholder="0.00" step="0.01" min="0" required value="{{ form.price.value|default:'' }}">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Billing Cycle</label>
+            <select name="billing_cycle" class="form-control">
+              <option value="monthly" {% if form.billing_cycle.value == 'monthly' %}selected{% endif %}>Monthly</option>
+              <option value="quarterly" {% if form.billing_cycle.value == 'quarterly' %}selected{% endif %}>Quarterly</option>
+              <option value="annual" {% if form.billing_cycle.value == 'annual' %}selected{% endif %}>Annual</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Trial Days</label>
+            <input type="number" name="trial_days" class="form-control" placeholder="0" min="0" value="{{ form.trial_days.value|default:'0' }}">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Max Members</label>
+            <input type="number" name="max_members" class="form-control" placeholder="Leave blank for unlimited" min="0" value="{{ form.max_members.value|default:'' }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Storage (GB)</label>
+            <div class="input-group">
+              <input type="number" name="storage_gb" class="form-control" placeholder="e.g. 50" min="0" value="{{ form.storage_gb.value|default:'' }}">
+              <span class="input-suffix">GB</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Features (one per line)</label>
+          <textarea name="features_text" class="form-control" placeholder="Advanced analytics&#10;Priority support&#10;API access&#10;Custom integrations" rows="5">{{ form.features_text.value|default:'' }}</textarea>
+          <div class="form-hint">Each line will display as a feature bullet on the plans page.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <div style="display:flex; align-items:center; gap:10px; padding: 10px 0;">
+            <input type="checkbox" name="is_active" id="is_active" {% if form.is_active.value != False %}checked{% endif %} style="width:16px; height:16px; accent-color:var(--accent); cursor:pointer;">
+            <label for="is_active" style="cursor:pointer; font-size:13.5px; color:var(--text-secondary);">Active — visible and available for new subscriptions</label>
+          </div>
+        </div>
+
+      </div>
+      <div class="card-footer" style="display:flex; justify-content:flex-end; gap:10px;">
+        <a href="{% url 'superuser:plans_list' %}" class="btn btn-ghost">Cancel</a>
+        <button type="submit" class="btn btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          Create Plan
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Preview -->
+  <div>
+    <div class="card" style="position:sticky; top: calc(var(--topbar-h) + 16px);">
+      <div class="card-header">
+        <span class="card-title">Plan Preview</span>
+      </div>
+      <div class="card-body">
+        <div style="border:1px solid var(--border); border-radius:var(--radius-md); padding:20px; background:var(--bg-raised);">
+          <div style="font-family:'Syne',sans-serif; font-size:18px; font-weight:700; color:var(--text-primary);" id="preview-name">Plan Name</div>
+          <div style="font-family:'JetBrains Mono',monospace; font-size:24px; font-weight:700; color:var(--accent); margin-top:4px; margin-bottom:12px;">
+            ₹<span id="preview-price">0</span><span style="font-size:13px; color:var(--text-muted);">/mo</span>
+          </div>
+          <div style="font-size:13px; color:var(--text-secondary); margin-bottom:14px;" id="preview-desc">Plan description appears here.</div>
+          <div id="preview-features" style="display:flex; flex-direction:column; gap:5px; font-size:12.5px; color:var(--text-secondary);">
+            <span style="color:var(--text-muted);">Features will appear here…</span>
+          </div>
+        </div>
+        <div class="alert alert-info" style="margin-top: 16px; margin-bottom:0;">
+          <span class="alert-icon">ℹ</span>
+          <div class="alert-text" style="font-size:12.5px;">Preview updates as you type.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Live preview
+const nameInput = document.querySelector('[name="name"]');
+const priceInput = document.querySelector('[name="price"]');
+const descInput = document.querySelector('[name="description"]');
+const featuresInput = document.querySelector('[name="features_text"]');
+const slugInput = document.querySelector('[name="slug"]');
+
+function updatePreview() {
+  document.getElementById('preview-name').textContent = nameInput.value || 'Plan Name';
+  document.getElementById('preview-price').textContent = priceInput.value || '0';
+  document.getElementById('preview-desc').textContent = descInput.value || 'Plan description appears here.';
+  const feats = featuresInput.value.split('\n').filter(f => f.trim());
+  const featEl = document.getElementById('preview-features');
+  if (feats.length) {
+    featEl.innerHTML = feats.map(f => `<span>✓ ${f.trim()}</span>`).join('');
+  } else {
+    featEl.innerHTML = '<span style="color:var(--text-muted);">Features will appear here…</span>';
+  }
+}
+
+// Auto-generate slug
+nameInput.addEventListener('input', () => {
+  updatePreview();
+  if (slugInput) {
+    slugInput.value = nameInput.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  }
+});
+
+[priceInput, descInput, featuresInput].forEach(el => {
+  if (el) el.addEventListener('input', updatePreview);
+});
+</script>
+{% endblock %}

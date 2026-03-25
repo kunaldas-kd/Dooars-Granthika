@@ -1,0 +1,97 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Confirm Fine Recovery — Dooars Granthika{% endblock %}
+{% block nav_finance %}active{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/finance/finance_dashboard.css' %}" />
+{% endblock %}
+
+{% block content %}
+<div class="fin-wrapper" style="max-width:680px;">
+
+  <!-- Breadcrumb -->
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:20px;font-size:12px;color:var(--fin-faint);">
+    <a href="{% url 'finance:overview' %}" style="color:var(--fin-faint);text-decoration:none;">Finance</a>
+    <i class="fas fa-chevron-right" style="font-size:9px;"></i>
+    <span style="color:var(--fin-blue-mid);font-weight:600;">Confirm Recovery</span>
+  </div>
+
+  <div class="fin-page-header">
+    <div class="fin-page-header__left">
+      <div class="fin-page-header__icon">
+        <i class="fas fa-hand-holding-dollar"></i>
+      </div>
+      <div>
+        <div class="fin-page-title">Confirm Fine Recovery</div>
+        <div class="fin-page-sub">Review fine details before marking as recovered</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fin-panel">
+    <div class="fin-panel__head">
+      <div class="fin-panel__title">
+        <i class="fas fa-file-invoice-dollar"></i> Fine #{{ fine.fine_id }}
+      </div>
+      {% if fine.status == 'unpaid' %}
+      <span class="fin-badge fin-badge--pending">
+        <i class="fas fa-clock"></i> Unpaid
+      </span>
+      {% elif fine.status == 'paid' %}
+      <span class="fin-badge fin-badge--success">
+        <i class="fas fa-check"></i> Paid
+      </span>
+      {% else %}
+      <span class="fin-badge fin-badge--waived">Waived</span>
+      {% endif %}
+    </div>
+    <div class="fin-panel__body">
+
+      <!-- Details grid -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--fin-faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Member</div>
+          <div style="font-size:14px;font-weight:600;color:var(--fin-ink);">{{ member.first_name }} {{ member.last_name }}</div>
+          <div style="font-size:12px;color:var(--fin-faint);">{{ member.member_id }}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--fin-faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Book</div>
+          <div style="font-size:14px;font-weight:500;color:var(--fin-ink-soft);">{{ book.title }}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--fin-faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Fine Type</div>
+          <div style="font-size:14px;font-weight:500;color:var(--fin-ink-soft);">{{ fine.get_fine_type_display }}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--fin-faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Amount Due</div>
+          <div style="font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:var(--fin-red-mid);">&#8377;{{ fine.amount }}</div>
+        </div>
+      </div>
+
+      {% if fine.status == 'unpaid' %}
+      <!-- Action buttons -->
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <a href="{% url 'finance:process_payment' %}?fine_id={{ fine.fine_id }}"
+           class="fin-btn fin-btn--success" style="flex:1;justify-content:center;">
+          <i class="fas fa-hand-holding-dollar"></i> Collect Payment
+        </a>
+        <a href="{% url 'finance:overview' %}" class="fin-btn fin-btn--ghost">
+          <i class="fas fa-arrow-left"></i> Back
+        </a>
+      </div>
+      {% else %}
+      <div style="text-align:center;padding:16px;">
+        <div style="font-size:14px;color:var(--fin-muted);">This fine has already been {{ fine.status }}.</div>
+        <a href="{% url 'finance:overview' %}" class="fin-btn fin-btn--ghost" style="margin-top:12px;display:inline-flex;">
+          <i class="fas fa-arrow-left"></i> Back to Overview
+        </a>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,173 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Checkout — {{ plan.name }} — Dooars Granthika{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/subscriptions/checkout.css' %}">
+{% endblock %}
+
+{% block nav_subscription %}active{% endblock %}
+
+{% block topbar %}
+<header class="top-bar">
+  <div class="topbar-left">
+    <a href="{% url 'subscriptions:plans' %}" class="back-link">
+      <i class="fas fa-arrow-left"></i> Back to Plans
+    </a>
+    <h1 class="topbar-title">Checkout</h1>
+  </div>
+  <div class="topbar-right">
+    <div class="secure-chip">
+      <i class="fas fa-lock"></i> Secured by Razorpay
+    </div>
+  </div>
+</header>
+{% endblock %}
+
+{% block content %}
+
+<div class="checkout-wrap">
+
+  <!-- ── Left: Order Summary ─────────────────────────────────── -->
+  <div class="co-summary">
+    <div class="co-plan-card">
+      <div class="co-plan-icon tier-{{ plan.tier }}">
+        {% if plan.tier == "free" %}<i class="fas fa-book-open"></i>
+        {% elif plan.tier == "basic" %}<i class="fas fa-bookmark"></i>
+        {% elif plan.tier == "silver" %}<i class="fas fa-building-columns"></i>
+        {% elif plan.tier == "gold" %}<i class="fas fa-star"></i>
+        {% elif plan.tier == "pro" %}<i class="fas fa-rocket"></i>
+        {% else %}<i class="fas fa-crown"></i>{% endif %}
+      </div>
+      <div>
+        <div class="co-plan-name">{{ plan.name }}</div>
+        {% if plan.tagline %}<div class="co-plan-tagline">{{ plan.tagline }}</div>{% endif %}
+      </div>
+    </div>
+
+    <ul class="co-features">
+      {% for feat in plan.feature_list %}
+      <li><i class="fas fa-check co-feat-check"></i>{{ feat }}</li>
+      {% endfor %}
+    </ul>
+
+    <div class="co-price-block">
+      <div class="co-price-row">
+        <span>Plan</span><span>{{ plan.price_display }}</span>
+      </div>
+      {% if not plan.is_free %}
+      <div class="co-price-row">
+        <span>Billing</span><span>{{ plan.get_billing_cycle_display }}</span>
+      </div>
+      <div class="co-price-row">
+        <span>Duration</span><span>{{ plan.duration_days }} days</span>
+      </div>
+      {% endif %}
+      <div class="co-price-total">
+        <span>Total today</span>
+        <span>{% if plan.is_free %}<span class="free-tag">Free</span>{% else %}₹{{ plan.price }}{% endif %}</span>
+      </div>
+    </div>
+
+    {% if subscription and subscription.plan.id != plan.id %}
+    <div class="co-upgrade-note">
+      <i class="fas fa-circle-info"></i>
+      Switching from <strong>{{ subscription.plan.name }}</strong>. New plan starts immediately.
+    </div>
+    {% endif %}
+  </div><!-- /co-summary -->
+
+  <!-- ── Right: Form ─────────────────────────────────────────── -->
+  <div class="co-form-area">
+
+    {% if plan.is_free %}
+    <!-- Free plan -->
+    <div class="free-box">
+      <div class="free-emoji">🎉</div>
+      <h2>This plan is free!</h2>
+      <p>No payment required. Your plan activates instantly.</p>
+      <form method="post" action="{% url 'subscriptions:checkout' plan.slug %}">
+        {% csrf_token %}
+        <button type="submit" class="btn-confirm">
+          <i class="fas fa-bolt"></i> Activate Free Plan
+        </button>
+      </form>
+    </div>
+
+    {% else %}
+    <!-- Library info -->
+    <div class="co-section">
+      <h2 class="co-section-title"><i class="fas fa-building-columns"></i> Library Details</h2>
+      <div class="info-grid">
+        <div class="info-item">
+          <label>Library Name</label>
+          <div class="info-val">{{ library.library_name }}</div>
+        </div>
+        <div class="info-item">
+          <label>Email</label>
+          <div class="info-val">{{ library.institute_email }}</div>
+        </div>
+        <div class="info-item">
+          <label>Library Code</label>
+          <div class="info-val mono">{{ library.library_code }}</div>
+        </div>
+        <div class="info-item">
+          <label>Location</label>
+          <div class="info-val">{{ library.district }}, {{ library.state }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment method -->
+    <div class="co-section">
+      <h2 class="co-section-title"><i class="fas fa-credit-card"></i> Payment Method</h2>
+      <div class="method-list" id="methodList">
+        <label class="method-item method-active" data-val="razorpay">
+          <input type="radio" name="method" value="razorpay" checked hidden/>
+          <div class="method-logo"><i class="fas fa-credit-card"></i></div>
+          <div class="method-text">
+            <div class="method-name">Razorpay</div>
+            <div class="method-sub">Cards, UPI, Net Banking, Wallets</div>
+          </div>
+          <div class="method-radio"></div>
+        </label>
+        <label class="method-item" data-val="upi">
+          <input type="radio" name="method" value="upi" hidden/>
+          <div class="method-logo"><i class="fas fa-mobile-screen-button"></i></div>
+          <div class="method-text">
+            <div class="method-name">UPI Direct</div>
+            <div class="method-sub">PhonePe · Google Pay · Paytm</div>
+          </div>
+          <div class="method-radio"></div>
+        </label>
+      </div>
+    </div>
+
+    <!-- Confirm -->
+    <form method="post" action="{% url 'subscriptions:checkout' plan.slug %}" id="checkoutForm">
+      {% csrf_token %}
+      <input type="hidden" name="payment_method" id="paymentMethodInput" value="razorpay"/>
+      <button type="submit" class="btn-confirm" id="confirmBtn">
+        <i class="fas fa-lock btn-lock"></i>
+        <span id="btnLabel">Pay ₹{{ plan.price }} — Activate {{ plan.name }}</span>
+        <span id="btnSpinner" class="hidden">Processing…</span>
+      </button>
+    </form>
+
+    <p class="terms-note">
+      <i class="fas fa-shield-halved"></i>
+      By proceeding you agree to our <a href="#">Terms of Service</a>.
+      Your subscription activates instantly after payment.
+    </p>
+    {% endif %}
+
+  </div><!-- /co-form-area -->
+
+</div><!-- /checkout-wrap -->
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/subscriptions/checkout.js' %}"></script>
+{% endblock %}

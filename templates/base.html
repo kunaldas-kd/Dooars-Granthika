@@ -1,0 +1,129 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="{% block meta_description %}Dooars Granthika - Smart Library Management System{% endblock %}" />
+  <title>{% block title %}Dooars Granthika - Smart Library Management{% endblock %}</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="{% static 'assets/img/logo2.png' %}" />
+  
+  <!-- Base CSS -->
+  <link rel="stylesheet" href="{% static 'css/base.css' %}" />
+  
+  <!-- Page-specific CSS (loaded after base styles) -->
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <!-- Header/Navigation -->
+  {% block header %}
+  <header class="main-header">
+    <div class="header-container">
+      <div class="logo-section">
+        <a href="{% url 'home' %}" style="display: flex; align-items: center; gap: 1rem; text-decoration: none;">
+          <img src="{% static 'assets/img/logo2.png' %}" alt="Dooars Granthika logo" class="logo-img">
+          <div class="brand-text">
+            <h1 class="brand-name">Dooars Granthika</h1>
+            <p class="brand-subtitle">Smart Library Management</p>
+          </div>
+        </a>
+      </div>
+      
+      <!-- Hamburger Button -->
+      <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu" aria-expanded="false">
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+      </button>
+
+      <nav class="main-nav" id="mainNav">
+        <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">Home</a>
+        <a href="{% url 'about' %}" class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}">About</a>
+        <a href="{% url 'pricing' %}" class="nav-link {% if request.resolver_match.url_name == 'pricing' %}active{% endif %}">Pricing</a>
+        <a href="{% url 'contact' %}" class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}">Contact</a>
+
+        <!-- Auth buttons shown only inside hamburger on mobile -->
+        <div class="mobile-auth-buttons">
+          {% if user.is_authenticated %}
+            <a href="{% url 'accounts:admin_dashboard' %}" class="btn btn-primary">Dashboard</a>
+            <a href="{% url 'accounts:signout' %}" class="btn btn-outline">Logout</a>
+          {% else %}
+            <a href="{% url 'accounts:signin' %}" class="btn btn-primary">Sign In</a>
+            <a href="{% url 'accounts:signup' %}" class="btn btn-secondary">Sign Up</a>
+          {% endif %}
+        </div>
+      </nav>
+      
+      <!-- Auth buttons shown only on desktop -->
+      <div class="auth-buttons">
+        {% if user.is_authenticated %}
+          <a href="{% url 'accounts:admin_dashboard' %}" class="btn btn-primary">Dashboard</a>
+          <a href="{% url 'accounts:signout' %}" class="btn btn-outline">Logout</a>
+        {% else %}
+          <a href="{% url 'accounts:signin' %}" id="loginBtn" class="btn btn-primary">Sign In</a>
+          <a href="{% url 'accounts:signup' %}" id="registerBtn" class="btn btn-secondary">Sign Up</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+  {% endblock %}
+
+  <!-- Main Content -->
+  <main class="main-content">
+    {% block content %}
+    {% endblock %}
+  </main>
+
+  <!-- Footer -->
+  {% block footer %}
+  <footer class="main-footer">
+    <div class="footer-container">
+      <div class="footer-section footer-brand">
+        <h3>Dooars Granthika</h3>
+        <p>Smart Library Management System for the modern age.</p>
+      </div>
+      
+      <div class="footer-section footer-links">
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="{% url 'home' %}">Home</a></li>
+          <li><a href="{% url 'about' %}">About</a></li>
+          <li><a href="{% url 'pricing' %}">Pricing</a></li>
+          <li><a href="{% url 'contact' %}">Contact</a></li>
+        </ul>
+      </div>
+      
+      <div class="footer-section footer-legal">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="{% url 'privacy' %}">Privacy Policy</a></li>
+          <li><a href="{% url 'terms' %}">Terms of Service</a></li>
+        </ul>
+      </div>
+      
+      <div class="footer-section footer-contact">
+        <h4>Contact</h4>
+        <p>Email: <a href="mailto:dooarsprajukti@gmail.com" style="color:rgba(255,255,255,0.8)">dooarsprajukti@gmail.com</a></p>
+        <p>Phone: +91-XXXX-XXXXXX</p>
+      </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <p>&copy; {% now "Y" %} Dooars Granthika. All Rights Reserved.</p>
+      <p>Developed by Kunal Das, Ashim Bakshi, and Arindam Das</p>
+    </div>
+  </footer>
+  {% endblock %}
+
+  <!-- Base JavaScript -->
+  <script src="{% static 'js/base.js' %}"></script>
+  
+  <!-- Page-specific JavaScript (loaded after base JS) -->
+  {% block extra_js %}{% endblock %}
+  
+  <!-- Inline JavaScript (loaded last) -->
+  {% block inline_js %}{% endblock %}
+</body>
+</html>

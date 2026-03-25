@@ -1,0 +1,230 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/transactions/overdue_list.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header__left">
+      <div class="page-header__breadcrumb">
+        <span class="breadcrumb-item">Library</span>
+        <svg class="breadcrumb-sep" viewBox="0 0 6 10" fill="none"><path d="M1 1l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <a href="{% url 'transactions:transaction_list' %}" class="breadcrumb-item">Transactions</a>
+        <svg class="breadcrumb-sep" viewBox="0 0 6 10" fill="none"><path d="M1 1l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="breadcrumb-item breadcrumb-item--active">Overdue</span>
+      </div>
+      <div class="page-title-row">
+        <h1 class="page-title">Overdue Books</h1>
+        {# overdue_transactions is a plain Python list (sorted in the view), so |length is correct #}
+        <span class="overdue-count-badge">{{ overdue_transactions|length }} overdue</span>
+      </div>
+      <p class="page-subtitle">Books past their due date that haven't been returned</p>
+    </div>
+    <div class="page-header__actions">
+      <button class="btn btn--ghost" id="sendRemindersBtn" type="button">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M4 4h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.5"/><path d="M3 5l7 5 7-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Send Reminders
+      </button>
+      <button class="btn btn--ghost" id="exportBtn" type="button">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M4 14l6 4 6-4M10 2v12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Export
+      </button>
+    </div>
+  </div>
+
+  <!-- Alert Banner -->
+  <div class="overdue-alert" id="overdueAlert">
+    <div class="overdue-alert__icon">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 4L2 20h20L12 4z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/><path d="M12 10v5M12 17.5v.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+    </div>
+    <div class="overdue-alert__content">
+      <strong>{{ overdue_transactions|length }} book{{ overdue_transactions|length|pluralize }} currently overdue.</strong>
+      Total accumulated fines: <strong>₹{{ total_fine|floatformat:2 }}</strong>
+    </div>
+    <button class="overdue-alert__dismiss" id="dismissAlert" type="button" aria-label="Dismiss alert">
+      <svg viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filter-panel">
+    <form method="GET" action="" class="filter-form">
+      <div class="filter-panel__search">
+        <svg class="search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.75"/><path d="M13.5 13.5l3 3" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+        <input
+          type="text"
+          name="q"
+          value="{{ request.GET.q }}"
+          class="search-input"
+          placeholder="Search by member or book…"
+          autocomplete="off">
+      </div>
+      <div class="filter-panel__filters">
+        <div class="filter-group">
+          <label class="filter-label">Overdue Severity</label>
+          <select name="severity" class="filter-select">
+            <option value="">All</option>
+            <option value="mild"     {% if request.GET.severity == 'mild'     %}selected{% endif %}>1–7 days</option>
+            <option value="moderate" {% if request.GET.severity == 'moderate' %}selected{% endif %}>8–30 days</option>
+            <option value="severe"   {% if request.GET.severity == 'severe'   %}selected{% endif %}>30+ days</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Sort By</label>
+          <select name="sort" class="filter-select">
+            <option value="-overdue_days" {% if request.GET.sort == '-overdue_days' or not request.GET.sort %}selected{% endif %}>Most Overdue</option>
+            <option value="overdue_days"  {% if request.GET.sort == 'overdue_days'  %}selected{% endif %}>Least Overdue</option>
+            <option value="-fine_amount"  {% if request.GET.sort == '-fine_amount'  %}selected{% endif %}>Highest Fine</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn--filter">Apply</button>
+        {% if request.GET.q or request.GET.severity or request.GET.sort %}
+          <a href="{% url 'transactions:overdue_list' %}" class="btn btn--reset">Clear</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  <!-- Overdue Table Card -->
+  <div class="table-card">
+    <div class="table-responsive">
+      <table class="data-table overdue-table" id="overdueTable">
+        <thead>
+          <tr>
+            <th class="th-check">
+              <label class="checkbox-label">
+                <input type="checkbox" id="selectAll" class="checkbox-input">
+                <span class="checkbox-custom"></span>
+              </label>
+            </th>
+            <th>Txn ID</th>
+            <th>Member</th>
+            <th>Book</th>
+            <th>Issue Date</th>
+            <th>Due Date</th>
+            <th class="th-sortable">
+              <span>Overdue Days</span>
+              <svg class="sort-icon" viewBox="0 0 10 14" fill="none"><path d="M5 1v12M1 9l4 4 4-4" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </th>
+            <th>Fine (₹)</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for txn in overdue_transactions %}
+          <tr class="overdue-row overdue-row--{{ txn.overdue_severity }}" data-overdue="{{ txn.overdue_days }}" data-id="{{ txn.id }}">
+            <td class="td-check">
+              <label class="checkbox-label">
+                <input type="checkbox" class="checkbox-input row-check" value="{{ txn.id }}">
+                <span class="checkbox-custom"></span>
+              </label>
+            </td>
+            <td class="td-id">
+              <a href="{% url 'transactions:transaction_detail' txn.id %}" class="txn-id-link">
+                {% if txn.transaction_id %}{{ txn.transaction_id }}{% else %}#{{ txn.id }}{% endif %}
+              </a>
+            </td>
+            <td class="td-member">
+              <div class="member-cell">
+                <div class="member-avatar">
+                  {% if txn.member.photo_mime_type %}
+                  <img
+                    src="{% url 'transactions:member_photo_image' txn.member.pk %}"
+                    alt="{{ txn.member.first_name }}"
+                    class="member-avatar__photo"
+                    onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+                  >
+                  {% endif %}
+                  <span class="member-avatar__initial" {% if txn.member.photo_mime_type %}style="display:none"{% endif %}>
+                    {{ txn.member.first_name|first|upper }}
+                  </span>
+                </div>
+                <div class="member-info">
+                  <span class="member-name">{{ txn.member.first_name }} {{ txn.member.last_name }}</span>
+                  <span class="member-id">{{ txn.member.member_id }}</span>
+                </div>
+              </div>
+            </td>
+            <td class="td-book">
+              <div class="book-cell">
+                <span class="book-title">{{ txn.book.title }}</span>
+                <span class="book-author">{{ txn.book.author }}</span>
+              </div>
+            </td>
+            <td class="td-date">{{ txn.issue_date|date:"d M Y" }}</td>
+            <td class="td-date td-date--overdue">{{ txn.due_date|date:"d M Y" }}</td>
+            <td class="td-overdue">
+              <div class="overdue-indicator">
+                <span class="overdue-days overdue-days--{{ txn.overdue_severity }}">
+                  {{ txn.overdue_days }} day{{ txn.overdue_days|pluralize }}
+                </span>
+                <div class="overdue-bar">
+                  <div class="overdue-bar__fill overdue-bar__fill--{{ txn.overdue_severity }}"
+                    style="width: {% if txn.overdue_days >= 60 %}100{% else %}{% widthratio txn.overdue_days 60 100 %}{% endif %}%">
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td class="td-fine">
+              <span class="fine-amount fine-amount--overdue">₹{{ txn.fine_amount|floatformat:2 }}</span>
+            </td>
+            <td class="td-actions">
+              <div class="action-group">
+                <a href="{% url 'transactions:return_book' txn.id %}" class="action-btn action-btn--return">
+                  <svg viewBox="0 0 20 20" fill="none"><path d="M4 10h10M10 6l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  Return
+                </a>
+                <a href="{% url 'transactions:transaction_detail' txn.id %}" class="action-btn action-btn--view">
+                  <svg viewBox="0 0 20 20" fill="none"><path d="M10 4C5.5 4 2 10 2 10s3.5 6 8 6 8-6 8-6-3.5-6-8-6z" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg>
+                  View
+                </a>
+                <button
+                  class="action-btn action-btn--notify"
+                  type="button"
+                  title="Send Reminder"
+                  data-id="{{ txn.id }}"
+                  data-member="{{ txn.member.email|default:'' }}">
+                  <svg viewBox="0 0 20 20" fill="none"><path d="M5 9A5 5 0 0 1 15 9v2l2 3H3l2-3V9z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 16a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.5"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr class="table-row--empty">
+            <td colspan="9">
+              <div class="empty-state empty-state--success">
+                <div class="empty-state__icon">
+                  <svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="2"/><path d="M20 32l8 8 16-16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <h3 class="empty-state__title">No Overdue Books!</h3>
+                <p class="empty-state__text">All issued books are within their due date.</p>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Bulk Actions Footer -->
+    <div class="table-card__footer table-card__footer--bulk" id="bulkActionsBar" hidden>
+      <span class="bulk-selected-count"><span id="selectedCount">0</span> selected</span>
+      <div class="bulk-actions">
+        <button class="btn btn--sm btn--ghost" id="bulkNotifyBtn" type="button">Send Reminders</button>
+        <button class="btn btn--sm btn--danger-outline" id="bulkMarkLostBtn" type="button">Mark as Lost</button>
+      </div>
+    </div>
+
+  </div><!-- /.table-card -->
+
+</div><!-- /.page-wrapper -->
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/transactions/overdue_list.js' %}"></script>
+{% endblock %}

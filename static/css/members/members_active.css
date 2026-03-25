@@ -1,0 +1,27 @@
+/* ═══════════════════════════════════════════════════════════════════
+   ACTIVE MEMBERS PAGE — page-specific styles
+   ═══════════════════════════════════════════════════════════════════ */
+
+@import url("members.css");
+
+/* ── Active-members banner accent ── */
+.members-active-page .stats-banner {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+/* ── 3-column filter grid ── */
+.members-active-page .filters-grid {
+  grid-template-columns: repeat(3, 1fr) auto;
+}
+
+@media (max-width: 900px) {
+  .members-active-page .filters-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .members-active-page .filters-grid {
+    grid-template-columns: 1fr;
+  }
+}

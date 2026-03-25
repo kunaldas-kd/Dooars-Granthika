@@ -1,0 +1,709 @@
+/* ============================================================
+   dashboard_base.css - Modern Blue-White Dashboard Theme
+   Clean and professional design with blue accents
+   ============================================================ */
+
+/* ───────────────────────────────────────────
+   1. CSS Custom Properties (Blue-White Theme)
+─────────────────────────────────────────── */
+:root {
+  /* Blue Color Palette */
+  --blue-50:   #eff6ff;
+  --blue-100:  #dbeafe;
+  --blue-200:  #bfdbfe;
+  --blue-300:  #93c5fd;
+  --blue-400:  #60a5fa;
+  --blue-500:  #3b82f6;
+  --blue-600:  #2563eb;
+  --blue-700:  #1d4ed8;
+  --blue-800:  #1e40af;
+  --blue-900:  #1e3a8a;
+
+  /* Primary Brand Colors */
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
+  --primary-light: #60a5fa;
+  --primary-bg: #eff6ff;
+
+  /* Neutral Grays */
+  --gray-50:  #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+
+  /* Surface Colors */
+  --bg-main:     #f8fafc;
+  --bg-card:     #ffffff;
+  --bg-sidebar:  #1e3a8a;
+  --bg-hover:    #f1f5f9;
+  --bg-glass:    rgba(255, 255, 255, 0.9);
+
+  /* Text Colors */
+  --text-primary:   #1f2937;
+  --text-secondary: #6b7280;
+  --text-muted:     #9ca3af;
+  --text-light:     #f3f4f6;
+  --text-white:     #ffffff;
+
+  /* Borders */
+  --border-light:  #e5e7eb;
+  --border-main:   #d1d5db;
+  --border-hover:  #3b82f6;
+
+  /* Semantic Colors */
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error:   #ef4444;
+  --info:    #3b82f6;
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  --gradient-success: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  --gradient-danger:  linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+
+  /* Shadows */
+  --shadow-xs:   0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm:   0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md:   0 4px 6px rgba(0, 0, 0, 0.07);
+  --shadow-lg:   0 10px 15px rgba(0, 0, 0, 0.08);
+  --shadow-xl:   0 20px 25px rgba(0, 0, 0, 0.1);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.1);
+
+  /* Transitions */
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+
+  /* Border Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* Hamburger trigger height — used to offset content on mobile */
+  --hamburger-trigger-size: 48px;
+
+  /* ── Ink alias tokens (consumed by library_setup.css and other pages) ──
+     These map the setup-page design tokens onto the base palette so that
+     every page sharing this base always resolves colours correctly.        */
+  --ink-accent:  #2563eb;   /* primary interactive blue  (= --blue-600)   */
+  --ink-glow:    #60a5fa;   /* lighter blue for gradients (= --blue-400)  */
+  --ink-deep:    #1e3a8a;   /* darkest blue for CTAs      (= --blue-900)  */
+}
+
+/* ───────────────────────────────────────────
+   2. Reset & Base
+─────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg-main);
+  color: var(--text-primary);
+  line-height: 1.6;
+  overflow-x: hidden;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* ───────────────────────────────────────────
+   3. Dashboard Wrapper
+─────────────────────────────────────────── */
+.dashboard-wrapper {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+}
+
+/* ───────────────────────────────────────────
+   4. Sidebar - Blue Theme
+─────────────────────────────────────────── */
+.sidebar {
+  width: 240px;
+  background: var(--bg-sidebar);
+  color: var(--text-light);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  z-index: 100;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+  transition: transform var(--transition-slow);
+}
+
+.sidebar-header {
+  padding: 28px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.sidebar .logo-container {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform var(--transition-base);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.sidebar .logo-container:hover {
+  transform: translateY(-2px) scale(1.05);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.sidebar .logo-container img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.sidebar .logo-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+/* Navigation */
+.sidebar-nav {
+  flex: 1;
+  padding: 24px 16px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  margin: 4px 0;
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all var(--transition-base);
+  border-radius: var(--radius-md);
+  position: relative;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  transform: translateX(2px);
+}
+
+.nav-item.active {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  font-weight: 600;
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: white;
+  border-radius: 0 3px 3px 0;
+}
+
+.nav-icon {
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.sidebar-footer {
+  padding: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-item.logout {
+  color: rgba(255, 180, 180, 0.9);
+}
+
+.nav-item.logout:hover {
+  background: rgba(255, 100, 100, 0.15);
+  color: #ff6b6b;
+}
+
+/* ───────────────────────────────────────────
+   5. Main Content
+─────────────────────────────────────────── */
+.main-content {
+  flex: 1;
+  margin-left: 240px;
+  padding: 32px 40px;
+  max-width: calc(100% - 240px);
+  min-height: 100vh;
+  position: relative;
+}
+
+.content-area {
+  width: 100%;
+}
+
+/* ───────────────────────────────────────────
+   6. Buttons
+─────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  text-decoration: none;
+  line-height: 1.5;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:hover {
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  background: white;
+  color: var(--text-primary);
+  border: 1px solid var(--border-main);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-hover);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* ───────────────────────────────────────────
+   7. Site Notification Bar
+   FIX: changed from sticky to fixed so it
+   stays visible above the fixed sidebar and
+   doesn't scroll away on mobile.
+   Added z-index above sidebar (z: 200).
+─────────────────────────────────────────── */
+.site-notif-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 24px;
+  background: var(--blue-600);
+  color: white;
+  font-size: 14px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  box-shadow: var(--shadow-sm);
+}
+
+/* When the notification bar is present, push sidebar and content down */
+body:has(.site-notif-bar) .sidebar {
+  top: 45px;
+  height: calc(100vh - 45px);
+}
+
+body:has(.site-notif-bar) .main-content {
+  padding-top: calc(32px + 45px);
+}
+
+body:has(.site-notif-bar) .hamburger-open-trigger {
+  top: calc(16px + 45px);
+}
+
+.site-notif-bar--info {
+  background: var(--blue-600);
+}
+
+.site-notif-bar--success {
+  background: var(--success);
+}
+
+.site-notif-bar--warning {
+  background: var(--warning);
+}
+
+.site-notif-bar--error {
+  background: var(--error);
+}
+
+.site-notif-bar__icon {
+  font-size: 16px;
+}
+
+.site-notif-bar__msg {
+  flex: 1;
+  font-weight: 500;
+}
+
+.site-notif-bar__link {
+  color: white;
+  text-decoration: underline;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+.site-notif-bar__close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-base);
+  flex-shrink: 0;
+}
+
+.site-notif-bar__close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+/* ───────────────────────────────────────────
+   8. Messages (Django Messages)
+   FIX: added top offset to avoid overlap
+   with the fixed notification bar.
+─────────────────────────────────────────── */
+.messages-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 400px;
+}
+
+/* Shift messages down when the notification bar is present */
+body:has(.site-notif-bar) .messages-container {
+  top: calc(20px + 45px);
+}
+
+.message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  animation: slideIn 0.3s ease-out;
+  border-left: 4px solid;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.message i {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.message--success {
+  background: #f0fdf4;
+  color: #166534;
+  border-color: var(--success);
+}
+
+.message--error {
+  background: #fef2f2;
+  color: #991b1b;
+  border-color: var(--error);
+}
+
+.message--warning {
+  background: #fffbeb;
+  color: #92400e;
+  border-color: var(--warning);
+}
+
+.message--info {
+  background: #eff6ff;
+  color: #1e40af;
+  border-color: var(--info);
+}
+
+.message-close {
+  margin-left: auto;
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-base);
+  flex-shrink: 0;
+}
+
+.message-close:hover {
+  background: rgba(0, 0, 0, 0.1);
+  transform: scale(1.1);
+}
+
+/* ───────────────────────────────────────────
+   9. Badges
+─────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge.success {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success);
+}
+
+.badge.warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--warning);
+}
+
+.badge.error {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--error);
+}
+
+.badge.info {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--info);
+}
+
+/* ───────────────────────────────────────────
+   10. Empty State
+─────────────────────────────────────────── */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+}
+
+.empty-state i {
+  font-size: 48px;
+  color: var(--gray-300);
+  margin-bottom: 16px;
+}
+
+.empty-state p {
+  margin-top: 12px;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+/* ───────────────────────────────────────────
+   11. Hamburger Menu (Mobile)
+   FIX: .hamburger-open-trigger now has an
+   explicit `display: none` as its base state
+   (not only under body.sidebar-closed) to
+   prevent flash on desktop.
+   FIX: .sidebar-overlay no longer uses
+   `display: none` — it uses visibility +
+   opacity so the CSS fade transition actually
+   plays. JS should toggle `.visible` only.
+─────────────────────────────────────────── */
+.hamburger {
+  display: none;
+  align-self: flex-end;
+  margin: 12px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.hamburger:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Base state: always hidden; JS/media query reveals it */
+.hamburger-open-trigger {
+  display: none;
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 200;
+  width: var(--hamburger-trigger-size);
+  height: var(--hamburger-trigger-size);
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--blue-600);
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: var(--shadow-lg);
+  transition: all var(--transition-base);
+}
+
+.hamburger-open-trigger:hover {
+  background: var(--blue-700);
+  transform: scale(1.05);
+}
+
+/* Only show the trigger on mobile when sidebar is closed — handled in the main @media block above */
+
+/* FIX: removed `display: none` — use visibility/opacity for animatable overlay */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 99;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity var(--transition-slow), visibility var(--transition-slow);
+  backdrop-filter: blur(2px);
+}
+
+.sidebar-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* ───────────────────────────────────────────
+   12. Responsive
+─────────────────────────────────────────── */
+@media (max-width: 968px) {
+  /* Hide sidebar off-screen by default on mobile */
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  /* Slide in when JS adds .open */
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* Show the close button (hamburger inside sidebar) on mobile */
+  .hamburger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Show the floating open-trigger only when sidebar is closed */
+  body.sidebar-closed .hamburger-open-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .main-content {
+    margin-left: 0;
+    max-width: 100%;
+    padding: calc(var(--hamburger-trigger-size) + 24px) 20px 24px;
+  }
+}
+
+@media (max-width: 640px) {
+  .main-content {
+    padding: calc(var(--hamburger-trigger-size) + 20px) 16px 20px;
+  }
+
+  .sidebar {
+    width: 260px;
+  }
+
+  .messages-container {
+    left: 16px;
+    right: 16px;
+    max-width: none;
+    top: calc(var(--hamburger-trigger-size) + 16px);
+  }
+}

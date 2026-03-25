@@ -1,0 +1,161 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+{% block title %}Reports Overview — Dooars Granthika{% endblock %}
+{% block nav_reports %}active{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/reports/reports_overview.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="rpt-page">
+
+  <!-- Hero -->
+  <div class="rpt-hero">
+    <div>
+      <h1 class="rpt-hero-title">Reports &amp; Analytics</h1>
+      <p class="rpt-hero-sub">Library-wide performance at a glance</p>
+    </div>
+    <span class="rpt-hero-date">{% now "N j, Y" %}</span>
+  </div>
+
+  <!-- KPI cards -->
+  <div class="rpt-kpi-grid">
+    <div class="rpt-kpi rpt-kpi--blue">
+      <div class="rpt-kpi-label">Total Books</div>
+      <div class="rpt-kpi-value">{{ total_books }}</div>
+    </div>
+    <div class="rpt-kpi rpt-kpi--green">
+      <div class="rpt-kpi-label">Total Members</div>
+      <div class="rpt-kpi-value">{{ total_members }}</div>
+      <div class="rpt-kpi-sub">{{ active_members }} active</div>
+    </div>
+    <div class="rpt-kpi rpt-kpi--cyan">
+      <div class="rpt-kpi-label">Currently Issued</div>
+      <div class="rpt-kpi-value">{{ total_issued }}</div>
+      <div class="rpt-kpi-sub" style="color:#dc2626">{{ total_overdue }} overdue</div>
+    </div>
+    <div class="rpt-kpi rpt-kpi--amber">
+      <div class="rpt-kpi-label">Fines Collected</div>
+      <div class="rpt-kpi-value">{{ fines_collected }}</div>
+      <div class="rpt-kpi-sub" style="color:#dc2626">₹{{ fines_pending }} pending</div>
+    </div>
+  </div>
+
+  <!-- Transaction chips -->
+  <div class="rpt-chip-strip">
+    <div class="rpt-chip rpt-chip--blue">
+      <div class="rpt-chip-label">Total Transactions</div>
+      <div class="rpt-chip-value">{{ total_txns }}</div>
+    </div>
+    <div class="rpt-chip rpt-chip--green">
+      <div class="rpt-chip-label">Returned</div>
+      <div class="rpt-chip-value">{{ total_returned }}</div>
+    </div>
+    <div class="rpt-chip rpt-chip--red">
+      <div class="rpt-chip-label">Overdue</div>
+      <div class="rpt-chip-value">{{ total_overdue }}</div>
+    </div>
+    <div class="rpt-chip rpt-chip--amber">
+      <div class="rpt-chip-label">Lost</div>
+      <div class="rpt-chip-value">{{ total_lost }}</div>
+    </div>
+  </div>
+
+  <!-- Chart + Top borrowers -->
+  <div class="rpt-two-col">
+    <div class="rpt-card">
+      <div class="rpt-card-head">
+        <span class="rpt-card-head-icon"><i class="fas fa-chart-bar"></i></span>
+        Monthly Issue Trend — last 12 months
+      </div>
+      <div class="rpt-chart-wrap">
+        <canvas id="trendChart" height="130"></canvas>
+      </div>
+    </div>
+    <div class="rpt-card">
+      <div class="rpt-card-head">
+        <span class="rpt-card-head-icon"><i class="fas fa-trophy"></i></span>
+        Top Borrowers
+      </div>
+      <ul class="rpt-blist">
+        {% for b in top_borrowers %}
+        <li class="rpt-blist-item rpt-blist-item--{{ forloop.counter }}">
+          <span class="rpt-blist-rank rpt-blist-rank--{% if forloop.counter <= 3 %}{{ forloop.counter }}{% else %}n{% endif %}">{{ forloop.counter }}</span>
+          <div>
+            <div class="rpt-blist-name">{{ b.member__first_name }} {{ b.member__last_name }}</div>
+            <div class="rpt-blist-meta">{{ b.member__member_id }}</div>
+          </div>
+          <span class="rpt-blist-badge">{{ b.loan_count }} loans</span>
+        </li>
+        {% empty %}
+        <li class="rpt-empty-list">No data yet</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <!-- Popular books -->
+  <div class="rpt-card">
+    <div class="rpt-card-head">
+      <span class="rpt-card-head-icon"><i class="fas fa-book"></i></span>
+      Most Popular Books
+    </div>
+    <div class="rpt-table-wrap">
+      <table class="rpt-table">
+        <thead>
+          <tr>
+            <th style="width:40px">#</th>
+            <th>Title</th>
+            <th>Author</th>
+            <th class="rpt-cell-center" style="width:110px">Issues</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in popular_books %}
+          <tr>
+            <td class="rpt-cell-rank">{{ forloop.counter }}</td>
+            <td class="rpt-cell-name">{{ b.book__title }}</td>
+            <td class="rpt-cell-muted">{{ b.book__author }}</td>
+            <td class="rpt-cell-center"><span class="rpt-pill-blue">{{ b.issue_count }}</span></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="rpt-table-empty">No transactions yet</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Quick links -->
+  <div class="rpt-card" style="margin-top:20px">
+    <div class="rpt-card-head">
+      <span class="rpt-card-head-icon"><i class="fas fa-link"></i></span>
+      Detailed Reports
+    </div>
+    <div class="rpt-card-body">
+      <div class="rpt-quick">
+        <a href="{% url 'reports:transactions' %}" class="rpt-quick-link"><i class="fas fa-exchange-alt"></i>Transactions</a>
+        <a href="{% url 'reports:books' %}"        class="rpt-quick-link"><i class="fas fa-book-open"></i>Books</a>
+        <a href="{% url 'reports:members' %}"      class="rpt-quick-link"><i class="fas fa-users"></i>Members</a>
+        <a href="{% url 'reports:fines' %}"        class="rpt-quick-link"><i class="fas fa-coins"></i>Fines</a>
+        <a href="{% url 'reports:overdue' %}"      class="rpt-quick-link"><i class="fas fa-clock"></i>Overdue</a>
+        <a href="{% url 'reports:inventory' %}"    class="rpt-quick-link"><i class="fas fa-boxes"></i>Inventory</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const labels = [{% for r in monthly_trend %}"{{ r.month|date:'M Y' }}"{% if not forloop.last %},{% endif %}{% endfor %}];
+  const data   = [{% for r in monthly_trend %}{{ r.issued }}{% if not forloop.last %},{% endif %}{% endfor %}];
+  new Chart(document.getElementById("trendChart"), {
+    type: "bar",
+    data: { labels, datasets: [{ label: "Issued", data, backgroundColor: "rgba(37,99,235,.15)", borderColor: "rgba(37,99,235,.85)", borderWidth: 2, borderRadius: 5, borderSkipped: false }] },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { font: { family: "'Plus Jakarta Sans'" } } }, y: { beginAtZero: true, ticks: { precision: 0, font: { family: "'Plus Jakarta Sans'" } }, grid: { color: "rgba(37,99,235,.06)" } } } }
+  });
+</script>
+{% endblock %}

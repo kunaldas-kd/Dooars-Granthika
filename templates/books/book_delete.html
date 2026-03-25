@@ -1,0 +1,77 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Delete Book — Dooars Granthika{% endblock %}
+{% block nav_books %}active{% endblock %}
+{% block page_heading %}Delete Book{% endblock %}
+{% block page_subheading %}Permanently remove a book from the catalogue{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/books/books.css' %}" />
+{% endblock %}
+
+{% block content %}
+
+  <nav class="breadcrumb">
+    <a href="{% url 'accounts:admin_dashboard' %}"><i class="fas fa-home"></i> Dashboard</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="{% url 'books:book_list' %}">Books</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="{% url 'books:book_detail' book.pk %}">{{ book.title }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-danger">Delete</span>
+  </nav>
+
+  <div class="card delete-card animate-in">
+    <div class="delete-card-body">
+
+      <div class="delete-icon-wrap">
+        <i class="fas fa-exclamation-triangle"></i>
+      </div>
+
+      <h2 class="delete-title">Delete This Book?</h2>
+      <p class="delete-subtitle">You are about to permanently delete:</p>
+
+      <div class="delete-book-name">
+        <i class="fas fa-book delete-book-icon"></i>
+        {{ book.title }}
+      </div>
+
+      <p class="delete-meta">
+        By <strong>{{ book.author }}</strong>
+        &nbsp;·&nbsp;
+        {{ book.total_copies }} copies total
+        &nbsp;·&nbsp;
+        <span class="delete-meta-available">{{ book.available_copies }} available</span>
+      </p>
+
+      <div class="delete-warning">
+        <i class="fas fa-exclamation-circle delete-warning-icon"></i>
+        This action <strong>cannot be undone</strong>. All issue records related to this book will also be affected.
+      </div>
+
+      <div class="delete-actions">
+        <a href="{% url 'books:book_detail' book.pk %}" class="btn btn-outline btn-delete-cancel">
+          <i class="fas fa-arrow-left"></i> Cancel
+        </a>
+        <form method="POST" class="delete-form">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger btn-delete-confirm">
+            <i class="fas fa-trash"></i> Yes, Delete Book
+          </button>
+        </form>
+      </div>
+
+      <p class="delete-return-hint">
+        Changed your mind?
+        <a href="{% url 'books:book_list' %}" class="delete-return-link">Return to book list</a>
+      </p>
+
+    </div>
+  </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/books/books.js' %}"></script>
+{% endblock %}

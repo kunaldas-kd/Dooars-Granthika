@@ -1,0 +1,28 @@
+/* ═══════════════════════════════════════════════════════════════════
+   CLEARED MEMBERS PAGE — page-specific styles
+   ═══════════════════════════════════════════════════════════════════ */
+
+@import url("members.css");
+
+/* ── Download certificate icon ── */
+.action-icon.certificate:hover {
+  background: #d1fae5;
+  color: #10b981;
+}
+
+/* ── 3-column filter grid ── */
+.cleared-members-page .filters-grid {
+  grid-template-columns: repeat(3, 1fr) auto;
+}
+
+@media (max-width: 900px) {
+  .cleared-members-page .filters-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .cleared-members-page .filters-grid {
+    grid-template-columns: 1fr;
+  }
+}

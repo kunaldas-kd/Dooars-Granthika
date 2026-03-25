@@ -1,0 +1,384 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Process Payment — Dooars Granthika{% endblock %}
+{% block nav_finance %}active{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/finance/process_payment.css' %}" />
+{% endblock %}
+
+{% block content %}
+<div class="pp-wrapper">
+
+  <!-- Breadcrumb -->
+  <div class="pp-breadcrumb">
+    <a href="{% url 'finance:overview' %}">Finance</a>
+    <svg viewBox="0 0 6 10" fill="none"><path d="M1 1l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>Process Payment</span>
+  </div>
+
+  <!-- Page Header -->
+  <div class="pp-page-header">
+    <div class="pp-page-header__icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
+      </svg>
+    </div>
+    <div>
+      <div class="pp-page-title">Process Payment</div>
+      <div class="pp-page-sub">Collect fine payments from library members</div>
+    </div>
+  </div>
+
+  {# ── Member selector (shown when no member pre-selected) ── #}
+  {% if not member %}
+  <div class="pp-card" style="margin-bottom:24px;">
+    <div class="pp-card__header">
+      <div class="pp-card__header-icon pp-card__header-icon--receipt">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </div>
+      <div>
+        <div class="pp-card__title">Find Member</div>
+        <div class="pp-card__subtitle">Select a member with outstanding fines</div>
+      </div>
+    </div>
+    <div class="pp-card__body">
+      <form method="get" action="">
+        <div class="pp-form-row" style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end;">
+          <div>
+            <label class="pp-label" for="member_select">Member with unpaid fines</label>
+            <select id="member_select" name="member_id" class="pp-input" style="width:100%;margin-top:6px;"
+                    onchange="this.form.submit()">
+              <option value="">— Select a member —</option>
+              {% for m in members_with_fines %}
+              <option value="{{ m.pk }}">{{ m.first_name }} {{ m.last_name }} ({{ m.member_id }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit" class="pp-submit-btn" style="width:auto;padding:10px 22px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Search
+          </button>
+        </div>
+      </form>
+
+      {% if members_with_fines %}
+      <p style="margin-top:14px;font-size:12.5px;color:var(--grey-400);">
+        <i class="fas fa-circle-info" style="margin-right:4px;"></i>
+        {{ members_with_fines|length }} member(s) have outstanding fines.
+      </p>
+      {% else %}
+      <div class="pp-settled" style="padding:24px 0 8px;">
+        <div class="pp-settled__icon pp-settled__icon--paid">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="pp-settled__title">All Clear!</div>
+        <div class="pp-settled__sub">No members have outstanding fines right now.</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Main layout: fine details (left) + summary (right) ── #}
+  {% if member %}
+  <div class="pp-grid">
+
+    <!-- LEFT COLUMN -->
+    <div class="pp-left">
+
+      {# Fine detail card #}
+      <div class="pp-card">
+        <div class="pp-card__header">
+          <div class="pp-card__header-icon pp-card__header-icon--receipt">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+            </svg>
+          </div>
+          <div>
+            <div class="pp-card__title">Fine Details</div>
+            <div class="pp-card__subtitle">
+              {% if fine %}{{ fine.fine_id }}{% else %}No fine selected{% endif %}
+            </div>
+          </div>
+          {% if fine %}
+          <div class="pp-fine-status pp-fine-status--{{ fine.status }}">
+            <span class="pp-fine-status__dot"></span>
+            {{ fine.get_status_display }}
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="pp-card__body">
+          {% if fine %}
+          <div class="pp-detail-grid">
+            <div class="pp-detail-item">
+              <span class="pp-detail-label">Fine Type</span>
+              <span class="pp-detail-value">{{ fine.get_fine_type_display }}</span>
+            </div>
+            <div class="pp-detail-item">
+              <span class="pp-detail-label">Amount</span>
+              <span class="pp-detail-value pp-detail-value--danger">&#8377;{{ fine.amount }}</span>
+            </div>
+            <div class="pp-detail-item">
+              <span class="pp-detail-label">Book</span>
+              <span class="pp-detail-value">{{ fine.book_title|default:fine.transaction.book.title|default:"—" }}</span>
+            </div>
+            <div class="pp-detail-item">
+              <span class="pp-detail-label">Transaction ID</span>
+              <span class="pp-detail-value">{{ fine.transaction_id_snapshot|default:fine.transaction_id|default:"—" }}</span>
+            </div>
+            {% if fine.issue_date_snapshot %}
+            <div class="pp-detail-item">
+              <span class="pp-detail-label">Issue Date</span>
+              <span class="pp-detail-value">{{ fine.issue_date_snapshot }}</span>
+            </div>
+            {% endif %}
+            {% if fine.due_date_snapshot %}
+            <div class="pp-detail-item">
+              <span class="pp-detail-label">Due Date</span>
+              <span class="pp-detail-value">{{ fine.due_date_snapshot }}</span>
+            </div>
+            {% endif %}
+          </div>
+
+          {# All unpaid fines list #}
+          {% if all_unpaid_fines|length > 1 %}
+          <div class="pp-pay-all-row">
+            <label class="pp-pay-all-label" for="pay_all_chk">
+              <input type="checkbox" id="pay_all_chk" name="pay_all_chk">
+              Pay all {{ all_unpaid_fines|length }} outstanding fines for this member
+            </label>
+            <span class="pp-pay-all-total">&#8377;{{ total_fine }}</span>
+          </div>
+          {% endif %}
+
+          {# Fine amount display #}
+          <div class="pp-amount-row" id="pp-amount-row">
+            <span class="pp-amount-label">
+              <i class="fas fa-rupee-sign" style="margin-right:4px;"></i>
+              Amount Due
+            </span>
+            <span class="pp-amount-value" id="pp-amount-display">&#8377;{{ fine.amount }}</span>
+          </div>
+
+          {% else %}
+          <div class="pp-settled">
+            <div class="pp-settled__icon pp-settled__icon--warn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div class="pp-settled__title">No Outstanding Fines</div>
+            <div class="pp-settled__sub">This member has no unpaid fines at the moment.</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      {# Payment form — only shown for unpaid fines #}
+      {% if fine and fine.status == 'unpaid' %}
+      <div class="pp-card">
+        <div class="pp-card__header">
+          <div class="pp-card__header-icon pp-card__header-icon--cash">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+          </div>
+          <div>
+            <div class="pp-card__title">Collect Payment</div>
+            <div class="pp-card__subtitle">Choose method and confirm</div>
+          </div>
+        </div>
+        <div class="pp-card__body">
+          <form method="post" action="{% url 'finance:cash_payment' %}" id="payment-form">
+            {% csrf_token %}
+            <input type="hidden" name="fine_id"  value="{{ fine_id }}">
+            <input type="hidden" name="pay_all"  value="0"     id="pay_all_hidden">
+            <input type="hidden" name="method"   value="cash"  id="method_hidden">
+
+            {# Payment method selector #}
+            <div class="pp-method-selector">
+              {% for val, label in payment_method_choices %}
+              <label class="pp-method-option {% if val == 'cash' %}pp-method-option--selected{% endif %}"
+                     data-method="{{ val }}"
+                     onclick="selectMethod('{{ val }}')">
+                <input type="radio" class="pp-method-radio" name="method_display" value="{{ val }}"
+                       {% if val == 'cash' %}checked{% endif %}>
+                <div class="pp-method-icon {% if val == 'upi' or val == 'card' %}pp-method-icon--online{% endif %}">
+                  {% if val == 'cash' %}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+                  {% elif val == 'upi' %}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                  {% elif val == 'card' %}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>
+                  {% else %}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                  {% endif %}
+                </div>
+                <div class="pp-method-text">
+                  <span class="pp-method-name">{{ label }}</span>
+                  <span class="pp-method-desc">
+                    {% if val == 'cash' %}Physical currency{% elif val == 'upi' %}UPI / QR transfer{% elif val == 'card' %}Debit or credit card{% else %}Other method{% endif %}
+                  </span>
+                </div>
+                <div class="pp-method-check">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+              </label>
+              {% endfor %}
+            </div>
+
+            {# Optional reference #}
+            <div style="margin-bottom:20px;">
+              <label class="pp-label" for="transaction_ref">
+                Transaction Reference
+                <span class="pp-optional">Optional</span>
+              </label>
+              <input type="text" id="transaction_ref" name="transaction_ref"
+                     class="pp-input" style="width:100%;margin-top:6px;"
+                     placeholder="UPI ref / receipt no / cheque no">
+              <div class="pp-hint">Leave blank for cash payments. Enter reference ID for digital payments.</div>
+            </div>
+
+            {# Confirm checkbox #}
+            <div class="pp-confirm-box" id="pp-confirm-box">
+              <input type="checkbox" class="pp-confirm-chk" id="confirm_chk"
+                     onchange="toggleSubmit()">
+              <label class="pp-confirm-label" for="confirm_chk">
+                I confirm that <strong>&#8377;<span id="confirm-amount">{{ fine.amount }}</span></strong>
+                has been received from <strong>{{ member.first_name }} {{ member.last_name }}</strong>
+                in <strong id="confirm-method">Cash</strong>.
+              </label>
+            </div>
+
+            <button type="submit" class="pp-submit-btn" id="pp-submit-btn" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Confirm &amp; Collect Payment
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+
+    </div><!-- /.pp-left -->
+
+    <!-- RIGHT COLUMN: summary sidebar -->
+    <div class="pp-right">
+      <div class="pp-summary-card">
+
+        <!-- Member info header -->
+        <div class="pp-summary-card__top">
+          <div class="pp-summary-amount">
+            <div class="pp-summary-amount__label">Total Due</div>
+            <div class="pp-summary-amount__value" id="sidebar-total">
+              &#8377;{% if fine and fine.status == 'unpaid' %}{{ fine.amount }}{% else %}0.00{% endif %}
+            </div>
+          </div>
+          <div class="pp-summary-member">
+            <div class="pp-summary-member__avatar">
+              {% if member_has_photo %}
+              <img src="{% url 'members:member_photo' member.pk %}" alt="{{ member.first_name }}">
+              {% else %}
+              <span class="pp-avatar-initial">{{ member.first_name|first|upper }}</span>
+              {% endif %}
+            </div>
+            <div>
+              <div class="pp-summary-member__name">{{ member.first_name }} {{ member.last_name }}</div>
+              <div class="pp-summary-member__id">{{ member.member_id }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fine rows -->
+        <div class="pp-summary-rows">
+          <div class="pp-summary-row">
+            <span class="pp-summary-row__key">Member ID</span>
+            <span class="pp-summary-row__val">{{ member.member_id }}</span>
+          </div>
+          <div class="pp-summary-row">
+            <span class="pp-summary-row__key">Total Fines</span>
+            <span class="pp-summary-row__val">{{ all_unpaid_fines|length }}</span>
+          </div>
+          {% for f in all_unpaid_fines %}
+          <div class="pp-summary-row">
+            <span class="pp-summary-row__key">{{ f.get_fine_type_display }}</span>
+            <span class="pp-summary-row__val">&#8377;{{ f.amount }}</span>
+          </div>
+          {% endfor %}
+          <div class="pp-summary-row pp-summary-row--total">
+            <span class="pp-summary-row__key">Total Outstanding</span>
+            <span class="pp-summary-row__val pp-summary-row__val--total" id="sidebar-total-2">
+              &#8377;{{ total_fine }}
+            </span>
+          </div>
+        </div>
+
+        <div class="pp-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>A receipt will be generated automatically after payment is confirmed.</span>
+        </div>
+
+      </div><!-- /.pp-summary-card -->
+
+      <a href="{% url 'finance:overview' %}" class="pp-cancel-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Back to Finance Overview
+      </a>
+    </div><!-- /.pp-right -->
+
+  </div><!-- /.pp-grid -->
+  {% endif %}
+
+</div><!-- /.pp-wrapper -->
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+(function () {
+  const singleAmount = "{{ fine.amount|default:'0' }}";
+  const totalAmount  = "{{ total_fine }}";
+
+  /* Method selection */
+  window.selectMethod = function (val) {
+    document.getElementById('method_hidden').value = val;
+    document.querySelectorAll('.pp-method-option').forEach(el => {
+      el.classList.toggle('pp-method-option--selected', el.dataset.method === val);
+    });
+    const names = { cash:'Cash', upi:'UPI', card:'Card', other:'Other' };
+    const el = document.getElementById('confirm-method');
+    if (el) el.textContent = names[val] || val;
+  };
+
+  /* Pay-all toggle */
+  const payAllChk    = document.getElementById('pay_all_chk');
+  const payAllHidden = document.getElementById('pay_all_hidden');
+  const sidebarTotal = document.getElementById('sidebar-total');
+  const amountDisplay = document.getElementById('pp-amount-display');
+  const confirmAmount = document.getElementById('confirm-amount');
+
+  if (payAllChk) {
+    payAllChk.addEventListener('change', function () {
+      const isAll = this.checked;
+      payAllHidden.value = isAll ? '1' : '0';
+      const amt = isAll ? totalAmount : singleAmount;
+      if (sidebarTotal)   sidebarTotal.textContent  = '₹' + amt;
+      if (amountDisplay)  amountDisplay.textContent = '₹' + amt;
+      if (confirmAmount)  confirmAmount.textContent  = amt;
+      // Reset confirm checkbox
+      const chk = document.getElementById('confirm_chk');
+      if (chk) { chk.checked = false; toggleSubmit(); }
+    });
+  }
+
+  /* Submit toggle */
+  window.toggleSubmit = function () {
+    const chk = document.getElementById('confirm_chk');
+    const btn = document.getElementById('pp-submit-btn');
+    if (btn) btn.disabled = !(chk && chk.checked);
+  };
+})();
+</script>
+{% endblock %}

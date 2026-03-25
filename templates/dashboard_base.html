@@ -1,0 +1,182 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Dooars Granthika{% endblock %}</title>
+
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+
+  <!-- Base dashboard layout & component styles -->
+  <link rel="stylesheet" href="{% static 'css/dashboard_base.css' %}" />
+
+  <!-- Admin-specific styles (stats, charts, overdue, members table, etc.) -->
+  {% block page_css %}{% endblock %}
+
+  <!-- Notification bar styles -->
+  <link rel="stylesheet" href="{% static 'css/notification.css' %}" />
+
+  <!-- Per-page extra CSS -->
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+     SITE-WIDE 1-LINE NOTIFICATION BANNER
+     Shown only when context provides a banner.
+════════════════════════════════════════════ -->
+{% if site_notification %}
+<div class="site-notif-bar site-notif-bar--{{ site_notification.level|default:'info' }}"
+     role="alert" id="siteNotifBar">
+  <span class="site-notif-bar__icon">
+    <i class="fas fa-{% if site_notification.level == 'warning' %}exclamation-triangle
+                     {% elif site_notification.level == 'error' %}exclamation-circle
+                     {% elif site_notification.level == 'success' %}check-circle
+                     {% else %}info-circle{% endif %}"></i>
+  </span>
+  <span class="site-notif-bar__msg">{{ site_notification.message }}</span>
+  {% if site_notification.link %}
+    <a class="site-notif-bar__link" href="{{ site_notification.link }}">
+      {{ site_notification.link_text|default:"View →" }}
+    </a>
+  {% endif %}
+  <button class="site-notif-bar__close"
+          onclick="document.getElementById('siteNotifBar').remove()"
+          aria-label="Dismiss">
+    <i class="fas fa-times"></i>
+  </button>
+</div>
+{% endif %}
+
+<!-- Fixed open-trigger (mobile only, shown when sidebar is closed) -->
+<button class="hamburger-open-trigger" id="sidebarOpenTrigger" aria-label="Open navigation">
+  <i class="fas fa-bars"></i>
+</button>
+
+<!-- Sidebar overlay (mobile only) -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="dashboard-wrapper">
+
+  <!-- ════════════════════════════════════════
+       SIDEBAR
+  ════════════════════════════════════════ -->
+  <nav class="sidebar">
+    <!-- Hamburger / close button — mobile only, sits above the logo -->
+    <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation">
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="sidebar-header">
+      <div class="logo-container">
+        <img src="{% static 'assets/img/logo2.png' %}" alt="Logo" />
+      </div>
+      <span class="logo-text">Dooars Granthika</span>
+    </div>
+
+    <ul class="sidebar-nav">
+      <li>
+        <a class="nav-item {% block nav_dashboard %}{% endblock %}"
+           href="{% url 'accounts:admin_dashboard' %}">
+          <span class="nav-icon"><i class="fas fa-chart-bar"></i></span> Dashboard
+        </a>
+      </li>
+      <li>
+        <a class="nav-item {% block nav_books %}{% endblock %}"
+           href="{% url 'books:book_list' %}">
+          <span class="nav-icon"><i class="fas fa-book"></i></span> Books
+        </a>
+      </li>
+      <li>
+        <a class="nav-item {% block nav_members %}{% endblock %}"
+           href="{% url 'members:members_list' %}">
+          <span class="nav-icon"><i class="fas fa-users"></i></span> Members
+        </a>
+      </li>
+      <li>
+        <a class="nav-item {% block nav_transactions %}{% endblock %}"
+           href="{% url 'transactions:transaction_list' %}">
+          <span class="nav-icon"><i class="fas fa-exchange-alt"></i></span> Transactions
+        </a>
+      </li>
+      <li>
+        <a class="nav-item {% block nav_reports %}{% endblock %}"
+           href="{% url 'reports:overview' %}">
+          <span class="nav-icon"><i class="fas fa-chart-line"></i></span> Reports
+        </a>
+      </li>
+      <li>
+        <a class="nav-item {% block nav_finance %}{% endblock %}"
+           href="{% url 'finance:overview' %}">
+          <span class="nav-icon"><i class="fas fa-coins"></i></span> Finance
+        </a>
+      </li>
+      <li>
+        <a class="nav-item {% block nav_subscription %}{% endblock %}"
+           href="{% url 'subscriptions:my_subscription' %}">
+          <span class="nav-icon"><i class="fas fa-crown"></i></span> Subscription
+        </a>
+      </li>
+      <li>
+        <a class="nav-item {% block nav_settings %}{% endblock %}"
+           href="{% url 'accounts:settings' %}">
+          <span class="nav-icon"><i class="fas fa-cog"></i></span> Settings
+        </a>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <a class="nav-item logout" href="{% url 'accounts:signout' %}">
+        <span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span> Sign Out
+      </a>
+    </div>
+  </nav>
+
+  <!-- ════════════════════════════════════════
+       MAIN CONTENT
+  ════════════════════════════════════════ -->
+  <main class="main-content">
+
+    <!-- Top bar — overridden per page -->
+    {% block topbar %}{% endblock %}
+
+    <!-- Django messages (success / error / warning toasts) -->
+    {% if messages %}
+    <div class="messages-container">
+      {% for message in messages %}
+      <div class="message message--{{ message.tags }}">
+        <i class="fas fa-{% if message.tags == 'success' %}check-circle
+                         {% elif message.tags == 'error' %}exclamation-circle
+                         {% elif message.tags == 'warning' %}exclamation-triangle
+                         {% else %}info-circle{% endif %}"></i>
+        {{ message }}
+        <button class="message-close" onclick="this.parentElement.remove()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Page content -->
+    <div class="content-area">
+      {% block content %}{% endblock %}
+    </div>
+
+  </main>
+</div><!-- /.dashboard-wrapper -->
+
+<!-- ════════════════════════════════════════
+     SCRIPTS
+════════════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="{% static 'js/notifications.js' %}"></script>
+<script src="{% static 'js/dashboard_base.js' %}"></script>
+{% block extra_js %}{% endblock %}
+
+</body>
+</html>

@@ -1,0 +1,399 @@
+{% extends "superuser/superuser_dashboard_base.html" %}
+{% block title %}Settings{% endblock %}
+{% block breadcrumb %}Settings{% endblock %}
+{% block nav_settings %}active{% endblock %}
+
+{% block content %}
+{% if not request.user.is_superuser %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Settings</h1>
+    <p class="page-subtitle">Platform configuration, billing defaults, and security options.</p>
+  </div>
+</div>
+<div class="alert alert-danger">
+  <span class="alert-icon">✕</span>
+  <div class="alert-text"><div class="alert-title">Access Denied</div>Only superusers can access platform settings.</div>
+</div>
+{% else %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Settings</h1>
+    <p class="page-subtitle">Platform configuration, billing defaults, and security options.</p>
+  </div>
+</div>
+
+<div class="settings-layout">
+  <!-- Left Nav -->
+  <div class="settings-nav">
+    <div class="settings-nav-item" data-section="s-general">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+      General
+    </div>
+    <div class="settings-nav-item" data-section="s-billing">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      Billing
+    </div>
+    <div class="settings-nav-item" data-section="s-notifications">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      Notifications
+    </div>
+    <div class="settings-nav-item" data-section="s-security">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Security
+    </div>
+    <div class="settings-nav-item" data-section="s-plans">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      Plan Defaults
+    </div>
+    <div class="settings-nav-item" data-section="s-danger">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Danger Zone
+    </div>
+  </div>
+
+  <div>
+    <!-- General -->
+    <div class="settings-section" id="s-general">
+      <form method="post" action="{% url 'superuser:settings_save' 'general' %}">
+        {% csrf_token %}
+        <div class="card">
+          <div class="card-header"><span class="card-title">Platform Information</span></div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">Platform Name</label>
+              <input type="text" name="platform_name" class="form-control" value="{{ settings.platform_name|default:'Dooars Granthika' }}">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Support Email</label>
+                <input type="email" name="support_email" class="form-control" value="{{ settings.support_email|default:'' }}" placeholder="support@example.com">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Support Phone</label>
+                <input type="tel" name="support_phone" class="form-control" value="{{ settings.support_phone|default:'' }}" placeholder="+91 XXXXX XXXXX">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Default Currency</label>
+                <select name="currency" class="form-control">
+                  <option value="INR" {% if settings.currency == 'INR' or not settings.currency %}selected{% endif %}>INR — Indian Rupee (Rs)</option>
+                  <option value="USD" {% if settings.currency == 'USD' %}selected{% endif %}>USD — US Dollar ($)</option>
+                  <option value="EUR" {% if settings.currency == 'EUR' %}selected{% endif %}>EUR — Euro (E)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Timezone</label>
+                <select name="timezone" class="form-control">
+                  <option value="Asia/Kolkata" {% if settings.timezone == 'Asia/Kolkata' or not settings.timezone %}selected{% endif %}>Asia/Kolkata (IST +05:30)</option>
+                  <option value="UTC" {% if settings.timezone == 'UTC' %}selected{% endif %}>UTC</option>
+                  <option value="America/New_York" {% if settings.timezone == 'America/New_York' %}selected{% endif %}>America/New_York (EST)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer" style="display:flex; justify-content:flex-end;">
+            <button type="submit" class="btn btn-primary">Save General Settings</button>
+          </div>
+        </div>
+      </form>
+      <form method="post" action="{% url 'superuser:settings_save' 'features' %}">
+        {% csrf_token %}
+        <div class="card">
+          <div class="card-header"><span class="card-title">Feature Flags</span></div>
+          <div class="card-body">
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">New Library Registrations</div>
+                <div class="settings-row-desc">Allow new libraries to register on the platform.</div>
+              </div>
+              <div class="settings-row-control">
+                <label class="toggle"><input type="checkbox" name="allow_registrations" {% if settings.allow_registrations != False %}checked{% endif %}><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Trial Plans</div>
+                <div class="settings-row-desc">Allow libraries to start with a free trial period.</div>
+              </div>
+              <div class="settings-row-control">
+                <label class="toggle"><input type="checkbox" name="allow_trials" {% if settings.allow_trials != False %}checked{% endif %}><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Maintenance Mode</div>
+                <div class="settings-row-desc">Take the platform offline. Only superusers can log in.</div>
+              </div>
+              <div class="settings-row-control">
+                <label class="toggle"><input type="checkbox" name="maintenance_mode" {% if settings.maintenance_mode %}checked{% endif %}><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer" style="display:flex; justify-content:flex-end;">
+            <button type="submit" class="btn btn-primary">Save Feature Flags</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Billing -->
+    <div class="settings-section" id="s-billing">
+      <form method="post" action="{% url 'superuser:settings_save' 'billing' %}">
+        {% csrf_token %}
+        <div class="card">
+          <div class="card-header"><span class="card-title">Billing Configuration</span></div>
+          <div class="card-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Tax Rate (%)</label>
+                <div class="input-group">
+                  <input type="number" name="tax_rate" class="form-control" step="0.01" min="0" max="100" value="{{ settings.tax_rate|default:'18' }}">
+                  <span class="input-suffix">%</span>
+                </div>
+                <div class="form-hint">Applied to all invoices (GST/VAT).</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Invoice Due Days</label>
+                <input type="number" name="invoice_due_days" class="form-control" min="1" value="{{ settings.invoice_due_days|default:'15' }}">
+                <div class="form-hint">Days after issue before invoice is overdue.</div>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Grace Period (days)</label>
+                <input type="number" name="grace_period_days" class="form-control" min="0" value="{{ settings.grace_period_days|default:'7' }}">
+                <div class="form-hint">Days after expiry before access is revoked.</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Payment Gateway</label>
+                <select name="payment_gateway" class="form-control">
+                  <option value="razorpay" {% if settings.payment_gateway == 'razorpay' or not settings.payment_gateway %}selected{% endif %}>Razorpay</option>
+                  <option value="stripe" {% if settings.payment_gateway == 'stripe' %}selected{% endif %}>Stripe</option>
+                  <option value="manual" {% if settings.payment_gateway == 'manual' %}selected{% endif %}>Manual</option>
+                </select>
+              </div>
+            </div>
+            <div class="settings-row" style="border-top:1px solid var(--border); margin-top:4px;">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Auto-send Invoice Emails</div>
+                <div class="settings-row-desc">Automatically email invoices to libraries on generation.</div>
+              </div>
+              <div class="settings-row-control">
+                <label class="toggle"><input type="checkbox" name="auto_invoice_email" {% if settings.auto_invoice_email != False %}checked{% endif %}><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Auto-send Payment Reminders</div>
+                <div class="settings-row-desc">Send reminders for unpaid invoices 3 days before due date.</div>
+              </div>
+              <div class="settings-row-control">
+                <label class="toggle"><input type="checkbox" name="auto_payment_reminder" {% if settings.auto_payment_reminder != False %}checked{% endif %}><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer" style="display:flex; justify-content:flex-end;">
+            <button type="submit" class="btn btn-primary">Save Billing Settings</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Notifications -->
+    <div class="settings-section" id="s-notifications">
+      <form method="post" action="{% url 'superuser:settings_save' 'notifications' %}">
+        {% csrf_token %}
+        <div class="card">
+          <div class="card-header"><span class="card-title">Email Notifications</span></div>
+          <div class="card-body">
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">New Library Signup</div>
+                <div class="settings-row-desc">Notify superadmins when a new library registers.</div>
+              </div>
+              <div class="settings-row-control">
+                <label class="toggle"><input type="checkbox" name="notify_new_library" {% if settings.notify_new_library != False %}checked{% endif %}><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Subscription Expiring (7 days)</div>
+                <div class="settings-row-desc">Alert when a library subscription is about to expire.</div>
+              </div>
+              <div class="settings-row-control">
+                <label class="toggle"><input type="checkbox" name="notify_expiry_7d" {% if settings.notify_expiry_7d != False %}checked{% endif %}><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Failed Payment</div>
+                <div class="settings-row-desc">Notify on any failed billing transaction.</div>
+              </div>
+              <div class="settings-row-control">
+                <label class="toggle"><input type="checkbox" name="notify_failed_payment" {% if settings.notify_failed_payment != False %}checked{% endif %}><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Weekly Revenue Digest</div>
+                <div class="settings-row-desc">Receive a weekly MRR and subscription summary every Monday.</div>
+              </div>
+              <div class="settings-row-control">
+                <label class="toggle"><input type="checkbox" name="notify_weekly_digest" {% if settings.notify_weekly_digest != False %}checked{% endif %}><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+            <div class="form-group" style="margin-top:20px; margin-bottom:0;">
+              <label class="form-label">Notification Recipients</label>
+              <input type="email" name="notify_emails" class="form-control" value="{{ settings.notify_emails|default:request.user.email }}" placeholder="admin@example.com, ops@example.com">
+              <div class="form-hint">Comma-separated list of emails that receive platform alerts.</div>
+            </div>
+          </div>
+          <div class="card-footer" style="display:flex; justify-content:flex-end;">
+            <button type="submit" class="btn btn-primary">Save Notification Settings</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Security -->
+    <div class="settings-section" id="s-security">
+      <form method="post" action="{% url 'superuser:settings_save' 'security' %}">
+        {% csrf_token %}
+        <div class="card">
+          <div class="card-header"><span class="card-title">Access and Security</span></div>
+          <div class="card-body">
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Require Staff Login</div>
+                <div class="settings-row-desc">Block non-staff users from the superuser panel (always on).</div>
+              </div>
+              <div class="settings-row-control">
+                <label class="toggle"><input type="checkbox" name="require_staff" checked disabled><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Session Timeout</div>
+                <div class="settings-row-desc">Automatically log out inactive superuser sessions.</div>
+              </div>
+              <div class="settings-row-control">
+                <select name="session_timeout" class="form-control" style="width:140px;">
+                  <option value="30" {% if settings.session_timeout == '30' %}selected{% endif %}>30 minutes</option>
+                  <option value="60" {% if settings.session_timeout == '60' or not settings.session_timeout %}selected{% endif %}>1 hour</option>
+                  <option value="240" {% if settings.session_timeout == '240' %}selected{% endif %}>4 hours</option>
+                  <option value="0" {% if settings.session_timeout == '0' %}selected{% endif %}>Never</option>
+                </select>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Activity Log Retention</div>
+                <div class="settings-row-desc">How long to keep superuser audit logs before auto-purging.</div>
+              </div>
+              <div class="settings-row-control">
+                <select name="log_retention_days" class="form-control" style="width:140px;">
+                  <option value="30" {% if settings.log_retention_days == '30' %}selected{% endif %}>30 days</option>
+                  <option value="90" {% if settings.log_retention_days == '90' or not settings.log_retention_days %}selected{% endif %}>90 days</option>
+                  <option value="365" {% if settings.log_retention_days == '365' %}selected{% endif %}>1 year</option>
+                  <option value="0" {% if settings.log_retention_days == '0' %}selected{% endif %}>Forever</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer" style="display:flex; justify-content:flex-end;">
+            <button type="submit" class="btn btn-primary">Save Security Settings</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Plan Defaults -->
+    <div class="settings-section" id="s-plans">
+      <form method="post" action="{% url 'superuser:settings_save' 'plans' %}">
+        {% csrf_token %}
+        <div class="card">
+          <div class="card-header"><span class="card-title">Plan Defaults</span></div>
+          <div class="card-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Default Trial Duration (days)</label>
+                <input type="number" name="default_trial_days" class="form-control" min="0" value="{{ settings.default_trial_days|default:'14' }}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Default Billing Cycle</label>
+                <select name="default_billing_cycle" class="form-control">
+                  <option value="monthly" {% if settings.default_billing_cycle == 'monthly' or not settings.default_billing_cycle %}selected{% endif %}>Monthly</option>
+                  <option value="quarterly" {% if settings.default_billing_cycle == 'quarterly' %}selected{% endif %}>Quarterly</option>
+                  <option value="annual" {% if settings.default_billing_cycle == 'annual' %}selected{% endif %}>Annual</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Default Max Members</label>
+                <input type="number" name="default_max_members" class="form-control" min="0" value="{{ settings.default_max_members|default:'' }}" placeholder="Unlimited">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Default Storage (GB)</label>
+                <div class="input-group">
+                  <input type="number" name="default_storage_gb" class="form-control" min="0" value="{{ settings.default_storage_gb|default:'10' }}">
+                  <span class="input-suffix">GB</span>
+                </div>
+              </div>
+            </div>
+            <div class="settings-row" style="border-top:1px solid var(--border); margin-top:4px;">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Auto-activate after payment</div>
+                <div class="settings-row-desc">Automatically activate a subscription when payment is confirmed.</div>
+              </div>
+              <div class="settings-row-control">
+                <label class="toggle"><input type="checkbox" name="auto_activate_on_payment" {% if settings.auto_activate_on_payment != False %}checked{% endif %}><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer" style="display:flex; justify-content:flex-end;">
+            <button type="submit" class="btn btn-primary">Save Plan Defaults</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="settings-section" id="s-danger">
+      <div class="card danger-zone">
+        <div class="card-header"><span class="card-title">Danger Zone</span></div>
+        <div class="card-body">
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label" style="color:var(--danger);">Purge Activity Logs</div>
+              <div class="settings-row-desc">Permanently delete all superuser audit logs. This cannot be undone.</div>
+            </div>
+            <div class="settings-row-control">
+              <form method="post" action="{% url 'superuser:settings_save' 'purge_logs' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete ALL activity logs? This cannot be undone.')">Purge Logs</button>
+              </form>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label" style="color:var(--warning);">Mark All Overdue Invoices</div>
+              <div class="settings-row-desc">Scan unpaid invoices past their due date and mark them as overdue.</div>
+            </div>
+            <div class="settings-row-control">
+              <form method="post" action="{% url 'superuser:settings_save' 'mark_overdue' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-warning btn-sm">Run Now</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endif %}{# end superuser check #}
+{% endblock %}

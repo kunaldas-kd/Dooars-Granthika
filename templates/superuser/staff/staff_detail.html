@@ -1,0 +1,190 @@
+{% extends "superuser/superuser_dashboard_base.html" %}
+{% block title %}{{ member.full_name }}{% endblock %}
+{% block breadcrumb %}Staff Detail{% endblock %}
+{% block nav_staff %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div style="display:flex; align-items:center; gap:14px;">
+    <div style="width:52px; height:52px; border-radius:50%; background:{{ member.avatar_color }}22; border:2px solid {{ member.avatar_color }}; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:800; color:{{ member.avatar_color }}; flex-shrink:0;">
+      {{ member.full_name|first|upper }}
+    </div>
+    <div>
+      <h1 class="page-title">{{ member.full_name }}
+        <span class="badge badge-{% if member.status == 'active' %}active{% elif member.status == 'inactive' %}danger{% else %}warning{% endif %}" style="margin-left:10px; vertical-align:middle;">{{ member.get_status_display }}</span>
+      </h1>
+      <p class="page-subtitle">{{ member.employee_id }} · {{ member.primary_role.name }} · {{ member.email }}</p>
+    </div>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'superuser:staff_list' %}" class="btn btn-secondary">← Staff</a>
+    <a href="{% url 'superuser:staff_edit' member.pk %}" class="btn btn-primary">Edit</a>
+    {% if member.status == 'active' %}
+    <form method="post" action="{% url 'superuser:staff_deactivate' member.pk %}" style="display:inline;" onsubmit="return confirm('Deactivate {{ member.full_name }}?')">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-warning">Deactivate</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Task Stats -->
+<div class="stats-grid" style="grid-template-columns:repeat(5,1fr);">
+  <div class="stat-card accent-info"><div class="stat-icon info-icon">📋</div><div class="stat-label">Total Tasks</div><div class="stat-value">{{ task_stats.total }}</div></div>
+  <div class="stat-card"><div class="stat-icon" style="background:var(--bg-overlay);">⏸</div><div class="stat-label">To Do</div><div class="stat-value">{{ task_stats.todo }}</div></div>
+  <div class="stat-card accent-blue"><div class="stat-icon accent-icon">▶</div><div class="stat-label">In Progress</div><div class="stat-value">{{ task_stats.in_progress }}</div></div>
+  <div class="stat-card accent-success"><div class="stat-icon success-icon">✓</div><div class="stat-label">Done</div><div class="stat-value">{{ task_stats.done }}</div></div>
+  <div class="stat-card accent-danger"><div class="stat-icon danger-icon">⚠</div><div class="stat-label">Overdue</div><div class="stat-value">{{ task_stats.overdue }}</div></div>
+</div>
+
+<div class="detail-grid">
+  <div>
+    <!-- Tasks -->
+    <div class="card mb-2">
+      <div class="card-header">
+        <span class="card-title">Tasks</span>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-ghost btn-sm task-filter-btn active" data-filter="all">All</button>
+          <button class="btn btn-ghost btn-sm task-filter-btn" data-filter="todo">To Do</button>
+          <button class="btn btn-ghost btn-sm task-filter-btn" data-filter="in_progress">Active</button>
+          <button class="btn btn-ghost btn-sm task-filter-btn" data-filter="done">Done</button>
+        </div>
+      </div>
+      <div class="table-wrapper" style="border:none; border-radius:0;">
+        <table id="tasks-table">
+          <thead><tr><th>Task</th><th>Category</th><th>Priority</th><th>Due</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>
+            {% for task in tasks %}
+            <tr data-status="{{ task.status }}">
+              <td>
+                <div style="font-weight:600; font-size:13.5px; max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ task.title }}">{{ task.title }}</div>
+                {% if task.description %}<div style="font-size:12px; color:var(--text-muted); margin-top:2px; max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ task.description }}</div>{% endif %}
+              </td>
+              <td><span class="badge badge-neutral">{{ task.get_category_display }}</span></td>
+              <td>
+                <span class="badge badge-{% if task.priority == 'urgent' %}danger{% elif task.priority == 'high' %}warning{% elif task.priority == 'medium' %}info{% else %}neutral{% endif %}">
+                  {{ task.get_priority_display }}
+                </span>
+              </td>
+              <td class="td-mono {% if task.is_overdue %}text-danger{% endif %}" style="font-size:12px;">
+                {% if task.due_date %}{{ task.due_date|date:"M d, Y" }}{% if task.is_overdue %} ⚠{% endif %}{% else %}—{% endif %}
+              </td>
+              <td>
+                <form method="post" action="{% url 'superuser:task_status_update' task.pk %}">
+                  {% csrf_token %}
+                  <select name="status" class="filter-select task-status-select" style="font-size:11px;" onchange="this.form.submit()">
+                    {% for val,label in task.STATUS_CHOICES %}
+                    <option value="{{ val }}" {% if task.status == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </form>
+              </td>
+              <td>
+                <form method="post" action="{% url 'superuser:task_delete' task.pk %}" style="display:inline;" onsubmit="return confirm('Delete task?')">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-ghost btn-sm btn-icon" title="Delete">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6">
+              <div class="empty-state" style="padding:30px;">
+                <div class="empty-text">No tasks assigned yet.</div>
+              </div>
+            </td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Staff they added -->
+    {% if added_staff %}
+    <div class="card">
+      <div class="card-header"><span class="card-title">Staff Added by {{ member.full_name }}</span></div>
+      <div class="table-wrapper" style="border:none; border-radius:0;">
+        <table>
+          <thead><tr><th>Name</th><th>Role</th><th>Level</th></tr></thead>
+          <tbody>
+            {% for s in added_staff %}
+            <tr data-href="{% url 'superuser:staff_detail' s.pk %}">
+              <td class="td-name">{{ s.full_name }}</td>
+              <td>{{ s.primary_role.name }}</td>
+              <td class="td-mono">L{{ s.primary_role.level }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div>
+    <!-- Profile Info -->
+    <div class="card mb-2">
+      <div class="card-header"><span class="card-title">Profile</span></div>
+      <div class="dl-grid">
+        <div class="dl-item"><div class="dl-label">Employee ID</div><div class="dl-value mono">{{ member.employee_id }}</div></div>
+        <div class="dl-item"><div class="dl-label">Level</div><div class="dl-value mono">L{{ member.primary_role.level }}</div></div>
+        <div class="dl-item"><div class="dl-label">Department</div><div class="dl-value">{{ member.primary_role.get_department_display }}</div></div>
+        <div class="dl-item"><div class="dl-label">Phone</div><div class="dl-value mono">{{ member.phone|default:"—" }}</div></div>
+        <div class="dl-item"><div class="dl-label">Joined</div><div class="dl-value mono">{{ member.joined_date|date:"M d, Y" }}</div></div>
+        <div class="dl-item"><div class="dl-label">Added By</div><div class="dl-value">{% if member.added_by %}{{ member.added_by.full_name }}{% else %}Superuser{% endif %}</div></div>
+      </div>
+      {% if member.bio %}
+      <div style="padding:14px 16px; border-top:1px solid var(--border); font-size:13.5px; color:var(--text-secondary);">{{ member.bio }}</div>
+      {% endif %}
+    </div>
+
+    <!-- Roles -->
+    <div class="card mb-2">
+      <div class="card-header"><span class="card-title">Roles</span></div>
+      <div class="card-body">
+        <div style="margin-bottom:10px;">
+          <div class="dl-label">Primary</div>
+          <div style="margin-top:6px; display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--accent-glow); border:1px solid rgba(61,107,255,0.25); border-radius:var(--radius-md);">
+            <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--accent); font-weight:700;">L{{ member.primary_role.level }}</span>
+            <span style="font-size:13.5px; font-weight:600; color:var(--accent);">{{ member.primary_role.name }}</span>
+          </div>
+        </div>
+        {% if member.secondary_roles.all %}
+        <div>
+          <div class="dl-label">Secondary</div>
+          <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">
+            {% for r in member.secondary_roles.all %}
+            <span class="badge badge-neutral">{{ r.name }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if request.user.is_superuser and member.notes %}
+    <div class="card">
+      <div class="card-header"><span class="card-title">Private Notes</span></div>
+      <div class="card-body" style="font-size:13.5px; color:var(--text-secondary);">{{ member.notes }}</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Task filter by status
+document.querySelectorAll('.task-filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.task-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const filter = btn.dataset.filter;
+    document.querySelectorAll('#tasks-table tbody tr[data-status]').forEach(row => {
+      row.style.display = (filter === 'all' || row.dataset.status === filter) ? '' : 'none';
+    });
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,310 @@
+{% extends "superuser/superuser_dashboard_base.html" %}
+{% block title %}Tasks{% endblock %}
+{% block breadcrumb %}Tasks{% endblock %}
+{% block nav_tasks %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div><h1 class="page-title">Task Board</h1><p class="page-subtitle">Assign and track work across the team.</p></div>
+  <div class="page-actions">
+    <button class="btn btn-secondary" id="toggle-board-btn" onclick="toggleView()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Board View
+    </button>
+    <button class="btn btn-primary" onclick="openTaskModal()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Task
+    </button>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid" style="grid-template-columns:repeat(5,1fr);">
+  <div class="stat-card"><div class="stat-icon" style="background:var(--bg-overlay);">📋</div><div class="stat-label">To Do</div><div class="stat-value">{{ stats.todo }}</div></div>
+  <div class="stat-card accent-blue"><div class="stat-icon accent-icon">▶</div><div class="stat-label">In Progress</div><div class="stat-value">{{ stats.in_progress }}</div></div>
+  <div class="stat-card accent-warning"><div class="stat-icon warning-icon">👁</div><div class="stat-label">In Review</div><div class="stat-value">{{ stats.review }}</div></div>
+  <div class="stat-card accent-success"><div class="stat-icon success-icon">✓</div><div class="stat-label">Done</div><div class="stat-value">{{ stats.done }}</div></div>
+  <div class="stat-card accent-danger"><div class="stat-icon danger-icon">⚠</div><div class="stat-label">Overdue</div><div class="stat-value">{{ stats.overdue }}</div></div>
+</div>
+
+<!-- List View -->
+<div id="list-view">
+  <div class="card">
+    <form method="get" class="filters-bar" id="filter-form">
+      <div class="filter-group">
+        <span class="filter-label">Status</span>
+        <select name="status" class="filter-select">
+          <option value="">All</option>
+          {% for val,label in status_choices %}
+          <option value="{{ val }}" {% if status_f == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Priority</span>
+        <select name="priority" class="filter-select">
+          <option value="">All</option>
+          {% for val,label in priority_choices %}
+          <option value="{{ val }}" {% if priority_f == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Assignee</span>
+        <select name="assignee" class="filter-select">
+          <option value="">All</option>
+          {% for s in assignable_staff %}
+          <option value="{{ s.pk }}" {% if assignee_f == s.pk|stringformat:'s' %}selected{% endif %}>{{ s.full_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="filter-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" name="q" value="{{ q }}" placeholder="Search tasks…">
+      </div>
+    </form>
+
+    <div class="table-wrapper" style="border:none; border-radius:0;">
+      <table id="tasks-table">
+        <thead>
+          <tr><th data-sort>Task</th><th>Assignee</th><th data-sort>Category</th><th data-sort>Priority</th><th data-sort>Due Date</th><th data-sort>Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          {% for task in tasks %}
+          <tr>
+            <td style="max-width:280px;">
+              <div style="font-weight:600; font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ task.title }}">{{ task.title }}</div>
+              {% if task.description %}<div style="font-size:12px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ task.description|truncatechars:60 }}</div>{% endif %}
+            </td>
+            <td>
+              <div style="display:flex; align-items:center; gap:7px;">
+                <div style="width:26px; height:26px; border-radius:50%; background:{{ task.assigned_to.avatar_color }}22; border:1px solid {{ task.assigned_to.avatar_color }}; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:{{ task.assigned_to.avatar_color }}; flex-shrink:0;">{{ task.assigned_to.full_name|first|upper }}</div>
+                <div>
+                  <div style="font-size:12.5px; font-weight:600;">{{ task.assigned_to.full_name }}</div>
+                  <div style="font-size:11px; color:var(--text-muted);">{{ task.assigned_to.primary_role.name }}</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge badge-neutral">{{ task.get_category_display }}</span></td>
+            <td>
+              <span class="badge badge-{% if task.priority == 'urgent' %}danger{% elif task.priority == 'high' %}warning{% elif task.priority == 'medium' %}info{% else %}neutral{% endif %}">
+                {{ task.get_priority_display }}
+              </span>
+            </td>
+            <td class="td-mono {% if task.is_overdue %}text-danger{% endif %}" style="font-size:12px;">
+              {% if task.due_date %}{{ task.due_date|date:"M d" }}{% if task.is_overdue %} ⚠{% endif %}{% else %}—{% endif %}
+            </td>
+            <td>
+              <form method="post" action="{% url 'superuser:task_status_update' task.pk %}" class="inline-status-form">
+                {% csrf_token %}
+                <select name="status" class="filter-select" style="font-size:11px;" onchange="this.form.submit()">
+                  {% for val,label in status_choices %}
+                  <option value="{{ val }}" {% if task.status == val %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </form>
+            </td>
+            <td>
+              <div class="td-actions">
+                <button class="btn btn-secondary btn-sm btn-icon" title="Edit"
+                  onclick="openTaskModal({{ task.pk }}, '{{ task.title|escapejs }}', '{{ task.description|escapejs }}', '{{ task.category }}', '{{ task.priority }}', '{{ task.status }}', {{ task.assigned_to.pk }}, '{{ task.due_date|date:'Y-m-d' }}', '{{ task.notes|escapejs }}')">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <form method="post" action="{% url 'superuser:task_delete' task.pk %}" style="display:inline;" onsubmit="return confirm('Delete this task?')">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-ghost btn-sm btn-icon" title="Delete">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7">
+            <div class="empty-state" style="padding:40px;">
+              <div class="empty-icon">📋</div>
+              <div class="empty-title">No Tasks</div>
+              <div class="empty-text">Create a task to get the team started.</div>
+              <button class="btn btn-primary mt-2" onclick="openTaskModal()">New Task</button>
+            </div>
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card-footer">
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <span style="font-size:12.5px; color:var(--text-muted); font-family:'JetBrains Mono',monospace;">{{ tasks.paginator.count }} tasks</span>
+        <div class="pagination" style="padding:0;">
+          {% if tasks.has_previous %}<a href="?page={{ tasks.previous_page_number }}&status={{ status_f }}&priority={{ priority_f }}&assignee={{ assignee_f }}&q={{ q }}" class="page-btn">‹</a>{% else %}<button class="page-btn" disabled>‹</button>{% endif %}
+          {% for i in tasks.paginator.page_range %}
+            {% if tasks.number == i %}<button class="page-btn active">{{ i }}</button>
+            {% elif i <= 3 or i >= tasks.paginator.num_pages|add:"-2" %}<a href="?page={{ i }}&status={{ status_f }}&priority={{ priority_f }}&assignee={{ assignee_f }}&q={{ q }}" class="page-btn">{{ i }}</a>{% endif %}
+          {% endfor %}
+          {% if tasks.has_next %}<a href="?page={{ tasks.next_page_number }}&status={{ status_f }}&priority={{ priority_f }}&assignee={{ assignee_f }}&q={{ q }}" class="page-btn">›</a>{% else %}<button class="page-btn" disabled>›</button>{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Board View (Kanban) -->
+<div id="board-view" style="display:none;">
+  <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:16px; align-items:start;">
+    {% for col_status, col_label in status_choices %}
+    <div style="background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden;">
+      <div style="padding:12px 14px; border-bottom:1px solid var(--border); background:var(--bg-raised); display:flex; align-items:center; justify-content:space-between;">
+        <span style="font-size:12px; font-weight:700; font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted);">{{ col_label }}</span>
+        <span style="font-size:11px; color:var(--text-muted); font-family:'JetBrains Mono',monospace;" id="count-{{ col_status }}">0</span>
+      </div>
+      <div id="col-{{ col_status }}" style="padding:10px; display:flex; flex-direction:column; gap:8px; min-height:120px;">
+        <!-- filled by JS -->
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Task data for board view -->
+<script id="task-data" type="application/json">
+[{% for task in tasks %}{"pk":{{ task.pk }},"title":"{{ task.title|escapejs }}","assignee":"{{ task.assigned_to.full_name|escapejs }}","role":"{{ task.assigned_to.primary_role.name|escapejs }}","priority":"{{ task.priority }}","status":"{{ task.status }}","due":"{{ task.due_date|date:'M d'|default:'' }}","overdue":{{ task.is_overdue|lower }}}{% if not forloop.last %},{% endif %}{% endfor %}]
+</script>
+
+<!-- Task Modal -->
+<div id="task-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:500; align-items:center; justify-content:center; backdrop-filter:blur(4px); overflow-y:auto; padding:20px;">
+  <div style="background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-xl); padding:32px; width:100%; max-width:580px; box-shadow:var(--shadow-lg);">
+    <h2 style="font-family:'Syne',sans-serif; font-size:20px; font-weight:700; margin-bottom:20px;" id="task-modal-title">New Task</h2>
+    <form method="post" id="task-form">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Title <span class="required">*</span></label>
+        <input type="text" name="title" id="t-title" class="form-control" required placeholder="Task title…">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea name="description" id="t-desc" class="form-control" rows="2" placeholder="Details…"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Assign To <span class="required">*</span></label>
+          <select name="assigned_to" id="t-assignee" class="form-control" required>
+            <option value="">— Select staff —</option>
+            {% for s in assignable_staff %}
+            <option value="{{ s.pk }}">{{ s.full_name }} ({{ s.primary_role.name }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select name="category" id="t-cat" class="form-control">
+            {% for val,label in category_choices %}
+            <option value="{{ val }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="form-row-3">
+        <div class="form-group">
+          <label class="form-label">Priority</label>
+          <select name="priority" id="t-priority" class="form-control">
+            {% for val,label in priority_choices %}
+            <option value="{{ val }}" {% if val == 'medium' %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select name="status" id="t-status" class="form-control">
+            {% for val,label in status_choices %}
+            <option value="{{ val }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Due Date</label>
+          <input type="date" name="due_date" id="t-due" class="form-control">
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:20px;">
+        <label class="form-label">Notes</label>
+        <textarea name="notes" id="t-notes" class="form-control" rows="2" placeholder="Internal notes…"></textarea>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" class="btn btn-ghost" onclick="closeTaskModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Task</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Filter auto-submit
+document.querySelectorAll('#filter-form select').forEach(el =>
+  el.addEventListener('change', () => el.closest('form').submit())
+);
+document.querySelector('#filter-form input')?.addEventListener('keyup', e => {
+  if (e.key === 'Enter') e.target.closest('form').submit();
+});
+
+// Task modal
+const taskModal = document.getElementById('task-modal');
+function openTaskModal(pk, title, desc, cat, priority, status, assignee, due, notes) {
+  document.getElementById('task-modal-title').textContent = pk ? 'Edit Task' : 'New Task';
+  document.getElementById('task-form').action = pk ? `/superuser/tasks/${pk}/save/` : '/superuser/tasks/save/';
+  document.getElementById('t-title').value    = title    || '';
+  document.getElementById('t-desc').value     = desc     || '';
+  document.getElementById('t-notes').value    = notes    || '';
+  document.getElementById('t-due').value      = due      || '';
+  if (cat)      document.getElementById('t-cat').value      = cat;
+  if (priority) document.getElementById('t-priority').value = priority;
+  if (status)   document.getElementById('t-status').value   = status;
+  if (assignee) document.getElementById('t-assignee').value = assignee;
+  taskModal.style.display = 'flex';
+}
+function closeTaskModal() { taskModal.style.display = 'none'; }
+taskModal.addEventListener('click', e => { if (e.target === taskModal) closeTaskModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTaskModal(); });
+
+// Board view
+let boardActive = false;
+const priorityColors = { urgent:'var(--danger)', high:'var(--warning)', medium:'var(--info)', low:'var(--text-muted)' };
+
+function buildBoard() {
+  const tasks = JSON.parse(document.getElementById('task-data').textContent);
+  const cols  = {};
+  document.querySelectorAll('[id^="col-"]').forEach(c => { cols[c.id.replace('col-','')] = c; c.innerHTML = ''; });
+  const counts = {};
+  tasks.forEach(t => {
+    counts[t.status] = (counts[t.status] || 0) + 1;
+    const col = cols[t.status];
+    if (!col) return;
+    const card = document.createElement('div');
+    card.style.cssText = `background:var(--bg-raised); border:1px solid var(--border); border-left:3px solid ${priorityColors[t.priority]||'var(--border)'}; border-radius:var(--radius-md); padding:12px; font-size:13px; transition:box-shadow var(--transition); cursor:pointer;`;
+    card.onmouseover = () => card.style.boxShadow = 'var(--shadow-md)';
+    card.onmouseout  = () => card.style.boxShadow = '';
+    card.innerHTML = `
+      <div style="font-weight:600; margin-bottom:6px; line-height:1.3;">${t.title}</div>
+      <div style="display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--text-muted);">
+        <span>${t.assignee}</span>
+        ${t.due ? `<span style="margin-left:auto; color:${t.overdue ? 'var(--danger)':'var(--text-muted)'};">📅 ${t.due}</span>` : ''}
+      </div>`;
+    col.appendChild(card);
+  });
+  Object.entries(counts).forEach(([s,c]) => {
+    const el = document.getElementById('count-'+s);
+    if (el) el.textContent = c;
+  });
+}
+
+function toggleView() {
+  boardActive = !boardActive;
+  document.getElementById('list-view').style.display  = boardActive ? 'none' : '';
+  document.getElementById('board-view').style.display = boardActive ? '' : 'none';
+  document.getElementById('toggle-board-btn').textContent = boardActive ? '☰ List View' : '⊞ Board View';
+  if (boardActive) buildBoard();
+}
+</script>
+{% endblock %}

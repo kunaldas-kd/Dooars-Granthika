@@ -1,0 +1,186 @@
+{% extends "superuser/superuser_dashboard_base.html" %}
+{% block title %}Staff{% endblock %}
+{% block breadcrumb %}Staff{% endblock %}
+{% block nav_staff %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Staff Members</h1>
+    <p class="page-subtitle">Company hierarchy — one person, multiple roles.</p>
+  </div>
+  <div class="page-actions">
+    {% if request.user.is_superuser or requesting_staff.primary_role.can_add_staff %}
+    <a href="{% url 'superuser:staff_add' %}" class="btn btn-primary">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add Staff
+    </a>
+    {% endif %}
+    {% if request.user.is_superuser %}
+    <a href="{% url 'superuser:roles_list' %}" class="btn btn-secondary">Manage Roles</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="stats-grid" style="grid-template-columns: repeat(4,1fr);">
+  <div class="stat-card accent-blue">
+    <div class="stat-icon accent-icon">👥</div>
+    <div class="stat-label">Total Staff</div>
+    <div class="stat-value">{{ total_staff }}</div>
+  </div>
+  <div class="stat-card accent-success">
+    <div class="stat-icon success-icon">✓</div>
+    <div class="stat-label">Active</div>
+    <div class="stat-value">{{ active_staff }}</div>
+  </div>
+  {% for row in by_dept %}
+  {% if forloop.counter <= 2 %}
+  <div class="stat-card accent-info">
+    <div class="stat-icon info-icon">🏷</div>
+    <div class="stat-label">{{ row.primary_role__department|capfirst }}</div>
+    <div class="stat-value">{{ row.cnt }}</div>
+  </div>
+  {% endif %}
+  {% endfor %}
+</div>
+
+<div class="card">
+  <form method="get" class="filters-bar" id="filter-form">
+    <div class="filter-group">
+      <span class="filter-label">Dept</span>
+      <select name="dept" class="filter-select">
+        <option value="">All Depts</option>
+        {% for val,label in dept_choices %}
+        <option value="{{ val }}" {% if dept_filter == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Status</span>
+      <select name="status" class="filter-select">
+        <option value="">All</option>
+        {% for val,label in status_choices %}
+        <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" name="q" value="{{ q }}" placeholder="Search name, email, role…">
+    </div>
+  </form>
+
+  <div class="table-wrapper" style="border:none; border-radius:0;">
+    <table id="staff-table">
+      <thead>
+        <tr>
+          <th>Staff</th>
+          <th data-sort>Employee ID</th>
+          <th data-sort>Primary Role</th>
+          <th>Secondary Roles</th>
+          <th data-sort>Level</th>
+          <th data-sort>Status</th>
+          <th data-sort>Joined</th>
+          <th>Added By</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in staff_members %}
+        <tr data-href="{% url 'superuser:staff_detail' m.pk %}">
+          <td>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:34px; height:34px; border-radius:50%; background:{{ m.avatar_color }}22; border:2px solid {{ m.avatar_color }}; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:{{ m.avatar_color }}; flex-shrink:0;">
+                {{ m.full_name|first|upper }}
+              </div>
+              <div>
+                <div style="font-weight:600; font-size:13.5px;">{{ m.full_name }}</div>
+                <div style="font-size:11.5px; color:var(--text-muted); font-family:'JetBrains Mono',monospace;">{{ m.email }}</div>
+              </div>
+            </div>
+          </td>
+          <td class="td-mono">{{ m.employee_id }}</td>
+          <td>
+            <span style="font-size:12.5px; font-weight:600; color:var(--accent);">{{ m.primary_role.name }}</span>
+            <div style="font-size:11px; color:var(--text-muted);">{{ m.primary_role.get_department_display }}</div>
+          </td>
+          <td>
+            <div style="display:flex; flex-wrap:wrap; gap:4px;">
+              {% for r in m.secondary_roles.all %}
+              <span class="badge badge-neutral" style="font-size:10px;">{{ r.name }}</span>
+              {% empty %}<span style="color:var(--text-muted); font-size:12px;">—</span>
+              {% endfor %}
+            </div>
+          </td>
+          <td class="td-mono">L{{ m.primary_role.level }}</td>
+          <td>
+            <span class="badge badge-{% if m.status == 'active' %}active{% elif m.status == 'inactive' %}danger{% else %}warning{% endif %}">
+              {{ m.get_status_display }}
+            </span>
+          </td>
+          <td class="td-mono">{{ m.joined_date|date:"M d, Y" }}</td>
+          <td style="font-size:12.5px; color:var(--text-secondary);">
+            {% if m.added_by %}{{ m.added_by.full_name }}{% else %}<span class="badge badge-accent" style="font-size:10px;">Superuser</span>{% endif %}
+          </td>
+          <td>
+            <div class="td-actions">
+              <a href="{% url 'superuser:staff_detail' m.pk %}" class="btn btn-ghost btn-sm btn-icon" title="View">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </a>
+              <a href="{% url 'superuser:staff_edit' m.pk %}" class="btn btn-secondary btn-sm btn-icon" title="Edit">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </a>
+              {% if m.status == 'active' %}
+              <form method="post" action="{% url 'superuser:staff_deactivate' m.pk %}" style="display:inline;" onsubmit="return confirm('Deactivate {{ m.full_name }}?')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-warning btn-sm btn-icon" title="Deactivate">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="9">
+          <div class="empty-state">
+            <div class="empty-icon">👥</div>
+            <div class="empty-title">No Staff Members</div>
+            <div class="empty-text">Add your first team member to get started.</div>
+            <a href="{% url 'superuser:staff_add' %}" class="btn btn-primary mt-2">Add Staff</a>
+          </div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card-footer">
+    <div style="display:flex; align-items:center; justify-content:space-between;">
+      <span style="font-size:12.5px; color:var(--text-muted); font-family:'JetBrains Mono',monospace;">
+        Showing {{ staff_members.start_index }}–{{ staff_members.end_index }} of {{ staff_members.paginator.count }}
+      </span>
+      <div class="pagination" style="padding:0;">
+        {% if staff_members.has_previous %}<a href="?page={{ staff_members.previous_page_number }}&dept={{ dept_filter }}&status={{ status_filter }}&q={{ q }}" class="page-btn">‹</a>{% else %}<button class="page-btn" disabled>‹</button>{% endif %}
+        {% for i in staff_members.paginator.page_range %}
+          {% if staff_members.number == i %}<button class="page-btn active">{{ i }}</button>
+          {% elif i <= 3 or i >= staff_members.paginator.num_pages|add:"-2" %}<a href="?page={{ i }}&dept={{ dept_filter }}&status={{ status_filter }}&q={{ q }}" class="page-btn">{{ i }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if staff_members.has_next %}<a href="?page={{ staff_members.next_page_number }}&dept={{ dept_filter }}&status={{ status_filter }}&q={{ q }}" class="page-btn">›</a>{% else %}<button class="page-btn" disabled>›</button>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('#filter-form select').forEach(el =>
+  el.addEventListener('change', () => el.closest('form').submit())
+);
+document.querySelector('#filter-form input')?.addEventListener('keyup', e => {
+  if (e.key === 'Enter') e.target.closest('form').submit();
+});
+</script>
+{% endblock %}

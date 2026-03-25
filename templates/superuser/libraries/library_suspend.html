@@ -1,0 +1,49 @@
+{% extends "superuser/superuser_dashboard_base.html" %}
+{% block title %}Suspend Library{% endblock %}
+{% block breadcrumb %}Suspend Library{% endblock %}
+{% block nav_libraries %}active{% endblock %}
+
+{% block content %}
+<div class="confirm-page" style="margin: -28px; min-height: calc(100vh - 64px);">
+  <div class="confirm-card">
+    <div class="confirm-icon warning">⏸</div>
+    <h2 class="confirm-title">Suspend Library</h2>
+    <p class="confirm-desc">
+      Suspending this library will immediately deactivate its subscription and revoke
+      platform access for all staff and users. This can be reversed at any time.
+    </p>
+
+    <div class="confirm-target">
+      <div class="label">Library</div>
+      <div class="value">{{ library.library_name }}</div>
+      <div style="margin-top:6px; font-size:12.5px; color:var(--text-secondary); font-family:'JetBrains Mono',monospace;">
+        {{ library.library_code }} · {{ library.institute_email }}
+        {% if library.subscription %} · Plan: {{ library.subscription.plan|capfirst }}{% endif %}
+      </div>
+    </div>
+
+    <div class="alert alert-warning" style="margin-bottom:20px;">
+      <span class="alert-icon">⚠</span>
+      <div class="alert-text">
+        <div class="alert-title">Immediate effect</div>
+        All library staff and users will lose access instantly.
+      </div>
+    </div>
+
+    <form method="post" data-confirm>
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Reason for suspension (optional)</label>
+        {{ form.reason }}
+      </div>
+      <div class="confirm-actions">
+        <a href="{% url 'superuser:library_detail' library.pk %}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-warning">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+          Suspend Library
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

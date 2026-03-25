@@ -1,0 +1,437 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Dashboard — Dooars Granthika{% endblock %}
+
+{% block nav_dashboard %}active{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboards/admin_dashboard.css' %}" />
+{% endblock %}
+
+{% block topbar %}
+<header class="topbar">
+  <div class="topbar-left">
+    <h1 class="dashboard-title">Dashboard</h1>
+    <p class="dashboard-subtitle">Welcome back, {{ user.get_full_name|default:user.username }}</p>
+  </div>
+  <div class="topbar-right">
+    <div class="global-search">
+      <i class="fas fa-search search-icon"></i>
+      <input
+        type="text"
+        class="search-input"
+        id="globalSearch"
+        placeholder="Search books, members, transactions..."
+        autocomplete="off"
+      />
+      <button class="search-clear" id="searchClear">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    {% if library_logo_b64 %}
+    <img src="{{ library_logo_b64 }}" alt="Library Logo" class="org-logo" />
+    {% else %}
+    <div class="org-badge">{{ user.get_full_name|slice:":1"|upper }}</div>
+    {% endif %}
+  </div>
+</header>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+  {% comment %} {# ═══════════════════════════════════════════════
+     PRIORITY ALERT BANNER
+  ═══════════════════════════════════════════════ #} {% endcomment %}
+  {% if overdue_count > 5 %}
+  <div class="alert-banner alert-danger">
+    <div class="alert-icon">
+      <i class="fas fa-exclamation-triangle"></i>
+    </div>
+    <div class="alert-content">
+      <strong>High Priority: {{ overdue_count }} Overdue Books</strong>
+      <span>Multiple books are significantly overdue and require immediate attention</span>
+    </div>
+    <a href="#overdue-section" class="alert-action">View Details →</a>
+  </div>
+  {% endif %}
+{% comment %} 
+  {# ═══════════════════════════════════════════════
+     KPI CARDS
+  ═══════════════════════════════════════════════ #} {% endcomment %}
+  <div class="kpi-grid">
+
+    <div class="kpi-card">
+      <div class="kpi-icon"><i class="fas fa-book"></i></div>
+      <div class="kpi-data">
+        <div class="kpi-value">{{ total_books|default:"0" }}</div>
+        <div class="kpi-label">Total Books</div>
+      </div>
+      {% if books_change != 0 %}
+      <div class="kpi-change {% if books_change > 0 %}positive{% else %}negative{% endif %}">
+        {{ books_change|add:0|stringformat:"+d" }}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon"><i class="fas fa-users"></i></div>
+      <div class="kpi-data">
+        <div class="kpi-value">{{ total_members|default:"0" }}</div>
+        <div class="kpi-label">Active Members</div>
+      </div>
+      {% if members_change != 0 %}
+      <div class="kpi-change {% if members_change > 0 %}positive{% else %}negative{% endif %}">
+        {{ members_change|add:0|stringformat:"+d" }}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon"><i class="fas fa-book-reader"></i></div>
+      <div class="kpi-data">
+        <div class="kpi-value">{{ active_transactions|default:"0" }}</div>
+        <div class="kpi-label">Active Loans</div>
+      </div>
+      {% if transactions_change != 0 %}
+      <div class="kpi-change {% if transactions_change > 0 %}positive{% else %}negative{% endif %}">
+        {{ transactions_change|add:0|stringformat:"+d" }}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="kpi-card {% if overdue_count > 0 %}kpi-card-highlight{% endif %}">
+      <div class="kpi-icon"><i class="fas fa-clock"></i></div>
+      <div class="kpi-data">
+        <div class="kpi-value">{{ overdue_count|default:"0" }}</div>
+        <div class="kpi-label">Overdue Books</div>
+      </div>
+    </div>
+
+  </div>
+
+  {% comment %} {# ═══════════════════════════════════════════════
+     QUICK ACTIONS
+  ═══════════════════════════════════════════════ #} {% endcomment %}
+  <div class="quick-actions-panel">
+    <h2 class="section-heading">
+      <i class="fas fa-bolt"></i>
+      Quick Actions
+    </h2>
+    <div class="action-buttons">
+      <a href="{% url 'books:book_create' %}" class="action-btn action-btn-primary">
+        <i class="fas fa-plus-circle"></i>
+        <span>Add Book</span>
+      </a>
+      <a href="{% url 'members:member_add' %}" class="action-btn action-btn-secondary">
+        <i class="fas fa-user-plus"></i>
+        <span>Add Member</span>
+      </a>
+      <a href="{% url 'transactions:issue_book' %}" class="action-btn action-btn-accent">
+        <i class="fas fa-hand-holding"></i>
+        <span>Issue Book</span>
+      </a>
+      <a href="{% url 'members:clearance_check' %}" class="action-btn">
+        <i class="fas fa-clipboard-check"></i>
+        <span>Library Clearance</span>
+      </a>
+      <a href="{% url 'reports:overview' %}" class="action-btn">
+        <i class="fas fa-chart-line"></i>
+        <span>Reports</span>
+      </a>
+    </div>
+  </div>
+
+  {% comment %} {# ═══════════════════════════════════════════════
+     MAIN CONTENT GRID — 2 × 2
+     ┌──────────────────────┬─────────────────────┐
+     │  Loan Trend Chart    │ Priority Notifs      │  row 1
+     ├──────────────────────┼─────────────────────┤
+     │  Collection by Cat.  │ Recent Activity      │  row 2
+     └──────────────────────┴─────────────────────┘
+  ═══════════════════════════════════════════════ #} {% endcomment %}
+  <div class="content-grid">
+
+    {# LEFT COLUMN — both chart cards (display:contents dissolves this wrapper) #}
+    <div class="content-left">
+
+      {# ROW 1 LEFT — Loan Activity Trend #}
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title">
+            <i class="fas fa-chart-line"></i>
+            Loan Activity Trend
+          </h3>
+          <span class="chart-badge">Last 6 months</span>
+        </div>
+        <div class="chart-body">
+          {% if monthly_loan_labels and monthly_loan_data %}
+          <canvas id="loansChart" height="100"></canvas>
+          {% else %}
+          <div class="empty-chart">
+            <i class="fas fa-chart-line"></i>
+            <p>No loan data available yet</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      {# ROW 2 LEFT — Collection by Category #}
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title">
+            <i class="fas fa-chart-pie"></i>
+            Collection by Category
+          </h3>
+          <span class="chart-badge">Top 8 categories</span>
+        </div>
+        <div class="chart-body chart-body-doughnut">
+          {% if category_labels and category_data %}
+          <canvas id="categoryChart" height="100"></canvas>
+          {% else %}
+          <div class="empty-chart">
+            <i class="fas fa-chart-pie"></i>
+            <p>No category data available yet</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>{# end .content-left #}
+
+    {# RIGHT COLUMN — notifications + activity (display:contents dissolves this wrapper) #}
+    <div class="content-right">
+
+      {# ROW 1 RIGHT — Priority Notifications #}
+      {% if overdue_count > 0 or due_today_count > 0 %}
+      <div class="notifications-board">
+        <div class="notification-header">
+          <div class="notification-title">
+            <i class="fas fa-bell"></i>
+            <span>Priority Notifications</span>
+          </div>
+          <span class="notification-count">
+            {{ overdue_count|add:due_today_count }} Alert{{ overdue_count|add:due_today_count|pluralize }}
+          </span>
+        </div>
+        <div class="notifications-scroll">
+          <div class="notifications-list" id="notificationsList">
+
+            {% if overdue_count > 0 %}
+            <div class="notification-item">
+              <div class="notification-icon"><i class="fas fa-exclamation-triangle"></i></div>
+              <div class="notification-text">
+                <strong>{{ overdue_count }}</strong> book{{ overdue_count|pluralize }} overdue — Immediate action required
+              </div>
+              <div class="notification-time">Now</div>
+            </div>
+            {% endif %}
+
+            {% if due_today_count > 0 %}
+            <div class="notification-item">
+              <div class="notification-icon"><i class="fas fa-clock"></i></div>
+              <div class="notification-text">
+                <strong>{{ due_today_count }}</strong> book{{ due_today_count|pluralize }} due today — Send reminders
+              </div>
+              <div class="notification-time">Today</div>
+            </div>
+            {% endif %}
+
+            {% if total_fines_pending > 0 %}
+            <div class="notification-item">
+              <div class="notification-icon"><i class="fas fa-rupee-sign"></i></div>
+              <div class="notification-text">
+                <strong>₹{{ total_fines_pending|floatformat:2 }}</strong> in pending fines to collect
+              </div>
+              <div class="notification-time">Pending</div>
+            </div>
+            {% endif %}
+
+            {# Duplicate items for seamless scroll loop #}
+            {% if overdue_count > 0 %}
+            <div class="notification-item">
+              <div class="notification-icon"><i class="fas fa-exclamation-triangle"></i></div>
+              <div class="notification-text">
+                <strong>{{ overdue_count }}</strong> book{{ overdue_count|pluralize }} overdue — Immediate action required
+              </div>
+              <div class="notification-time">Now</div>
+            </div>
+            {% endif %}
+
+            {% if due_today_count > 0 %}
+            <div class="notification-item">
+              <div class="notification-icon"><i class="fas fa-clock"></i></div>
+              <div class="notification-text">
+                <strong>{{ due_today_count }}</strong> book{{ due_today_count|pluralize }} due today — Send reminders
+              </div>
+              <div class="notification-time">Today</div>
+            </div>
+            {% endif %}
+
+            {% if total_fines_pending > 0 %}
+            <div class="notification-item">
+              <div class="notification-icon"><i class="fas fa-rupee-sign"></i></div>
+              <div class="notification-text">
+                <strong>₹{{ total_fines_pending|floatformat:2 }}</strong> in pending fines to collect
+              </div>
+              <div class="notification-time">Pending</div>
+            </div>
+            {% endif %}
+
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      {# ROW 2 RIGHT — Recent Activity #}
+      <div class="activity-card">
+        <div class="activity-header">
+          <h3 class="activity-title">
+            <i class="fas fa-history"></i>
+            Recent Activity
+          </h3>
+        </div>
+        <div class="activity-body">
+          {% for activity in recent_activities %}
+          <div class="activity-item">
+            <div class="activity-icon activity-icon-{{ activity.color }}">
+              <i class="fas fa-{{ activity.icon }}"></i>
+            </div>
+            <div class="activity-text">
+              <div class="activity-main">{{ activity.title }}</div>
+              <div class="activity-sub">{{ activity.description }}</div>
+            </div>
+            <div class="activity-time">{{ activity.timestamp }}</div>
+          </div>
+          {% empty %}
+          <div class="empty-state">
+            <i class="fas fa-clock"></i>
+            <p>No recent activity</p>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>{# end .content-right #}
+
+  </div>{# end .content-grid #}
+
+  {% comment %} {# ═══════════════════════════════════════════════
+     OVERDUE & FINES SECTION
+  ═══════════════════════════════════════════════ #} {% endcomment %}
+  <div id="overdue-section" class="overdue-section">
+
+    <div class="section-header">
+      <h2 class="section-heading">
+        <i class="fas fa-exclamation-circle"></i>
+        Overdue Books & Fines Management
+      </h2>
+    </div>
+
+    <div class="finance-grid">
+
+      <div class="finance-stat finance-stat-danger">
+        <div class="finance-icon"><i class="fas fa-exclamation-triangle"></i></div>
+        <div class="finance-data">
+          <div class="finance-value">{{ overdue_count|default:"0" }}</div>
+          <div class="finance-label">Overdue Books</div>
+        </div>
+      </div>
+
+      <div class="finance-stat finance-stat-warning">
+        <div class="finance-icon"><i class="fas fa-rupee-sign"></i></div>
+        <div class="finance-data">
+          <div class="finance-value">₹{{ total_fines_pending|floatformat:2 }}</div>
+          <div class="finance-label">Fines Pending</div>
+        </div>
+      </div>
+
+      <div class="finance-stat finance-stat-success">
+        <div class="finance-icon"><i class="fas fa-check-circle"></i></div>
+        <div class="finance-data">
+          <div class="finance-value">₹{{ total_fines_collected|floatformat:2 }}</div>
+          <div class="finance-label">Fines Collected</div>
+        </div>
+      </div>
+
+      <div class="finance-stat finance-stat-info">
+        <div class="finance-icon"><i class="fas fa-calendar-day"></i></div>
+        <div class="finance-data">
+          <div class="finance-value">{{ due_today_count|default:"0" }}</div>
+          <div class="finance-label">Due Today</div>
+        </div>
+      </div>
+
+    </div>
+
+    {% if overdue_transactions %}
+    <div class="overdue-table-wrapper">
+      <table class="overdue-table">
+        <thead>
+          <tr>
+            <th>Book Details</th>
+            <th>Member</th>
+            <th>Due Date</th>
+            <th>Days Overdue</th>
+            <th>Fine Amount</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for txn in overdue_transactions %}
+          <tr>
+            <td>
+              <div class="book-info">
+                <span class="book-title">{{ txn.book.title }}</span>
+                <span class="book-author">{{ txn.book.author }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="member-info">
+                <span class="member-name">{{ txn.member.first_name }} {{ txn.member.last_name }}</span>
+                <span class="member-id">ID: {{ txn.member.member_id }}</span>
+              </div>
+            </td>
+            <td>{{ txn.due_date|date:"M d, Y" }}</td>
+            <td>
+              <span class="days-badge {% if txn.days_overdue > 14 %}critical{% elif txn.days_overdue > 7 %}high{% else %}medium{% endif %}">
+                <i class="fas fa-clock"></i>
+                {{ txn.days_overdue }} day{{ txn.days_overdue|pluralize }}
+              </span>
+            </td>
+            <td>
+              <strong>₹{{ txn.display_fine|floatformat:2 }}</strong>
+            </td>
+            <td>
+              <a href="{% url 'transactions:transaction_detail' txn.pk %}" class="action-link">
+                <i class="fas fa-eye"></i> View
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="fas fa-check-circle"></i>
+      <p>No overdue books at the moment!</p>
+    </div>
+    {% endif %}
+
+  </div>{# end #overdue-section #}
+
+</div>{# end .dashboard-container #}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const monthlyLoanLabels = {{ monthly_loan_labels|safe }};
+  const monthlyLoanData   = {{ monthly_loan_data|safe }};
+  const categoryLabels    = {{ category_labels|safe }};
+  const categoryData      = {{ category_data|safe }};
+</script>
+<script src="{% static 'js/dashboards/admin_dashboard.js' %}"></script>
+{% endblock %}

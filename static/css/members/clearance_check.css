@@ -1,0 +1,45 @@
+/* ═══════════════════════════════════════════════════════════════════
+   CLEARANCE CHECK PAGE — page-specific styles
+   ═══════════════════════════════════════════════════════════════════ */
+
+@import url("members.css");
+
+/* ── Narrow the clearance container on very wide screens ── */
+.clearance-container {
+  max-width: 780px;
+}
+
+/* ── Quick-links grid ── */
+.clearance-quicklinks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+/* ── Info box ── */
+.clearance-info-box {
+  background: #dbeafe;
+  border-left: 4px solid #3b82f6;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+}
+
+.clearance-info-box h4 {
+  margin: 0 0 0.75rem;
+  color: #1e40af;
+  font-size: 1rem;
+}
+
+.clearance-info-box p,
+.clearance-info-box ul {
+  margin: 0;
+  color: #1e3a8a;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.clearance-info-box ul {
+  padding-left: 1.5rem;
+  margin-top: 0.75rem;
+}

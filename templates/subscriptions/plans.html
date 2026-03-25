@@ -1,0 +1,184 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Subscription Plans — Dooars Granthika{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/subscriptions/plans.css' %}">
+{% endblock %}
+
+{% block nav_subscription %}active{% endblock %}
+
+{% block topbar %}
+<header class="top-bar">
+  <div class="topbar-left">
+    <h1 class="topbar-title">Subscription Plans</h1>
+    <p class="topbar-sub">Choose the right plan for your library</p>
+  </div>
+  <div class="topbar-right">
+    {% if current_plan %}
+    <div class="current-plan-chip">
+      <span class="chip-dot"></span>
+      <span>{{ current_plan.name }}</span>
+      {% if subscription.days_remaining > 0 %}
+      <span class="chip-days">{{ subscription.days_remaining }}d left</span>
+      {% endif %}
+    </div>
+    {% endif %}
+    <a href="{% url 'subscriptions:my_subscription' %}" class="btn-topbar">
+      <i class="fas fa-receipt"></i> My Subscription
+    </a>
+  </div>
+</header>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Hero tagline ─────────────────────────────────────────────── -->
+<div class="plans-hero">
+  <p class="hero-lead">Flexible plans that grow with your library. All plans include core catalogue management, member tracking, and transaction history.</p>
+</div>
+
+<!-- ── Plans Grid ──────────────────────────────────────────────── -->
+<div class="plans-grid" id="plansGrid">
+  {% for plan in plans %}
+  <div class="plan-card {% if plan.is_popular %}plan-popular{% endif %} {% if current_plan and current_plan.id == plan.id %}plan-current{% endif %}"
+       style="--i:{{ forloop.counter0 }}">
+
+    {% if plan.is_popular %}
+    <div class="plan-ribbon"><i class="fas fa-fire"></i> Most Popular</div>
+    {% endif %}
+
+    {% if current_plan and current_plan.id == plan.id %}
+    <div class="plan-yours-tag"><i class="fas fa-check"></i> Your Plan</div>
+    {% endif %}
+
+    <!-- Header -->
+    <div class="plan-header">
+      <div class="plan-tier-icon tier-{{ plan.tier }}">
+        {% if plan.tier == "free" %}<i class="fas fa-book-open"></i>
+        {% elif plan.tier == "basic" %}<i class="fas fa-bookmark"></i>
+        {% elif plan.tier == "silver" %}<i class="fas fa-building-columns"></i>
+        {% elif plan.tier == "gold" %}<i class="fas fa-star"></i>
+        {% elif plan.tier == "pro" %}<i class="fas fa-rocket"></i>
+        {% else %}<i class="fas fa-crown"></i>{% endif %}
+      </div>
+      <div>
+        <h2 class="plan-name">{{ plan.name }}</h2>
+        {% if plan.tagline %}<p class="plan-tagline">{{ plan.tagline }}</p>{% endif %}
+      </div>
+    </div>
+
+    <!-- Price -->
+    <div class="plan-price-row">
+      <span class="plan-price">{{ plan.price_display }}</span>
+      {% if not plan.is_free %}
+      <span class="plan-cycle">/ {{ plan.get_billing_cycle_display|lower }}</span>
+      {% endif %}
+    </div>
+
+    <!-- Limits -->
+    <div class="plan-limits">
+      <div class="limit-row">
+        <i class="fas fa-users limit-icon"></i>
+        <span><strong>{{ plan.max_members }}</strong> members</span>
+      </div>
+      <div class="limit-row">
+        <i class="fas fa-book limit-icon"></i>
+        <span><strong>{{ plan.max_books }}</strong> book titles</span>
+      </div>
+      <div class="limit-row">
+        <i class="fas fa-copy limit-icon"></i>
+        <span><strong>{{ plan.max_book_copies }}</strong> physical copies</span>
+      </div>
+      <div class="limit-row">
+        <i class="fas fa-user-tie limit-icon"></i>
+        <span><strong>{{ plan.max_staff }}</strong> staff accounts</span>
+      </div>
+    </div>
+
+    <!-- Feature toggles -->
+    <ul class="plan-features">
+      {% if plan.allow_reports %}
+      <li class="feat-on"><i class="fas fa-check feat-check"></i> Reports & Analytics</li>
+      {% else %}
+      <li class="feat-off"><i class="fas fa-minus feat-minus"></i> Reports & Analytics</li>
+      {% endif %}
+      {% if plan.allow_export %}
+      <li class="feat-on"><i class="fas fa-check feat-check"></i> CSV / PDF Export</li>
+      {% else %}
+      <li class="feat-off"><i class="fas fa-minus feat-minus"></i> CSV / PDF Export</li>
+      {% endif %}
+      {% if plan.allow_sms %}
+      <li class="feat-on"><i class="fas fa-check feat-check"></i> SMS Reminders</li>
+      {% else %}
+      <li class="feat-off"><i class="fas fa-minus feat-minus"></i> SMS Reminders</li>
+      {% endif %}
+      {% if plan.allow_email_reminders %}
+      <li class="feat-on"><i class="fas fa-check feat-check"></i> Email Reminders</li>
+      {% else %}
+      <li class="feat-off"><i class="fas fa-minus feat-minus"></i> Email Reminders</li>
+      {% endif %}
+      {% if plan.allow_api_access %}
+      <li class="feat-on"><i class="fas fa-check feat-check"></i> API Access</li>
+      {% endif %}
+      {% if plan.allow_custom_branding %}
+      <li class="feat-on"><i class="fas fa-check feat-check"></i> Custom Branding</li>
+      {% endif %}
+      {% if plan.priority_support %}
+      <li class="feat-on"><i class="fas fa-check feat-check"></i> Priority Support</li>
+      {% endif %}
+    </ul>
+
+    <!-- CTA -->
+    <div class="plan-cta">
+      {% if current_plan and current_plan.id == plan.id %}
+        <button class="btn-current" disabled>
+          <i class="fas fa-check-circle"></i> Current Plan
+        </button>
+      {% else %}
+        <a href="{% url 'subscriptions:checkout' plan.slug %}"
+           class="btn-choose {% if plan.is_popular %}btn-primary{% else %}btn-outline{% endif %}">
+          {% if plan.is_free %}Get Started Free{% else %}Choose {{ plan.name }}{% endif %}
+          <i class="fas fa-arrow-right"></i>
+        </a>
+      {% endif %}
+    </div>
+
+  </div>
+  {% empty %}
+  <div class="empty-plans">
+    <i class="fas fa-box-open"></i>
+    <p>No plans are available at the moment. Please check back soon.</p>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- ── FAQ ─────────────────────────────────────────────────────── -->
+<div class="faq-section">
+  <h2 class="faq-heading"><i class="fas fa-circle-question"></i> Frequently Asked Questions</h2>
+  <div class="faq-grid">
+    <div class="faq-card">
+      <h3>Can I upgrade anytime?</h3>
+      <p>Yes. Upgrades take effect immediately. Your new plan's validity starts from today.</p>
+    </div>
+    <div class="faq-card">
+      <h3>What payment methods are accepted?</h3>
+      <p>We accept UPI, debit/credit cards, and net banking via our secure Razorpay gateway.</p>
+    </div>
+    <div class="faq-card">
+      <h3>Is my data safe if I downgrade?</h3>
+      <p>Yes. Data is never deleted on downgrade; you simply cannot add new records beyond your plan's limits.</p>
+    </div>
+    <div class="faq-card">
+      <h3>Do plans auto-renew?</h3>
+      <p>Not yet. You'll receive an email reminder 7 days before expiry and can renew manually.</p>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/subscriptions/plans.js' %}"></script>
+{% endblock %}

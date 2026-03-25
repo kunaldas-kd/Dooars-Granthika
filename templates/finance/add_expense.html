@@ -1,0 +1,112 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}{% if expense %}Edit{% else %}Add{% endif %} Expense — Dooars Granthika{% endblock %}
+{% block nav_finance %}active{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/finance/finance_dashboard.css' %}" />
+{% endblock %}
+
+{% block content %}
+<div class="fin-wrapper" style="max-width:720px;">
+
+  <!-- Breadcrumb -->
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:20px;font-size:12px;color:var(--fin-faint);">
+    <a href="{% url 'finance:overview' %}" style="color:var(--fin-faint);text-decoration:none;">Finance</a>
+    <i class="fas fa-chevron-right" style="font-size:9px;"></i>
+    <a href="{% url 'finance:expense_list' %}" style="color:var(--fin-faint);text-decoration:none;">Expenses</a>
+    <i class="fas fa-chevron-right" style="font-size:9px;"></i>
+    <span style="color:var(--fin-blue-mid);font-weight:600;">{% if expense %}Edit{% else %}Add{% endif %}</span>
+  </div>
+
+  <!-- Page Header -->
+  <div class="fin-page-header" style="margin-bottom:24px;">
+    <div class="fin-page-header__left">
+      <div class="fin-page-header__icon" style="background:linear-gradient(135deg,#ef4444,#dc2626);">
+        <i class="fas fa-{% if expense %}pen{% else %}plus{% endif %}"></i>
+      </div>
+      <div>
+        <div class="fin-page-title">{% if expense %}Edit Expense{% else %}Add Expense{% endif %}</div>
+        <div class="fin-page-sub">{% if expense %}Update the expense record{% else %}Record a new operational cost{% endif %}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Card -->
+  <div class="fin-panel">
+    <div class="fin-panel__head">
+      <div class="fin-panel__title">
+        <i class="fas fa-receipt"></i>
+        Expense Details
+      </div>
+    </div>
+    <div class="fin-panel__body">
+      <form method="post" action="">
+        {% csrf_token %}
+
+        <!-- Row 1: Amount + Date -->
+        <div class="fin-form-row">
+          <div class="fin-form-group">
+            <label class="fin-form-label fin-form-label--required">Amount (&#8377;)</label>
+            <input type="number" name="amount" step="0.01" min="0"
+                   class="fin-form-input"
+                   value="{{ expense.amount|default:'' }}"
+                   placeholder="0.00" required>
+          </div>
+          <div class="fin-form-group">
+            <label class="fin-form-label fin-form-label--required">Date</label>
+            <input type="date" name="date"
+                   class="fin-form-input"
+                   value="{{ expense.date|date:'Y-m-d'|default:today }}"
+                   required>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="fin-form-group" style="margin-top:16px;">
+          <label class="fin-form-label fin-form-label--required">Description</label>
+          <input type="text" name="description"
+                 class="fin-form-input"
+                 value="{{ expense.description|default:'' }}"
+                 placeholder="e.g. Purchased new books, Electricity bill…"
+                 required>
+        </div>
+
+        <!-- Category -->
+        <div class="fin-form-group" style="margin-top:16px;">
+          <label class="fin-form-label">Category</label>
+          <select name="category" class="fin-form-input">
+            <option value="">— Select Category —</option>
+            {% for val, label in categories %}
+            <option value="{{ val }}" {% if expense.category == val %}selected{% endif %}>
+              {{ label }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Notes -->
+        <div class="fin-form-group" style="margin-top:16px;">
+          <label class="fin-form-label">Notes <span class="fin-form-optional">Optional</span></label>
+          <textarea name="notes" rows="3" class="fin-form-input fin-form-textarea"
+                    placeholder="Any additional details…">{{ expense.notes|default:'' }}</textarea>
+        </div>
+
+        <!-- Actions -->
+        <div class="fin-form-actions">
+          <button type="submit" class="fin-btn fin-btn--primary" style="min-width:140px;">
+            <i class="fas fa-{% if expense %}floppy-disk{% else %}plus{% endif %}"></i>
+            {% if expense %}Save Changes{% else %}Add Expense{% endif %}
+          </button>
+          <a href="{% url 'finance:expense_list' %}" class="fin-btn fin-btn--ghost">
+            <i class="fas fa-xmark"></i> Cancel
+          </a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

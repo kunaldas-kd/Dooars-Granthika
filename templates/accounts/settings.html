@@ -1,0 +1,1172 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Settings - Dooars Granthika{% endblock %}
+
+{% block nav_settings %}active{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/accounts/settings.css' %}" />
+{% endblock %}
+
+{% block topbar %}
+<header class="top-bar">
+  <div class="page-title">
+    <h1>Settings</h1>
+    <p class="subtitle">Manage your account and system preferences</p>
+  </div>
+  <div class="top-bar-actions">
+    <div class="user-profile">
+      <div class="user-info">
+        <span class="user-name">
+          {% if user.get_full_name %}{{ user.get_full_name }}{% else %}{{ user.username }}{% endif %}
+        </span>
+        <span class="user-role">Administrator</span>
+      </div>
+    </div>
+  </div>
+</header>
+{% endblock %}
+
+{% block content %}
+
+<!-- Django messages as toasts -->
+{% if messages %}
+<div class="toast-container">
+  {% for message in messages %}
+  <div class="toast {% if message.tags == 'error' %}toast-error{% else %}toast-success{% endif %}">
+    <span class="toast-icon">
+      {% if message.tags == 'error' %}<i class="fas fa-exclamation-circle"></i>
+      {% else %}<i class="fas fa-check-circle"></i>{% endif %}
+    </span>
+    {{ message }}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Settings Layout -->
+<div class="settings-layout">
+
+  <!-- Tab Nav -->
+  <nav class="settings-nav" id="settings-nav">
+    <button class="settings-tab active" data-tab="profile">
+      <span class="tab-icon"><i class="fas fa-user"></i></span>
+      <span class="tab-label">Profile</span>
+    </button>
+    <button class="settings-tab" data-tab="security">
+      <span class="tab-icon"><i class="fas fa-lock"></i></span>
+      <span class="tab-label">Security</span>
+    </button>
+    <button class="settings-tab" data-tab="system">
+      <span class="tab-icon"><i class="fas fa-landmark"></i></span>
+      <span class="tab-label">System</span>
+    </button>
+    <button class="settings-tab" data-tab="notifications">
+      <span class="tab-icon"><i class="fas fa-bell"></i></span>
+      <span class="tab-label">Notifications</span>
+    </button>
+    <button class="settings-tab" data-tab="fine">
+      <span class="tab-icon"><i class="fas fa-coins"></i></span>
+      <span class="tab-label">Fine &amp; Loans</span>
+    </button>
+    <button class="settings-tab" data-tab="members">
+      <span class="tab-icon"><i class="fas fa-users"></i></span>
+      <span class="tab-label">Members</span>
+    </button>
+    <button class="settings-tab" data-tab="subscription">
+      <span class="tab-icon"><i class="fas fa-credit-card"></i></span>
+      <span class="tab-label">Subscription</span>
+    </button>
+  </nav>
+
+  <!-- Single Form wraps ALL panels -->
+  <form class="settings-panels"
+        method="POST"
+        action="{% url 'accounts:settings' %}"
+        enctype="multipart/form-data"
+        id="settings-form">
+    {% csrf_token %}
+
+    <!-- Hidden: which tab was submitted -->
+    <input type="hidden" name="form_type" id="form_type" value="profile" />
+
+
+    <!-- ══════════════════════════════════
+         PROFILE TAB
+    ══════════════════════════════════ -->
+    <div class="settings-panel active" id="tab-profile">
+
+      <!-- Logo -->
+      <div class="panel-section">
+        <h2 class="section-heading">
+          Organisation Logo
+          {% if plan and not plan.allow_custom_branding %}
+            <a href="{% url 'subscriptions:plans' %}" class="plan-gate-badge" style="font-size:12px;font-weight:600">
+              <i class="fas fa-lock"></i> Upgrade to unlock
+            </a>
+          {% endif %}
+        </h2>
+        <p class="section-desc">This logo appears across the platform. JPG, PNG or GIF · Max 2 MB.</p>
+
+        <div class="avatar-row{% if plan and not plan.allow_custom_branding %} plan-gate-overlay{% endif %}">
+          <div class="avatar-wrap">
+            {% if library_logo_b64 %}
+              <img src="{{ library_logo_b64 }}" alt="Organisation Logo" class="avatar-img" id="avatar-preview" />
+            {% else %}
+              <div class="avatar-placeholder" id="avatar-preview">
+                {{ library.library_name|first|upper }}
+              </div>
+            {% endif %}
+          </div>
+          <div class="avatar-actions">
+            {% if plan and not plan.allow_custom_branding %}
+              <span class="btn btn-secondary" style="opacity:.45;cursor:not-allowed;pointer-events:none">
+                <i class="fas fa-upload"></i> Upload Logo
+              </span>
+              <input type="file" id="avatar-upload" name="library_logo" accept="image/*" class="sr-only" disabled />
+            {% else %}
+              <label class="btn btn-secondary" for="avatar-upload">
+                <i class="fas fa-upload"></i> Upload Logo
+              </label>
+              <input type="file" id="avatar-upload" name="library_logo" accept="image/*" class="sr-only" />
+              <button type="submit" class="btn btn-danger-sm" name="remove_logo" value="1" data-form="profile">
+                <i class="fas fa-trash-alt"></i> Remove Logo
+              </button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Personal Info -->
+      <div class="panel-section">
+        <h2 class="section-heading">Personal Information</h2>
+        <p class="section-desc">Update your administrator name and contact details.</p>
+
+        <div class="form-grid">
+          <div class="field-group">
+            <label class="field-label" for="first_name">First Name</label>
+            <input class="field-input" type="text" id="first_name" name="first_name"
+                   value="{{ user.first_name }}" placeholder="Enter first name" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="last_name">Last Name</label>
+            <input class="field-input" type="text" id="last_name" name="last_name"
+                   value="{{ user.last_name }}" placeholder="Enter last name" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="email">Email Address</label>
+            <input class="field-input" type="email" id="email" name="email"
+                   value="{{ user.email }}" placeholder="admin@example.com" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="phone">Phone Number</label>
+            <input class="field-input" type="text" id="phone" name="phone_number"
+                   value="{{ library.phone_number }}" placeholder="+91 00000 00000" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Library Code -->
+      <div class="panel-section">
+        <h2 class="section-heading">Library Code</h2>
+        <p class="section-desc">Your unique library identifier used across the platform.</p>
+
+        <div style="display:flex;align-items:center;gap:14px;background:var(--bg-main);border:1.5px solid var(--border-light);border-radius:10px;padding:14px 18px">
+          <code style="font-size:20px;font-weight:700;color:var(--ink-accent);letter-spacing:.08em" id="library-code-display">{{ library.library_code }}</code>
+          <div style="flex:1"></div>
+          <a href="{% url 'accounts:regen_code' %}"
+             class="btn btn-secondary"
+             style="padding:8px 16px;font-size:13px"
+             id="regen-code-btn">
+            <i class="fas fa-sync-alt"></i> Regenerate
+          </a>
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        <button type="submit" class="btn btn-primary" data-form="profile">
+          <i class="fas fa-save"></i> Save Changes
+        </button>
+      </div>
+
+    </div><!-- /tab-profile -->
+
+
+    <!-- ══════════════════════════════════
+         SECURITY TAB  (SecuritySettings)
+    ══════════════════════════════════ -->
+    <div class="settings-panel" id="tab-security">
+
+      <!-- Password -->
+      <div class="panel-section">
+        <h2 class="section-heading">Change Password</h2>
+        <p class="section-desc">Use a strong password at least 8 characters long.</p>
+
+        <div class="form-grid form-grid--single">
+          <div class="field-group">
+            <label class="field-label" for="current_password">Current Password</label>
+            <input class="field-input" type="password" id="current_password"
+                   name="current_password" placeholder="Enter current password" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="new_password">New Password</label>
+            <input class="field-input" type="password" id="new_password"
+                   name="new_password" placeholder="At least 8 characters" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="confirm_password">Confirm New Password</label>
+            <input class="field-input" type="password" id="confirm_password"
+                   name="confirm_password" placeholder="Repeat new password" />
+          </div>
+        </div>
+      </div>
+
+      <!-- SecuritySettings toggles -->
+      <div class="panel-section">
+        <h2 class="section-heading">Security Controls</h2>
+        <p class="section-desc">Configure login protection and account security behaviour.</p>
+
+        <div class="toggle-list">
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-label">Two-Factor Authentication</div>
+              <div class="toggle-desc">Require a second verification step on every login.</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="two_factor_auth"
+                     {% if security.two_factor_auth %}checked{% endif %} />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-label">Lock After Failed Attempts</div>
+              <div class="toggle-desc">Temporarily lock the account after repeated wrong passwords.</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="lock_after_failed_attempts"
+                     {% if security.lock_after_failed_attempts %}checked{% endif %} />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-label">Force Password Reset</div>
+              <div class="toggle-desc">Require a password change on next login.</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="force_password_reset"
+                     {% if security.force_password_reset %}checked{% endif %} />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-label">Login Email Notification</div>
+              <div class="toggle-desc">Send an email alert whenever a new login occurs.</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="login_email_notification"
+                     {% if security.login_email_notification %}checked{% endif %} />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-label">Allow Multiple Device Login</div>
+              <div class="toggle-desc">Permit simultaneous sessions from different devices.</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="allow_multiple_device_login"
+                     {% if security.allow_multiple_device_login %}checked{% endif %} />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-grid" style="margin-top:24px;max-width:320px">
+          <div class="field-group">
+            <label class="field-label" for="failed_login_attempts_limit">Failed Login Attempts Limit</label>
+            <input class="field-input" type="number" id="failed_login_attempts_limit"
+                   name="failed_login_attempts_limit" min="1" max="20"
+                   value="{{ security.failed_login_attempts_limit }}" />
+            <span class="field-hint">Account locks after this many failed attempts (1–20).</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active sessions -->
+      <div class="panel-section">
+        <h2 class="section-heading">Login Sessions</h2>
+        <p class="section-desc">Active sessions for your account.</p>
+
+        <div class="session-list">
+          {% for session in active_sessions %}
+          <div class="session-item">
+            <div class="session-icon">{{ session.device_icon }}</div>
+            <div class="session-info">
+              <div class="session-device">{{ session.device }}</div>
+              <div class="session-meta">{{ session.location }} · {{ session.last_active }}</div>
+            </div>
+            {% if session.is_current %}
+              <span class="badge success">Current</span>
+            {% else %}
+              <button type="submit" class="btn btn-danger-sm"
+                      name="revoke_session_id" value="{{ session.id }}"
+                      data-form="revoke_session">Revoke</button>
+            {% endif %}
+          </div>
+          {% empty %}
+          <p class="empty-state">No active sessions found.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        <button type="submit" class="btn btn-primary" data-form="security">
+          <i class="fas fa-save"></i> Update Security Settings
+        </button>
+      </div>
+
+    </div><!-- /tab-security -->
+
+
+    <!-- ══════════════════════════════════
+         SYSTEM TAB
+         Library + AppearanceSettings
+    ══════════════════════════════════ -->
+    <div class="settings-panel" id="tab-system">
+
+      <!-- Organisation Details -->
+      <div class="panel-section">
+        <h2 class="section-heading">Organisation Details</h2>
+        <p class="section-desc">Information shown across the platform.</p>
+
+        <div class="form-grid">
+          <div class="field-group field-group--full">
+            <label class="field-label" for="library_name">Library Name</label>
+            <input class="field-input" type="text" id="library_name" name="library_name"
+                   value="{{ library.library_name }}" placeholder="Library name" />
+          </div>
+          <div class="field-group field-group--full">
+            <label class="field-label" for="institute_name">Institute / Organisation Name</label>
+            <input class="field-input" type="text" id="institute_name" name="institute_name"
+                   value="{{ library.institute_name }}" placeholder="Parent institution" />
+          </div>
+          <div class="field-group field-group--full">
+            <label class="field-label" for="address">Address</label>
+            <textarea class="field-input field-textarea" id="address" name="address"
+                      rows="3" placeholder="Full address">{{ system_settings.org_address }}</textarea>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="institute_email">Contact Email</label>
+            <input class="field-input" type="email" id="institute_email" name="institute_email"
+                   value="{{ system_settings.org_email }}" placeholder="contact@library.org" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="org_phone">Contact Phone</label>
+            <input class="field-input" type="text" id="org_phone" name="phone_number"
+                   value="{{ system_settings.org_phone }}" placeholder="+91 00000 00000" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="district">District</label>
+            <input class="field-input" type="text" id="district" name="district"
+                   value="{{ system_settings.district }}" placeholder="District" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="state">State</label>
+            <input class="field-input" type="text" id="state" name="state"
+                   value="{{ system_settings.state }}" placeholder="State" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="country">Country</label>
+            <input class="field-input" type="text" id="country" name="country"
+                   value="{{ system_settings.country }}" placeholder="Country" />
+          </div>
+        </div>
+      </div>
+
+      <!-- AppearanceSettings -->
+      <div class="panel-section">
+        <h2 class="section-heading">
+          Appearance
+          {% if plan and not plan.allow_custom_branding %}
+            <a href="{% url 'subscriptions:plans' %}" class="plan-gate-badge" style="font-size:12px;font-weight:600">
+              <i class="fas fa-lock"></i> Upgrade to unlock
+            </a>
+          {% endif %}
+        </h2>
+        <p class="section-desc">Customise the look and feel of your dashboard.</p>
+
+        <div class="form-grid">
+          <div class="field-group">
+            <label class="field-label" for="primary_color">Primary Colour</label>
+            <input class="field-input" type="color" id="primary_color" name="primary_color"
+                   value="{{ system_settings.primary_color }}"
+                   {% if plan and not plan.allow_custom_branding %}disabled style="opacity:.45;cursor:not-allowed"{% endif %} />
+            <span class="field-hint">
+              Accent colour used in buttons, links, and highlights.
+              {% if plan and not plan.allow_custom_branding %}
+                <a href="{% url 'subscriptions:plans' %}" class="plan-gate-badge" style="margin-left:6px">
+                  <i class="fas fa-lock"></i> Upgrade
+                </a>
+              {% endif %}
+            </span>
+          </div>
+        </div>
+
+        <div class="toggle-list" style="margin-top:20px">
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-label">Dark Mode</div>
+              <div class="toggle-desc">Use a dark colour scheme across the dashboard.</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="dark_mode"
+                     {% if appearance.dark_mode %}checked{% endif %} />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-label">Compact View</div>
+              <div class="toggle-desc">Reduce spacing for a denser information layout.</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="compact_view"
+                     {% if appearance.compact_view %}checked{% endif %} />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-label">Dashboard Animations</div>
+              <div class="toggle-desc">Enable animated transitions and effects on the dashboard.</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="dashboard_animation"
+                     {% if appearance.dashboard_animation %}checked{% endif %} />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-label">Show Welcome Message</div>
+              <div class="toggle-desc">Display a greeting banner when you log in.</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="show_welcome_message"
+                     {% if appearance.show_welcome_message %}checked{% endif %} />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        <button type="submit" class="btn btn-primary" data-form="system">
+          <i class="fas fa-save"></i> Save System Settings
+        </button>
+      </div>
+
+    </div><!-- /tab-system -->
+
+
+    <!-- ══════════════════════════════════
+         NOTIFICATIONS TAB  (NotificationSettings)
+    ══════════════════════════════════ -->
+    <div class="settings-panel" id="tab-notifications">
+
+      <div class="panel-section">
+        <h2 class="section-heading">Email Notifications</h2>
+        <p class="section-desc">Choose which emails and alerts you receive.</p>
+
+        <div class="toggle-list">
+          {% for notif in notification_settings %}
+          <div class="toggle-item{% if notif.key == 'email_overdue_reminder' and plan and not plan.allow_email_reminders %} toggle-item--locked{% endif %}{% if notif.key == 'sms_reminder' and plan and not plan.allow_sms %} toggle-item--locked{% endif %}">
+            <div class="toggle-info">
+              <div class="toggle-label">
+                {{ notif.label }}
+                {% if notif.key == 'email_overdue_reminder' and plan and not plan.allow_email_reminders %}
+                  <a href="{% url 'subscriptions:plans' %}" class="plan-gate-badge">
+                    <i class="fas fa-lock"></i> Upgrade to unlock
+                  </a>
+                {% endif %}
+                {% if notif.key == 'sms_reminder' and plan and not plan.allow_sms %}
+                  <a href="{% url 'subscriptions:plans' %}" class="plan-gate-badge">
+                    <i class="fas fa-lock"></i> Upgrade to unlock
+                  </a>
+                {% endif %}
+              </div>
+              <div class="toggle-desc">{{ notif.description }}</div>
+            </div>
+            <label class="toggle-switch{% if notif.key == 'email_overdue_reminder' and plan and not plan.allow_email_reminders %} toggle-switch--locked{% endif %}{% if notif.key == 'sms_reminder' and plan and not plan.allow_sms %} toggle-switch--locked{% endif %}">
+              <input type="checkbox" name="{{ notif.key }}"
+                     {% if notif.enabled %}checked{% endif %}
+                     {% if notif.key == 'email_overdue_reminder' and plan and not plan.allow_email_reminders %}disabled{% endif %}
+                     {% if notif.key == 'sms_reminder' and plan and not plan.allow_sms %}disabled{% endif %} />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          {% empty %}
+          <p class="empty-state">No notification settings available.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        <button type="submit" class="btn btn-primary" data-form="notifications">
+          <i class="fas fa-save"></i> Save Preferences
+        </button>
+      </div>
+
+    </div><!-- /tab-notifications -->
+
+
+    <!-- ══════════════════════════════════
+         FINE & LOANS TAB  (LibraryRuleSettings)
+    ══════════════════════════════════ -->
+    <div class="settings-panel" id="tab-fine">
+
+      <!-- Loan numbers -->
+      <div class="panel-section">
+        <h2 class="section-heading">Loan Rules</h2>
+        <p class="section-desc">Default borrowing limits and durations.</p>
+
+        <div class="form-grid">
+          <div class="field-group">
+            <label class="field-label" for="max_books_per_member">Max Books per Member</label>
+            <input class="field-input" type="number" id="max_books_per_member"
+                   name="max_books_per_member" min="1"
+                   value="{{ loan_settings.max_books_per_member }}" />
+            <span class="field-hint">Global cap on books a single member can hold at once.</span>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="loan_period_days">Default Loan Period (days)</label>
+            <input class="field-input" type="number" id="loan_period_days"
+                   name="loan_period_days" min="1" max="365"
+                   value="{{ loan_settings.loan_period_days }}" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="renewal_limit">Max Renewals Allowed</label>
+            <input class="field-input" type="number" id="renewal_limit"
+                   name="renewal_limit" min="0"
+                   value="{{ loan_settings.renewal_limit }}" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="grace_period_days">Grace Period (days)</label>
+            <input class="field-input" type="number" id="grace_period_days"
+                   name="grace_period_days" min="0"
+                   value="{{ loan_settings.grace_period_days }}" />
+            <span class="field-hint">Days after due date before a fine begins to accrue.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fine numbers -->
+      <div class="panel-section">
+        <h2 class="section-heading">Fine Configuration</h2>
+        <p class="section-desc">Late return fines and lost book charges.</p>
+
+        <div class="form-grid">
+          <div class="field-group">
+            <label class="field-label" for="fine_per_day">Fine per Day (₹)</label>
+            <input class="field-input" type="number" id="fine_per_day"
+                   name="fine_per_day" min="0" step="0.50"
+                   value="{{ loan_settings.fine_per_day }}" />
+            <span class="field-hint">Set to 0 to disable daily fines.</span>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="lost_book_charge_formula">Lost Book Charge Formula</label>
+            <input class="field-input" type="text" id="lost_book_charge_formula"
+                   name="lost_book_charge_formula"
+                   value="{{ rules.lost_book_charge_formula }}"
+                   placeholder="e.g. book_price * 1.5" />
+            <span class="field-hint">Optional expression to calculate a lost-book charge.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toggles -->
+      <div class="panel-section">
+        <h2 class="section-heading">Rule Toggles</h2>
+        <p class="section-desc">Enable or disable specific loan behaviours.</p>
+
+        <div class="toggle-list">
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-label">Auto Fine</div>
+              <div class="toggle-desc">Automatically apply fines when a book is overdue.</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="auto_fine"
+                     {% if loan_settings.auto_fine %}checked{% endif %} />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-label">Allow Renewal</div>
+              <div class="toggle-desc">Let members renew borrowed books before the due date.</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="allow_renewal"
+                     {% if loan_settings.allow_renewal %}checked{% endif %} />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-label">Allow Partial Payment</div>
+              <div class="toggle-desc">Accept partial fine payments from members.</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="allow_partial_payment"
+                     {% if loan_settings.allow_partial_payment %}checked{% endif %} />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-label">Auto Mark Lost</div>
+              <div class="toggle-desc">Automatically flag severely overdue books as lost.</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="auto_mark_lost"
+                     {% if loan_settings.auto_mark_lost %}checked{% endif %} />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-item{% if plan and not plan.allow_advance_booking %} toggle-item--locked{% endif %}">
+            <div class="toggle-info">
+              <div class="toggle-label">
+                Allow Advance Booking
+                {% if plan and not plan.allow_advance_booking %}
+                  <a href="{% url 'subscriptions:plans' %}" class="plan-gate-badge">
+                    <i class="fas fa-lock"></i> Upgrade to unlock
+                  </a>
+                {% endif %}
+              </div>
+              <div class="toggle-desc">Let members reserve books before they are available.</div>
+            </div>
+            <label class="toggle-switch{% if plan and not plan.allow_advance_booking %} toggle-switch--locked{% endif %}">
+              <input type="checkbox" name="allow_advance_booking"
+                     {% if loan_settings.allow_advance_booking %}checked{% endif %}
+                     {% if plan and not plan.allow_advance_booking %}disabled{% endif %} />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        <button type="submit" class="btn btn-primary" data-form="fine">
+          <i class="fas fa-save"></i> Save Loan &amp; Fine Settings
+        </button>
+      </div>
+
+    </div><!-- /tab-fine -->
+
+
+    <!-- ══════════════════════════════════
+         MEMBERS TAB  (MemberSettings)
+    ══════════════════════════════════ -->
+    <div class="settings-panel" id="tab-members">
+
+      <!-- Borrow Limits -->
+      <div class="panel-section">
+        <h2 class="section-heading">Borrow Limits</h2>
+        <p class="section-desc">Set how many books each member type can borrow at once.</p>
+
+        <div class="form-grid">
+          {% if library.institute_type == "Institution" %}
+            <div class="field-group">
+              <label class="field-label" for="student_borrow_limit">Student Borrow Limit</label>
+              <input class="field-input" type="number" id="student_borrow_limit"
+                     name="student_borrow_limit" min="0"
+                     value="{{ member_cfg.student_borrow_limit }}" />
+              <span class="field-hint">Books a student can borrow at once. 0 = unlimited.</span>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="teacher_borrow_limit">Teacher / Faculty Borrow Limit</label>
+              <input class="field-input" type="number" id="teacher_borrow_limit"
+                     name="teacher_borrow_limit" min="0"
+                     value="{{ member_cfg.teacher_borrow_limit }}" />
+              <span class="field-hint">Books a teacher/faculty can borrow at once. 0 = unlimited.</span>
+            </div>
+          {% else %}
+            <div class="field-group">
+              <label class="field-label" for="member_borrow_limit">Member Borrow Limit</label>
+              <input class="field-input" type="number" id="member_borrow_limit"
+                     name="member_borrow_limit" min="0"
+                     value="{{ member_cfg.member_borrow_limit }}" />
+              <span class="field-hint">Books a general member can borrow at once. 0 = unlimited.</span>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Membership Rules -->
+      <div class="panel-section">
+        <h2 class="section-heading">Membership Rules</h2>
+        <p class="section-desc">Membership validity period and ID format.</p>
+
+        <div class="form-grid">
+          <div class="field-group">
+            <label class="field-label" for="membership_validity_days">Membership Validity (days)</label>
+            <input class="field-input" type="number" id="membership_validity_days"
+                   name="membership_validity_days" min="1"
+                   value="{{ member_cfg.membership_validity_days }}" />
+            <span class="field-hint">How long a membership remains active after registration.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Permissions -->
+      <div class="panel-section">
+        <h2 class="section-heading">Member Permissions</h2>
+        <p class="section-desc">Control what members can do on their own.</p>
+
+        <div class="toggle-list">
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-label">Allow Self Registration</div>
+              <div class="toggle-desc">Let members register themselves without admin action.</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="allow_self_registration"
+                     {% if member_cfg.allow_self_registration %}checked{% endif %} />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-label">Require Admin Approval</div>
+              <div class="toggle-desc">New member registrations need admin approval before activation.</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="require_admin_approval"
+                     {% if member_cfg.require_admin_approval %}checked{% endif %} />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-label">Enable Member ID Card Download</div>
+              <div class="toggle-desc">Allow members to download their library ID card as a PDF.</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="enable_member_id_download"
+                     {% if member_cfg.enable_member_id_download %}checked{% endif %} />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-label">Allow Profile Edit</div>
+              <div class="toggle-desc">Let members update their own profile details.</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="allow_profile_edit"
+                     {% if member_cfg.allow_profile_edit %}checked{% endif %} />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        <button type="submit" class="btn btn-primary" data-form="members">
+          <i class="fas fa-save"></i> Save Member Settings
+        </button>
+      </div>
+
+    </div><!-- /tab-members -->
+
+
+    <!-- ══════════════════════════════════
+         SUBSCRIPTION TAB  (read-only — librarian may only toggle active)
+    ══════════════════════════════════ -->
+    <div class="settings-panel" id="tab-subscription">
+
+      {% if subscription %}
+      {% with sub=subscription plan=subscription.plan %}
+
+      <!-- ── Plan banner ────────────────────────────────────────── -->
+      <div class="panel-section"
+           style="background:linear-gradient(135deg,#0c2d6b 0%,#1a6fd4 100%);border-color:transparent">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+          <div>
+            <p style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:8px">
+              Current Plan
+            </p>
+            <h2 style="font-size:34px;font-weight:800;color:#fff;margin:0;letter-spacing:.01em">
+              {{ plan.name }}
+            </h2>
+            {% if plan.tagline %}
+            <p style="font-size:13px;color:rgba(255,255,255,.65);margin-top:6px">{{ plan.tagline }}</p>
+            {% endif %}
+          </div>
+          <div style="text-align:right">
+            {% if sub.is_active %}
+              <span style="display:inline-block;padding:5px 14px;background:rgba(16,185,129,.2);color:#6ee7b7;border-radius:20px;font-size:12px;font-weight:700">
+                ✓ ACTIVE
+              </span>
+            {% elif sub.status == 'expired' %}
+              <span style="display:inline-block;padding:5px 14px;background:rgba(239,68,68,.2);color:#fca5a5;border-radius:20px;font-size:12px;font-weight:700">
+                ⚠ EXPIRED
+              </span>
+            {% elif sub.status == 'cancelled' %}
+              <span style="display:inline-block;padding:5px 14px;background:rgba(107,114,128,.25);color:#d1d5db;border-radius:20px;font-size:12px;font-weight:700">
+                ✕ CANCELLED
+              </span>
+            {% else %}
+              <span style="display:inline-block;padding:5px 14px;background:rgba(245,158,11,.2);color:#fcd34d;border-radius:20px;font-size:12px;font-weight:700">
+                ● {{ sub.get_status_display }}
+              </span>
+            {% endif %}
+            <p style="font-size:13px;color:rgba(255,255,255,.75);margin-top:8px">
+              {% if sub.is_expiring_soon %}
+                <span style="color:#fcd34d;font-weight:600">⚠ Expires in {{ sub.days_remaining }} day{{ sub.days_remaining|pluralize }}</span>
+              {% else %}
+                Valid until <strong style="color:#fff">{{ sub.expiry_date|date:"d M Y" }}</strong>
+              {% endif %}
+            </p>
+            <p style="font-size:12px;color:rgba(255,255,255,.5);margin-top:4px">
+              {{ sub.days_remaining }} day{{ sub.days_remaining|pluralize }} remaining ·
+              Renewed {{ sub.renewal_count }} time{{ sub.renewal_count|pluralize }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Read-only plan details ─────────────────────────────── -->
+      <div class="panel-section">
+        <h2 class="section-heading">Plan Details</h2>
+        <p class="section-desc">
+          Your current subscription information.
+          To change your plan or renew, visit the
+          <a href="{% url 'subscriptions:plans' %}" style="color:var(--ink-accent,#2563eb);font-weight:600">Subscription Plans</a> page.
+        </p>
+
+        <div class="form-grid">
+          <div class="field-group">
+            <label class="field-label">Plan</label>
+            <input class="field-input" type="text"
+                   value="{{ plan.name }}" readonly
+                   style="font-weight:700;color:var(--ink-accent);cursor:default" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">Status</label>
+            <input class="field-input" type="text"
+                   value="{{ sub.get_status_display }}"
+                   readonly style="cursor:default" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">Start Date</label>
+            <input class="field-input" type="text"
+                   value="{{ sub.start_date|date:'d M Y' }}"
+                   readonly style="cursor:default" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">Expiry Date</label>
+            <input class="field-input" type="text"
+                   value="{{ sub.expiry_date|date:'d M Y' }}"
+                   readonly
+                   style="cursor:default;{% if sub.expiry_date < today_date %}color:#ef4444;font-weight:600{% endif %}" />
+            {% if sub.expiry_date < today_date %}
+              <span class="field-hint" style="color:#ef4444">⚠ This subscription has expired.</span>
+            {% endif %}
+          </div>
+          <div class="field-group">
+            <label class="field-label">Last Renewed</label>
+            <input class="field-input" type="text"
+                   value="{% if sub.last_renewed_at %}{{ sub.last_renewed_at|date:'d M Y' }}{% else %}Never{% endif %}"
+                   readonly style="cursor:default" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">Price</label>
+            <input class="field-input" type="text"
+                   value="{{ plan.price_display }} / {{ plan.get_billing_cycle_display }}"
+                   readonly style="cursor:default" />
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Active toggle (the ONE thing librarians can control) ── -->
+      <div class="panel-section">
+        <h2 class="section-heading">Activation</h2>
+        <p class="section-desc">
+          You can pause or resume your library's access here.
+          All other subscription settings are managed by the platform administrator.
+        </p>
+
+        <div class="toggle-list">
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-label">Library Active</div>
+              <div class="toggle-desc">
+                When off, all member logins and book transactions are suspended until you re-enable this.
+                Your plan and expiry date are not affected.
+              </div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="sub_active" id="sub-active-toggle"
+                     {% if sub.is_active %}checked{% endif %} />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Plan feature summary (informational) ───────────────── -->
+      <div class="panel-section">
+        <h2 class="section-heading">What's Included</h2>
+        <p class="section-desc">Features available on your current <strong>{{ plan.name }}</strong> plan.</p>
+
+        <div class="form-grid">
+          <div class="field-group">
+            <label class="field-label">Members</label>
+            <input class="field-input" type="text" value="Up to {{ plan.max_members }}" readonly style="cursor:default" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">Book Titles</label>
+            <input class="field-input" type="text" value="Up to {{ plan.max_books }}" readonly style="cursor:default" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">Physical Copies</label>
+            <input class="field-input" type="text" value="Up to {{ plan.max_book_copies }}" readonly style="cursor:default" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">Staff Accounts</label>
+            <input class="field-input" type="text" value="Up to {{ plan.max_staff }}" readonly style="cursor:default" />
+          </div>
+        </div>
+
+        <div class="toggle-list" style="margin-top:16px;pointer-events:none">
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-label">Reports &amp; Analytics</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" {% if plan.allow_reports %}checked{% endif %} disabled />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-label">CSV / PDF Export</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" {% if plan.allow_export %}checked{% endif %} disabled />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-label">SMS Reminders</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" {% if plan.allow_sms %}checked{% endif %} disabled />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-label">Email Reminders</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" {% if plan.allow_email_reminders %}checked{% endif %} disabled />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-label">Priority Support</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" {% if plan.priority_support %}checked{% endif %} disabled />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Footer ─────────────────────────────────────────────── -->
+      <div class="panel-footer">
+        <button type="submit" class="btn btn-primary" data-form="subscription">
+          <i class="fas fa-save"></i> Save
+        </button>
+        <a href="{% url 'subscriptions:plans' %}" class="btn btn-secondary">
+          <i class="fas fa-arrow-up-right-from-square"></i> View Plans
+        </a>
+        <a href="{% url 'subscriptions:my_subscription' %}" class="btn btn-secondary">
+          <i class="fas fa-receipt"></i> Payment History
+        </a>
+      </div>
+
+      {% endwith %}
+
+      {% else %}
+      <!-- ── No subscription yet ────────────────────────────────── -->
+      <div class="panel-section" style="text-align:center;padding:48px 24px">
+        <i class="fas fa-box-open" style="font-size:40px;color:var(--ink-muted,#9ca3af);margin-bottom:16px"></i>
+        <h3 style="margin:0 0 8px;color:var(--ink-primary,#111827)">No Subscription Found</h3>
+        <p style="color:var(--ink-secondary,#6b7280);margin-bottom:24px">
+          This library doesn't have an active subscription yet.
+        </p>
+        <a href="{% url 'subscriptions:plans' %}" class="btn btn-primary">
+          <i class="fas fa-sparkles"></i> Browse Plans
+        </a>
+      </div>
+      {% endif %}
+
+    </div><!-- /tab-subscription -->
+
+    <style>
+    /* ── Plan gate: locked toggles ──────────────────────────── */
+    .toggle-item--locked {
+      opacity: .6;
+      position: relative;
+    }
+    .toggle-switch--locked {
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .toggle-switch--locked .toggle-slider {
+      background: var(--border-light, #e5e7eb) !important;
+    }
+    .toggle-switch--locked input:checked + .toggle-slider {
+      background: #9ca3af !important;
+    }
+    .plan-gate-overlay {
+      opacity: .55;
+      pointer-events: none;
+      user-select: none;
+      filter: grayscale(40%);
+    }
+    .plan-gate-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: 8px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #d97706;
+      background: #fef3c7;
+      border: 1px solid #fde68a;
+      text-decoration: none;
+      vertical-align: middle;
+      white-space: nowrap;
+      transition: background .15s, color .15s;
+    }
+    .plan-gate-badge:hover {
+      background: #fde68a;
+      color: #92400e;
+    }
+    /* ── Plan matrix ─────────────────────────────────────────── */
+    .sub-plan-matrix {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+      margin-top: 4px;
+    }
+    .sub-plan-card {
+      position: relative;
+      border: 2px solid var(--border-light, #e5e7eb);
+      border-radius: 12px;
+      padding: 16px 12px 12px;
+      cursor: pointer;
+      transition: border-color .15s, box-shadow .15s, transform .12s;
+      background: var(--surface, #fff);
+      user-select: none;
+    }
+    .sub-plan-card:hover {
+      border-color: var(--ink-accent, #2563eb);
+      transform: translateY(-2px);
+    }
+    .sub-plan-card--active {
+      border-color: var(--ink-accent, #2563eb);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink-accent,#2563eb) 18%, transparent);
+      transform: translateY(-2px);
+    }
+    .spc-ribbon {
+      position: absolute;
+      top: -1px; right: -1px;
+      background: var(--ink-accent, #2563eb);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 0 10px 0 8px;
+    }
+    .spc-tier-icon {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      margin-bottom: 8px;
+      background: color-mix(in srgb, var(--ink-accent, #2563eb) 12%, transparent);
+      color: var(--ink-accent, #2563eb);
+    }
+    .spc-name {
+      font-weight: 700;
+      font-size: .9rem;
+      color: var(--ink-primary, #111827);
+      margin-bottom: 2px;
+    }
+    .spc-price {
+      font-size: .8rem;
+      color: var(--ink-accent, #2563eb);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .spc-features {
+      list-style: none;
+      padding: 0; margin: 0;
+      font-size: .76rem;
+      color: var(--ink-secondary, #6b7280);
+      line-height: 1.9;
+    }
+    .spc-features .feat-on { color: #059669; font-weight: 500; }
+    .spc-features .feat-on i { margin-right: 4px; }
+    .spc-current-tag {
+      margin-top: 10px;
+      font-size: .75rem;
+      font-weight: 600;
+      color: var(--ink-accent, #2563eb);
+    }
+    </style>
+
+
+
+  </form><!-- /settings-panels -->
+</div><!-- /settings-layout -->
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/accounts/settings.js' %}"></script>
+<script>
+// Regenerate library code via AJAX so page doesn't hard-reload
+(function () {
+  const btn = document.getElementById('regen-code-btn');
+  if (!btn) return;
+  btn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    try {
+      const res  = await fetch(btn.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+      const data = await res.json();
+      if (data.library_code) {
+        document.getElementById('library-code-display').textContent = data.library_code;
+      }
+    } catch (_) {
+      window.location.href = btn.href; // fallback to normal navigation
+    }
+  });
+})();
+</script>
+{% endblock %}

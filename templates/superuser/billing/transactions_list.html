@@ -1,0 +1,143 @@
+{% extends "superuser/superuser_dashboard_base.html" %}
+{% block title %}Transactions{% endblock %}
+{% block breadcrumb %}Transactions{% endblock %}
+{% block nav_transactions %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Billing Transactions</h1>
+    <p class="page-subtitle">All SaaS payment records across libraries.</p>
+  </div>
+  <div class="page-actions">
+    <button class="btn btn-secondary" onclick="exportTable('tx-table','transactions.csv')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export CSV
+    </button>
+  </div>
+</div>
+
+<div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
+  <div class="stat-card accent-success">
+    <div class="stat-icon success-icon">✓</div>
+    <div class="stat-label">Paid This Month</div>
+    <div class="stat-value">₹{{ paid_this_month }}</div>
+  </div>
+  <div class="stat-card accent-warning">
+    <div class="stat-icon warning-icon">⏳</div>
+    <div class="stat-label">Pending</div>
+    <div class="stat-value">{{ pending_count }}</div>
+  </div>
+  <div class="stat-card accent-danger">
+    <div class="stat-icon danger-icon">✕</div>
+    <div class="stat-label">Failed</div>
+    <div class="stat-value">{{ failed_count }}</div>
+  </div>
+  <div class="stat-card accent-info">
+    <div class="stat-icon info-icon">↩</div>
+    <div class="stat-label">Refunded</div>
+    <div class="stat-value">{{ refunded_count }}</div>
+  </div>
+</div>
+
+<div class="card">
+  <form method="get" class="filters-bar" id="filter-form">
+    <div class="filter-group">
+      <span class="filter-label">Status</span>
+      {{ form.status }}
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Type</span>
+      {{ form.type }}
+    </div>
+    <div class="filter-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      {{ form.q }}
+    </div>
+    <div class="ml-auto" style="font-size:12px; color:var(--text-muted); font-family:'JetBrains Mono',monospace;">
+      {{ transactions.paginator.count }} total
+    </div>
+  </form>
+
+  <div class="table-wrapper" style="border:none; border-radius:0;">
+    <table id="tx-table">
+      <thead>
+        <tr>
+          <th data-sort>Reference</th>
+          <th data-sort>Library</th>
+          <th data-sort>Plan</th>
+          <th data-sort>Type</th>
+          <th data-sort>Amount</th>
+          <th data-sort>Gateway</th>
+          <th data-sort>Date</th>
+          <th data-sort>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tx in transactions %}
+        <tr data-href="{% url 'superuser:transaction_detail' tx.pk %}">
+          <td class="td-mono">{{ tx.reference }}</td>
+          <td class="td-name">{{ tx.library.library_name }}</td>
+          <td>{{ tx.plan_name|capfirst|default:"—" }}</td>
+          <td><span class="badge badge-neutral">{{ tx.get_type_display }}</span></td>
+          <td class="td-mono" style="color:var(--success); font-weight:600;">₹{{ tx.amount }}</td>
+          <td class="td-mono">{{ tx.gateway }}</td>
+          <td class="td-mono">{{ tx.created_at|date:"M d, Y" }}</td>
+          <td><span class="badge badge-{{ tx.status }}">{{ tx.get_status_display }}</span></td>
+          <td>
+            <a href="{% url 'superuser:transaction_detail' tx.pk %}" class="btn btn-ghost btn-sm btn-icon">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="9">
+          <div class="empty-state">
+            <div class="empty-icon">💳</div>
+            <div class="empty-title">No Transactions Found</div>
+            <div class="empty-text">No billing transactions match your filters.</div>
+          </div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card-footer">
+    <div style="display:flex; align-items:center; justify-content:space-between;">
+      <span style="font-size:12.5px; color:var(--text-muted); font-family:'JetBrains Mono',monospace;">
+        Showing {{ transactions.start_index }}–{{ transactions.end_index }} of {{ transactions.paginator.count }}
+      </span>
+      <div class="pagination" style="padding:0;">
+        {% if transactions.has_previous %}<a href="?page={{ transactions.previous_page_number }}" class="page-btn">‹</a>{% else %}<button class="page-btn" disabled>‹</button>{% endif %}
+        {% for i in transactions.paginator.page_range %}
+          {% if transactions.number == i %}<button class="page-btn active">{{ i }}</button>
+          {% elif i <= 3 or i >= transactions.paginator.num_pages|add:"-2" %}<a href="?page={{ i }}" class="page-btn">{{ i }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if transactions.has_next %}<a href="?page={{ transactions.next_page_number }}" class="page-btn">›</a>{% else %}<button class="page-btn" disabled>›</button>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('#filter-form select, #filter-form input').forEach(el => {
+  el.addEventListener('change', () => el.closest('form').submit());
+  el.addEventListener('keyup', e => { if (e.key === 'Enter') el.closest('form').submit(); });
+});
+function exportTable(id, filename) {
+  const rows = document.querySelectorAll('#' + id + ' tr');
+  const csv  = Array.from(rows).map(r =>
+    Array.from(r.querySelectorAll('th,td')).slice(0,-1).map(c=>`"${c.textContent.trim()}"`).join(',')
+  ).join('\n');
+  Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([csv], {type:'text/csv'})),
+    download: filename
+  }).click();
+}
+</script>
+{% endblock %}

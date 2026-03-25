@@ -1,0 +1,414 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Library Setup — Dooars Granthika{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/accounts/library_setup.css' %}" />
+{% endblock %}
+
+{% block topbar %}
+<header class="top-bar">
+  <div class="page-title">
+    <h1><i class="fas fa-cogs"></i> Library Setup</h1>
+    <p class="subtitle">Configure your library before going live</p>
+  </div>
+  <div class="top-bar-actions">
+    <div class="setup-status-badge">
+      <span class="status-dot"></span>
+      Setup Required
+    </div>
+  </div>
+</header>
+{% endblock %}
+
+{% block content %}
+<div class="setup-page">
+
+  <!-- STEPPER -->
+  <div class="stepper-wrap">
+    <div class="stepper">
+      <div class="step active" data-step="1">
+        <div class="step-bubble">1</div>
+        <span class="step-label">Library Rules</span>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step" data-step="2">
+        <div class="step-bubble">2</div>
+        <span class="step-label">Preferences</span>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step" data-step="3">
+        <div class="step-bubble">3</div>
+        <span class="step-label">Go Live</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="setup-grid">
+
+    <!-- LEFT: Main Form -->
+    <div class="setup-main">
+      <form method="post" id="setupForm" novalidate>
+        {% csrf_token %}
+
+        <!-- ── Library Identity ── -->
+        <div class="form-card">
+          <div class="form-card-header">
+            <div class="form-card-icon blue"><i class="fas fa-id-badge"></i></div>
+            <div>
+              <h2 class="form-card-title">Library Identity</h2>
+              <p class="form-card-sub">Your unique code and operating timezone</p>
+            </div>
+          </div>
+          <div class="fields-grid cols-2">
+
+            <!-- Library Code -->
+            <div class="field-group" id="fg-libcode">
+              <label class="field-label">
+                Library Code
+                <span class="label-tag auto">Auto-Generated</span>
+              </label>
+              <div class="input-row">
+                <div class="input-icon-wrap"><i class="fas fa-fingerprint"></i></div>
+                <input type="text" id="libraryCode" name="library_code"
+                       value="{{ library.library_code }}" readonly class="input-code" />
+                <button type="button" class="btn-regen" id="regenBtn" title="Generate new code">
+                  <i class="fas fa-sync-alt"></i>
+                </button>
+              </div>
+              <p class="field-hint">Used in member IDs and all records. Shared with members on registration.</p>
+            </div>
+
+            <!-- Timezone -->
+            <div class="field-group" id="fg-tz">
+              <label class="field-label" for="timezone">
+                Time Zone <span class="required-star">*</span>
+              </label>
+              <div class="input-row">
+                <div class="input-icon-wrap"><i class="fas fa-globe"></i></div>
+                <select id="timezone" name="timezone" required>
+                  <option value="" disabled selected>Select time zone…</option>
+                  <optgroup label="Asia">
+                    <option value="Asia/Kolkata" selected>Asia/Kolkata — IST (UTC+5:30)</option>
+                    <option value="Asia/Dhaka">Asia/Dhaka — BST (UTC+6:00)</option>
+                    <option value="Asia/Kathmandu">Asia/Kathmandu — NPT (UTC+5:45)</option>
+                    <option value="Asia/Colombo">Asia/Colombo — SLST (UTC+5:30)</option>
+                    <option value="Asia/Dubai">Asia/Dubai — GST (UTC+4:00)</option>
+                    <option value="Asia/Singapore">Asia/Singapore — SGT (UTC+8:00)</option>
+                    <option value="Asia/Tokyo">Asia/Tokyo — JST (UTC+9:00)</option>
+                  </optgroup>
+                  <optgroup label="Europe">
+                    <option value="Europe/London">Europe/London — GMT (UTC+0)</option>
+                    <option value="Europe/Paris">Europe/Paris — CET (UTC+1)</option>
+                  </optgroup>
+                  <optgroup label="Americas">
+                    <option value="America/New_York">America/New_York — EST (UTC-5)</option>
+                    <option value="America/Chicago">America/Chicago — CST (UTC-6)</option>
+                    <option value="America/Los_Angeles">America/Los_Angeles — PST (UTC-8)</option>
+                  </optgroup>
+                </select>
+              </div>
+              <p class="field-hint">Used to calculate due dates and fine timestamps accurately.</p>
+              <p class="field-error" id="err-tz">Please select a time zone.</p>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── Borrowing Rules ── -->
+        <div class="form-card">
+          <div class="form-card-header">
+            <div class="form-card-icon green"><i class="fas fa-book-open"></i></div>
+            <div>
+              <h2 class="form-card-title">Borrowing Rules</h2>
+              <p class="form-card-sub">Core lending policies — set limits per member role and configure fines</p>
+            </div>
+          </div>
+          <div class="fields-grid cols-3">
+
+            <!-- Student Borrow Limit -->
+            <div class="field-group" id="fg-sbl">
+              <label class="field-label" for="studentBorrowLimit">
+                Student Borrow Limit <span class="required-star">*</span>
+              </label>
+              <div class="input-row">
+                <div class="input-icon-wrap"><i class="fas fa-user-graduate"></i></div>
+                <input type="number" id="studentBorrowLimit" name="student_borrow_limit"
+                       placeholder="3" min="1" max="50" value="3" required />
+                <span class="input-unit">books</span>
+              </div>
+              <p class="field-hint">Max books a student can borrow at once.</p>
+              <p class="field-error" id="err-sbl">Enter a value between 1–50.</p>
+            </div>
+
+            <!-- Teacher / Faculty Borrow Limit -->
+            <div class="field-group" id="fg-tbl">
+              <label class="field-label" for="teacherBorrowLimit">
+                Teacher / Faculty Limit <span class="required-star">*</span>
+              </label>
+              <div class="input-row">
+                <div class="input-icon-wrap"><i class="fas fa-chalkboard-teacher"></i></div>
+                <input type="number" id="teacherBorrowLimit" name="teacher_borrow_limit"
+                       placeholder="5" min="1" max="50" value="5" required />
+                <span class="input-unit">books</span>
+              </div>
+              <p class="field-hint">Max books a teacher or faculty member can borrow at once.</p>
+              <p class="field-error" id="err-tbl">Enter a value between 1–50.</p>
+            </div>
+
+            <!-- Max Books per Member (overall cap) -->
+            <div class="field-group" id="fg-mb">
+              <label class="field-label" for="maxBooks">
+                Max Books / Member <span class="required-star">*</span>
+              </label>
+              <div class="input-row">
+                <div class="input-icon-wrap"><i class="fas fa-books"></i></div>
+                <input type="number" id="maxBooks" name="max_books_per_member"
+                       placeholder="5" min="1" max="50" value="5" required />
+                <span class="input-unit">books</span>
+              </div>
+              <p class="field-hint">Overall cap regardless of role.</p>
+              <p class="field-error" id="err-mb">Enter a value between 1–50.</p>
+            </div>
+
+            <!-- Late Fine -->
+            <div class="field-group" id="fg-lf">
+              <label class="field-label" for="lateFine">
+                Late Fine <span class="required-star">*</span>
+              </label>
+              <div class="input-row">
+                <div class="input-icon-wrap"><i class="fas fa-rupee-sign"></i></div>
+                <input type="number" id="lateFine" name="late_fine"
+                       placeholder="1.00" min="0" step="0.50" value="1.00" required />
+                <span class="input-unit">₹/day</span>
+              </div>
+              <p class="field-hint">Charged per overdue day. Set 0 to disable.</p>
+              <p class="field-error" id="err-lf">Must be 0 or greater.</p>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── Working Days ── -->
+        <div class="form-card">
+          <div class="form-card-header">
+            <div class="form-card-icon orange"><i class="fas fa-calendar-week"></i></div>
+            <div>
+              <h2 class="form-card-title">Working Days</h2>
+              <p class="form-card-sub">Days the library is open — used to compute actual due dates</p>
+            </div>
+          </div>
+          <div class="field-group" id="fg-days">
+            <label class="field-label">Open Days <span class="required-star">*</span></label>
+            <div class="days-row" id="daysRow">
+              <button type="button" class="day-btn selected" data-day="Mon">Mon</button>
+              <button type="button" class="day-btn selected" data-day="Tue">Tue</button>
+              <button type="button" class="day-btn selected" data-day="Wed">Wed</button>
+              <button type="button" class="day-btn selected" data-day="Thu">Thu</button>
+              <button type="button" class="day-btn selected" data-day="Fri">Fri</button>
+              <button type="button" class="day-btn"          data-day="Sat">Sat</button>
+              <button type="button" class="day-btn"          data-day="Sun">Sun</button>
+            </div>
+            <input type="hidden" name="working_days" id="workingDaysInput" value="Mon,Tue,Wed,Thu,Fri" />
+            <p class="field-hint" style="margin-top:10px;">Holidays are skipped when calculating return dates.</p>
+            <p class="field-error" id="err-days">Please select at least one working day.</p>
+          </div>
+        </div>
+
+        <!-- ── Rule Toggles ── -->
+        <div class="form-card">
+          <div class="form-card-header">
+            <div class="form-card-icon blue"><i class="fas fa-toggle-on"></i></div>
+            <div>
+              <h2 class="form-card-title">Rule Toggles</h2>
+              <p class="form-card-sub">Enable or disable specific loan behaviours</p>
+            </div>
+          </div>
+          <div class="toggle-list">
+            <div class="toggle-row">
+              <div class="toggle-info"><span class="toggle-name">Auto Fine</span><span class="toggle-desc">Automatically apply fines when a book is overdue.</span></div>
+              <label class="toggle-switch"><input type="checkbox" name="auto_fine" checked><span class="toggle-track"><span class="toggle-thumb"></span></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info"><span class="toggle-name">Allow Renewal</span><span class="toggle-desc">Let members renew borrowed books.</span></div>
+              <label class="toggle-switch"><input type="checkbox" name="allow_renewal" checked><span class="toggle-track"><span class="toggle-thumb"></span></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info"><span class="toggle-name">Allow Partial Payment</span><span class="toggle-desc">Accept partial fine payments from members.</span></div>
+              <label class="toggle-switch"><input type="checkbox" name="allow_partial_payment"><span class="toggle-track"><span class="toggle-thumb"></span></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info"><span class="toggle-name">Auto Mark Lost</span><span class="toggle-desc">Automatically mark severely overdue books as lost.</span></div>
+              <label class="toggle-switch"><input type="checkbox" name="auto_mark_lost"><span class="toggle-track"><span class="toggle-thumb"></span></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info"><span class="toggle-name">Allow Advance Booking</span><span class="toggle-desc">Let members reserve books before they are available.</span></div>
+              <label class="toggle-switch"><input type="checkbox" name="allow_advance_booking"><span class="toggle-track"><span class="toggle-thumb"></span></span></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Email Notifications ── -->
+        <div class="form-card">
+          <div class="form-card-header">
+            <div class="form-card-icon green"><i class="fas fa-bell"></i></div>
+            <div>
+              <h2 class="form-card-title">Email Notifications</h2>
+              <p class="form-card-sub">Choose which emails you receive</p>
+            </div>
+          </div>
+          <div class="toggle-list">
+            <div class="toggle-row">
+              <div class="toggle-info"><span class="toggle-name">Email Overdue Reminder</span><span class="toggle-desc">Send email reminders when a loan becomes overdue.</span></div>
+              <label class="toggle-switch"><input type="checkbox" name="email_overdue_reminder" checked><span class="toggle-track"><span class="toggle-thumb"></span></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info"><span class="toggle-name">SMS Reminders</span><span class="toggle-desc">Send SMS reminders for due and overdue books.</span></div>
+              <label class="toggle-switch"><input type="checkbox" name="sms_reminder"><span class="toggle-track"><span class="toggle-thumb"></span></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info"><span class="toggle-name">Monthly Usage Report</span><span class="toggle-desc">Receive a monthly summary report via email.</span></div>
+              <label class="toggle-switch"><input type="checkbox" name="monthly_usage_report" checked><span class="toggle-track"><span class="toggle-thumb"></span></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info"><span class="toggle-name">Weekly Database Backup</span><span class="toggle-desc">Get notified when weekly backup completes.</span></div>
+              <label class="toggle-switch"><input type="checkbox" name="weekly_database_backup" checked><span class="toggle-track"><span class="toggle-thumb"></span></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info"><span class="toggle-name">Daily Activity Summary</span><span class="toggle-desc">Receive a daily digest of library activity.</span></div>
+              <label class="toggle-switch"><input type="checkbox" name="daily_activity_summary"><span class="toggle-track"><span class="toggle-thumb"></span></span></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Member Permissions ── -->
+        <div class="form-card">
+          <div class="form-card-header">
+            <div class="form-card-icon orange"><i class="fas fa-user-shield"></i></div>
+            <div>
+              <h2 class="form-card-title">Member Permissions</h2>
+              <p class="form-card-sub">Control what members can do on their own</p>
+            </div>
+          </div>
+          <div class="toggle-list">
+            <div class="toggle-row">
+              <div class="toggle-info"><span class="toggle-name">Allow Self Registration</span><span class="toggle-desc">Let members register themselves without admin action.</span></div>
+              <label class="toggle-switch"><input type="checkbox" name="allow_self_registration"><span class="toggle-track"><span class="toggle-thumb"></span></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info"><span class="toggle-name">Require Admin Approval</span><span class="toggle-desc">New member registrations need admin approval before activation.</span></div>
+              <label class="toggle-switch"><input type="checkbox" name="require_admin_approval" checked><span class="toggle-track"><span class="toggle-thumb"></span></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info"><span class="toggle-name">Enable Member ID Card Download</span><span class="toggle-desc">Allow members to download their library ID card as a PDF.</span></div>
+              <label class="toggle-switch"><input type="checkbox" name="enable_member_id_download" checked><span class="toggle-track"><span class="toggle-thumb"></span></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info"><span class="toggle-name">Allow Profile Edit</span><span class="toggle-desc">Let members update their own profile details.</span></div>
+              <label class="toggle-switch"><input type="checkbox" name="allow_profile_edit" checked><span class="toggle-track"><span class="toggle-thumb"></span></span></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Save Button ── -->
+        <div class="form-actions">
+          <button type="submit" class="btn-activate" id="activateBtn">
+            <span class="btn-inner">
+              <i class="fas fa-check-circle"></i>
+              Save &amp; Activate Library
+            </span>
+            <span class="btn-loading" style="display:none;">
+              <i class="fas fa-spinner fa-spin"></i>
+              Activating…
+            </span>
+          </button>
+          <p class="form-footnote">
+            <i class="fas fa-info-circle"></i>
+            All settings can be changed anytime from <strong>Settings → Library Rules</strong>.
+          </p>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- RIGHT: Live Preview + Locked Modules -->
+    <div class="setup-side">
+
+      <div class="summary-card card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <i class="fas fa-eye" style="color:var(--ink-accent);margin-right:6px;"></i>
+            Live Preview
+          </h2>
+        </div>
+        <div class="card-body">
+          <ul class="summary-list">
+            <li class="summary-item">
+              <span class="summary-key"><i class="fas fa-fingerprint"></i> Code</span>
+              <span class="summary-val mono" id="sv-code">DG-XXXX</span>
+            </li>
+            <li class="summary-item">
+              <span class="summary-key"><i class="fas fa-globe"></i> Time Zone</span>
+              <span class="summary-val" id="sv-tz">—</span>
+            </li>
+            <li class="summary-item">
+              <span class="summary-key"><i class="fas fa-user-graduate"></i> Student Limit</span>
+              <span class="summary-val" id="sv-sbl">3 books</span>
+            </li>
+            <li class="summary-item">
+              <span class="summary-key"><i class="fas fa-chalkboard-teacher"></i> Teacher Limit</span>
+              <span class="summary-val" id="sv-tbl">5 books</span>
+            </li>
+            <li class="summary-item">
+              <span class="summary-key"><i class="fas fa-book"></i> Max / Member</span>
+              <span class="summary-val" id="sv-mb">5 books</span>
+            </li>
+            <li class="summary-item">
+              <span class="summary-key"><i class="fas fa-rupee-sign"></i> Late Fine</span>
+              <span class="summary-val" id="sv-lf">₹1.00/day</span>
+            </li>
+            <li class="summary-item">
+              <span class="summary-key"><i class="fas fa-calendar-week"></i> Open Days</span>
+              <span class="summary-val" id="sv-days">Mon–Fri</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="locked-panel">
+        <div class="locked-panel-title"><i class="fas fa-lock"></i> Unlocks After Setup</div>
+        <div class="locked-modules">
+          <div class="locked-mod"><div class="locked-mod-icon purple"><i class="fas fa-users"></i></div><div class="locked-mod-info"><span class="locked-mod-name">Members</span><span class="locked-mod-desc">Register &amp; manage</span></div><i class="fas fa-lock locked-lock"></i></div>
+          <div class="locked-mod"><div class="locked-mod-icon blue"><i class="fas fa-book"></i></div><div class="locked-mod-info"><span class="locked-mod-name">Catalogue</span><span class="locked-mod-desc">Books &amp; inventory</span></div><i class="fas fa-lock locked-lock"></i></div>
+          <div class="locked-mod"><div class="locked-mod-icon green"><i class="fas fa-exchange-alt"></i></div><div class="locked-mod-info"><span class="locked-mod-name">Circulation</span><span class="locked-mod-desc">Issue &amp; returns</span></div><i class="fas fa-lock locked-lock"></i></div>
+          <div class="locked-mod"><div class="locked-mod-icon orange"><i class="fas fa-file-invoice-dollar"></i></div><div class="locked-mod-info"><span class="locked-mod-name">Fine Ledger</span><span class="locked-mod-desc">Payments &amp; dues</span></div><i class="fas fa-lock locked-lock"></i></div>
+          <div class="locked-mod"><div class="locked-mod-icon blue"><i class="fas fa-chart-bar"></i></div><div class="locked-mod-info"><span class="locked-mod-name">Reports</span><span class="locked-mod-desc">Analytics &amp; export</span></div><i class="fas fa-lock locked-lock"></i></div>
+          <div class="locked-mod"><div class="locked-mod-icon green"><i class="fas fa-cog"></i></div><div class="locked-mod-info"><span class="locked-mod-name">Full Settings</span><span class="locked-mod-desc">All configuration</span></div><i class="fas fa-lock locked-lock"></i></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- SUCCESS MODAL -->
+<div class="modal-overlay" id="successModal" aria-hidden="true">
+  <div class="modal-card">
+    <div class="modal-icon-wrap success"><i class="fas fa-check"></i></div>
+    <h2 class="modal-title">Library Activated!</h2>
+    <p class="modal-body">Your library is configured and ready. Your unique library code is:</p>
+    <div class="modal-code" id="modalCode">DG-XXXX</div>
+    <p class="modal-body small">Share this code with members during self-registration. All modules are now unlocked.</p>
+    <button class="btn-activate" id="modalGoDash" style="margin-top:8px;">
+      <span class="btn-inner"><i class="fas fa-tachometer-alt"></i> Go to Dashboard</span>
+    </button>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/accounts/library_setup.js' %}"></script>
+{% endblock %}

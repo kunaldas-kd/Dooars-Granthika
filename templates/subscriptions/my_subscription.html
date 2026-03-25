@@ -1,0 +1,221 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}My Subscription — Dooars Granthika{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/subscriptions/my_subscription.css' %}">
+{% endblock %}
+
+{% block nav_subscription %}active{% endblock %}
+
+{% block topbar %}
+<header class="top-bar">
+  <div class="topbar-left">
+    <h1 class="topbar-title">My Subscription</h1>
+    <p class="topbar-sub">Plan details, usage limits, and payment history</p>
+  </div>
+  <div class="topbar-right">
+    <a href="{% url 'subscriptions:plans' %}" class="btn-topbar">
+      <i class="fas fa-arrow-up-right-from-square"></i> Upgrade Plan
+    </a>
+  </div>
+</header>
+{% endblock %}
+
+{% block content %}
+
+{% if not subscription %}
+<!-- ── No subscription ───────────────────────────────────────── -->
+<div class="ms-empty">
+  <i class="fas fa-box-open ms-empty-icon"></i>
+  <h2>No Active Subscription</h2>
+  <p>You don't have an active subscription yet. Choose a plan to unlock all features.</p>
+  <a href="{% url 'subscriptions:plans' %}" class="btn-primary-lg">
+    <i class="fas fa-sparkles"></i> Browse Plans
+  </a>
+</div>
+
+{% else %}
+
+<!-- ── Status banner ────────────────────────────────────────── -->
+<div class="ms-status-bar status-{{ subscription.status }}
+            {% if subscription.is_expiring_soon %}status-expiring{% endif %}">
+  <div class="sb-left">
+    <div class="sb-icon">
+      {% if subscription.status == 'active' %}<i class="fas fa-check-circle"></i>
+      {% elif subscription.status == 'expired' %}<i class="fas fa-times-circle"></i>
+      {% elif subscription.status == 'trial' %}<i class="fas fa-clock"></i>
+      {% else %}<i class="fas fa-exclamation-circle"></i>{% endif %}
+    </div>
+    <div>
+      <div class="sb-plan">{{ plan.name }}</div>
+      <div class="sb-label">{{ subscription.get_status_display }}
+        {% if subscription.is_expiring_soon %} · Expiring Soon!{% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="sb-center">
+    <div class="sb-dates">
+      <div class="sb-date-item">
+        <span class="sb-date-label"><i class="fas fa-calendar-plus"></i> Started</span>
+        <span class="sb-date-val">{{ subscription.start_date|date:"d M Y" }}</span>
+      </div>
+      <div class="sb-divider"></div>
+      <div class="sb-date-item">
+        <span class="sb-date-label"><i class="fas fa-calendar-xmark"></i> Expires</span>
+        <span class="sb-date-val {% if subscription.is_expiring_soon %}text-warn{% endif %}">
+          {{ subscription.expiry_date|date:"d M Y" }}
+        </span>
+      </div>
+      <div class="sb-divider"></div>
+      <div class="sb-date-item">
+        <span class="sb-date-label"><i class="fas fa-rotate-right"></i> Renewals</span>
+        <span class="sb-date-val">{{ subscription.renewal_count }}</span>
+      </div>
+    </div>
+  </div>
+  <div class="sb-right">
+    <div class="days-ring" id="daysRing"
+         data-days="{{ subscription.days_remaining }}"
+         data-total="{{ plan.duration_days }}">
+      <svg viewBox="0 0 80 80">
+        <circle class="ring-track" cx="40" cy="40" r="34"/>
+        <circle class="ring-prog"  cx="40" cy="40" r="34" id="ringProg"/>
+      </svg>
+      <div class="ring-label">
+        <span class="ring-num">{{ subscription.days_remaining }}</span>
+        <span class="ring-sub">days</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 2-col layout ─────────────────────────────────────────── -->
+<div class="ms-grid">
+
+  <!-- Left col: Usage + Features -->
+  <div class="ms-col-main">
+
+    <!-- Usage meters -->
+    <div class="ms-card">
+      <div class="ms-card-head">
+        <h2><i class="fas fa-gauge-high"></i> Usage</h2>
+        <span class="ms-card-sub">Current period · {{ subscription.start_date|date:"d M" }} – {{ subscription.expiry_date|date:"d M Y" }}</span>
+      </div>
+      <div class="usage-meters">
+
+        <div class="meter-row">
+          <div class="meter-label">
+            <i class="fas fa-users"></i>
+            <span>Members</span>
+            <span class="meter-nums">{{ usage.members|default:0 }} / {{ plan.max_members }}</span>
+          </div>
+          <div class="meter-track">
+            <div class="meter-fill"
+                 style="--val:{{ usage.members|default:0 }};--max:{{ plan.max_members }}"></div>
+          </div>
+          <div class="meter-pct" id="mPct0">0%</div>
+        </div>
+
+        <div class="meter-row">
+          <div class="meter-label">
+            <i class="fas fa-book"></i>
+            <span>Book Titles</span>
+            <span class="meter-nums">{{ usage.books|default:0 }} / {{ plan.max_books }}</span>
+          </div>
+          <div class="meter-track">
+            <div class="meter-fill"
+                 style="--val:{{ usage.books|default:0 }};--max:{{ plan.max_books }}"></div>
+          </div>
+          <div class="meter-pct" id="mPct1">0%</div>
+        </div>
+
+        <div class="meter-row">
+          <div class="meter-label">
+            <i class="fas fa-copy"></i>
+            <span>Physical Copies</span>
+            <span class="meter-nums">{{ usage.book_copies|default:0 }} / {{ plan.max_book_copies }}</span>
+          </div>
+          <div class="meter-track">
+            <div class="meter-fill"
+                 style="--val:{{ usage.book_copies|default:0 }};--max:{{ plan.max_book_copies }}"></div>
+          </div>
+          <div class="meter-pct" id="mPct2">0%</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Plan features -->
+    <div class="ms-card">
+      <div class="ms-card-head">
+        <h2><i class="fas fa-list-check"></i> Plan Features</h2>
+      </div>
+      <div class="feature-chips">
+        {% for feat in plan.feature_list %}
+        <div class="feat-chip">
+          <i class="fas fa-check feat-chip-icon"></i>{{ feat }}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div><!-- /ms-col-main -->
+
+  <!-- Right col: Payment history -->
+  <div class="ms-col-aside">
+    <div class="ms-card ms-card-full">
+      <div class="ms-card-head">
+        <h2><i class="fas fa-receipt"></i> Payment History</h2>
+      </div>
+      {% if payments %}
+      <div class="pay-list">
+        {% for p in payments %}
+        <div class="pay-row">
+          <div class="pay-icon pay-{{ p.status }}">
+            {% if p.status == 'success' %}<i class="fas fa-check"></i>
+            {% elif p.status == 'failed' %}<i class="fas fa-times"></i>
+            {% elif p.status == 'refunded' %}<i class="fas fa-rotate-left"></i>
+            {% else %}<i class="fas fa-clock"></i>{% endif %}
+          </div>
+          <div class="pay-info">
+            <div class="pay-plan">{{ p.plan.name }}</div>
+            <div class="pay-meta">{{ p.created_at|date:"d M Y" }} · {{ p.get_payment_method_display }}</div>
+          </div>
+          <div class="pay-right">
+            <div class="pay-amount">
+              {% if p.amount == 0 %}Free{% else %}₹{{ p.amount }}{% endif %}
+            </div>
+            <div class="pay-badge pay-badge-{{ p.status }}">{{ p.get_status_display }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="pay-empty">
+        <i class="fas fa-file-invoice"></i>
+        <p>No payment records yet.</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Quick actions -->
+    <div class="ms-actions">
+      <a href="{% url 'subscriptions:plans' %}" class="ms-action-btn btn-primary-sm">
+        <i class="fas fa-arrow-up"></i> Upgrade / Change Plan
+      </a>
+      <a href="{% url 'accounts:settings' %}" class="ms-action-btn btn-outline-sm">
+        <i class="fas fa-cog"></i> Library Settings
+      </a>
+    </div>
+  </div><!-- /ms-col-aside -->
+
+</div><!-- /ms-grid -->
+
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/subscriptions/my_subscription.js' %}"></script>
+{% endblock %}

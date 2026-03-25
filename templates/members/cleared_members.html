@@ -1,0 +1,218 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Cleared Members - Dooars Granthika{% endblock %}
+
+{% block nav_members %}active{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/members/cleared_members.css' %}" />
+{% endblock %}
+
+{% block content %}
+<div class="members-list-page cleared-members-page">
+
+  <!-- Page Header -->
+  <div class="page-header" style="margin-bottom: 2rem;">
+    <div>
+      <h1 style="font-size: 2rem; font-weight: 700; color: #1f2937; margin: 0;">
+        <i class="fas fa-check-circle" style="color: #10b981;"></i> Cleared Members
+      </h1>
+      <p style="color: #6b7280; margin: 0.5rem 0 0;">Members who have completed all library clearance requirements</p>
+    </div>
+  </div>
+
+  <!-- Stats Banner -->
+  <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 12px; padding: 2rem; margin-bottom: 2rem; color: white;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 2rem;">
+      <div>
+        {# Use total_count (int from view) not members.count (Page object method) #}
+        <h2 style="margin: 0; font-size: 2.5rem;">{{ total_count }}</h2>
+        <p style="margin: 0.5rem 0 0; font-size: 1.125rem; opacity: 0.9;">Total Cleared Members</p>
+      </div>
+      <div style="display: flex; gap: 1rem;">
+        <a href="{% url 'members:pending_clearance' %}" class="btn" style="background: white; color: #10b981;">
+          <i class="fas fa-clock"></i> Pending Clearance
+        </a>
+        <a href="{% url 'members:clearance_check' %}" class="btn" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid white;">
+          <i class="fas fa-search"></i> Check Clearance
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <form id="filterForm" method="get">
+      <div class="filters-grid">
+        <div class="filter-group">
+          <label for="department">Department</label>
+          <select id="department" name="department" class="filter-select">
+            <option value="">All Departments</option>
+            {% for dept in departments %}
+            <option value="{{ dept.id }}" {% if request.GET.department == dept.id|stringformat:"s" %}selected{% endif %}>
+              {{ dept.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="clearance_date">Clearance Date</label>
+          <select id="clearance_date" name="clearance_date" class="filter-select">
+            <option value="">All Dates</option>
+            <option value="today" {% if request.GET.clearance_date == 'today' %}selected{% endif %}>Today</option>
+            <option value="week"  {% if request.GET.clearance_date == 'week'  %}selected{% endif %}>This Week</option>
+            <option value="month" {% if request.GET.clearance_date == 'month' %}selected{% endif %}>This Month</option>
+            <option value="year"  {% if request.GET.clearance_date == 'year'  %}selected{% endif %}>This Year</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="member_type">Member Type</label>
+          <select id="member_type" name="member_type" class="filter-select">
+            <option value="">All Types</option>
+            <option value="passout" {% if request.GET.member_type == 'passout' %}selected{% endif %}>Pass Out</option>
+            <option value="active"  {% if request.GET.member_type == 'active'  %}selected{% endif %}>Active</option>
+          </select>
+        </div>
+
+        <div class="filter-actions">
+          <button type="submit" class="btn-filter">
+            <i class="fas fa-filter"></i> Apply
+          </button>
+          <button type="button" id="resetFilters" class="btn-reset">
+            <i class="fas fa-redo"></i> Reset
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Members Table -->
+  <div class="members-table-container">
+    <div class="table-header">
+      {# total_count is safe on a paginated result — page_obj.paginator.count also works #}
+      <h2>Cleared Members List ({{ total_count }})</h2>
+      <div class="table-controls">
+        <div class="search-box">
+          <i class="fas fa-search"></i>
+          <input type="text" id="memberSearch" placeholder="Search members..." />
+        </div>
+      </div>
+    </div>
+
+    {% if members %}
+    <div class="members-table-wrapper">
+    <table class="members-table" id="membersTable">
+      <thead>
+        <tr>
+          <th data-sortable>Member Info</th>
+          <th data-sortable>Member ID</th>
+          <th data-sortable>Department</th>
+          <th data-sortable>Status</th>
+          <th data-sortable>Clearance Date</th>
+          <th>Verified By</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for member in members %}
+        <tr>
+          <td>
+            <div class="member-info">
+              
+              {% if member.photo_mime_type %}
+              <img src="{% url 'members:member_photo' member.pk %}"
+                   alt="{{ member.full_name }}"
+                   class="member-avatar"
+                   style="border-radius: 50%; object-fit: cover;" />
+              {% else %}
+              <div class="member-avatar">
+                {{ member.full_name|slice:":1"|upper }}
+              </div>
+              {% endif %}
+              <div class="member-details">
+                <span class="member-name">{{ member.full_name }}</span>
+                <span class="member-id">{{ member.email }}</span>
+              </div>
+            </div>
+          </td>
+          <td><strong>{{ member.member_id }}</strong></td>
+          <td>{{ member.department.name|default:"N/A" }}</td>
+          <td>
+            <span class="status-badge {{ member.status }}">
+              <i class="fas fa-circle"></i>
+              {{ member.get_status_display }}
+            </span>
+          </td>
+          <td>{{ member.clearance_date|date:"M d, Y"|default:"N/A" }}</td>
+          <td>
+            <span style="font-size: 0.875rem; color: #6b7280;">
+              {{ member.cleared_by.get_full_name|default:"System" }}
+            </span>
+          </td>
+          <td>
+            <div class="table-actions">
+              <a href="{% url 'members:member_detail' member.pk %}" class="action-icon view" title="View Details">
+                <i class="fas fa-eye"></i>
+              </a>
+              <button class="action-icon certificate"
+                      onclick="downloadClearanceCertificate({{ member.pk }})"
+                      title="Download Certificate">
+                <i class="fas fa-download"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div><!-- /.members-table-wrapper -->
+
+    {% if is_paginated %}
+    <div class="pagination-container">
+      <div class="pagination-info">
+        Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} members
+      </div>
+      <ul class="pagination">
+        {% if page_obj.has_previous %}
+        <li><a href="?page=1{% for k, v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}"><i class="fas fa-angle-double-left"></i></a></li>
+        <li><a href="?page={{ page_obj.previous_page_number }}{% for k, v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}"><i class="fas fa-angle-left"></i></a></li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+          {% if page_obj.number == num %}
+          <li class="active"><span>{{ num }}</span></li>
+          {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+          <li><a href="?page={{ num }}{% for k, v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">{{ num }}</a></li>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li><a href="?page={{ page_obj.next_page_number }}{% for k, v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}"><i class="fas fa-angle-right"></i></a></li>
+        <li><a href="?page={{ page_obj.paginator.num_pages }}{% for k, v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}"><i class="fas fa-angle-double-right"></i></a></li>
+        {% endif %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-state-icon">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <h3>No Cleared Members Yet</h3>
+      <p>Members who complete all clearance requirements will appear here.</p>
+      <a href="{% url 'members:pending_clearance' %}" class="btn btn-primary">
+        <i class="fas fa-clock"></i> View Pending Clearance
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/members/members.js' %}"></script>
+<script src="{% static 'js/members/cleared_members.js' %}"></script>
+{% endblock %}

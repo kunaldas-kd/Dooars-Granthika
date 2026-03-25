@@ -1,0 +1,22 @@
+/* ═══════════════════════════════════════════════════════════════════
+   MEMBER DETAIL PAGE — page-specific styles
+   ═══════════════════════════════════════════════════════════════════ */
+
+@import url("members.css");
+
+/* ── Transaction status badges ── */
+.status-badge.returned { background: #d1fae5; color: #065f46; }
+.status-badge.overdue  { background: #fee2e2; color: #991b1b; }
+.status-badge.issued   { background: #dbeafe; color: #1e40af; }
+
+/* ── Fine amount cell ── */
+td .fine-paid    { color: #10b981; font-weight: 600; }
+td .fine-pending { color: #ef4444; font-weight: 600; }
+
+/* ── Not-returned highlight ── */
+td .not-returned { color: #f59e0b; font-style: italic; }
+
+/* ── Detail container max width ── */
+.member-detail-container {
+  max-width: 1100px;
+}

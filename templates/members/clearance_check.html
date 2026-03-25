@@ -1,0 +1,95 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Clearance Check - Dooars Granthika{% endblock %}
+
+{% block nav_members %}active{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/members/clearance_check.css' %}" />
+{% endblock %}
+
+{% block content %}
+<div class="clearance-container">
+
+  <!-- Page Header -->
+  <div class="page-header" style="margin-bottom: 2rem; text-align: center;">
+    <h1 style="font-size: 2rem; font-weight: 700; color: #1f2937; margin: 0;">
+      <i class="fas fa-clipboard-check" style="color: #3b82f6;"></i> Member Clearance Check
+    </h1>
+    <p style="color: #6b7280; margin: 0.5rem 0 0;">Verify member clearance status for library dues and returns</p>
+  </div>
+
+  <!-- Search Card -->
+  <div class="clearance-search-card">
+    <h2>Search Member</h2>
+    {# CSRF token read by clearance_check.js via getCsrfToken() #}
+    <form id="clearanceCheckForm" method="post" action="{% url 'members:clearance_check' %}">
+      {% csrf_token %}
+      <div class="search-form">
+        <div class="search-input-group">
+          <i class="fas fa-search"></i>
+          <input
+            type="text"
+            id="memberIdInput"
+            name="member_id"
+            placeholder="Enter Member ID or Phone Number"
+            required
+            autocomplete="off"
+            value="{{ request.GET.member_id|default:'' }}"
+          />
+        </div>
+        <button type="submit" class="btn-search" id="searchBtn">
+          <i class="fas fa-search"></i> Check Status
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Result Card — populated by clearance_check.js after AJAX response -->
+  <div id="clearanceResult"></div>
+
+  <!-- Quick Links -->
+  <div style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-top: 2rem;">
+    <h3 style="margin: 0 0 1.5rem; font-size: 1.125rem; color: #1f2937;">
+      <i class="fas fa-link"></i> Quick Links
+    </h3>
+    <div class="clearance-quicklinks">
+      <a href="{% url 'members:cleared_members' %}" class="action-btn secondary" style="text-align: center; justify-content: center;">
+        <i class="fas fa-check-circle"></i>
+        <span>Cleared Members</span>
+      </a>
+      <a href="{% url 'members:pending_clearance' %}" class="action-btn secondary" style="text-align: center; justify-content: center;">
+        <i class="fas fa-clock"></i>
+        <span>Pending Clearance</span>
+      </a>
+      <a href="{% url 'members:members_passout' %}" class="action-btn secondary" style="text-align: center; justify-content: center;">
+        <i class="fas fa-user-graduate"></i>
+        <span>Pass Out Members</span>
+      </a>
+      <a href="{% url 'members:members_list' %}" class="action-btn secondary" style="text-align: center; justify-content: center;">
+        <i class="fas fa-users"></i>
+        <span>All Members</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Information Box -->
+  <div class="clearance-info-box">
+    <h4><i class="fas fa-info-circle"></i> About Clearance Check</h4>
+    <p>Use this tool to verify if a member has cleared all library obligations including:</p>
+    <ul>
+      <li>Returned all borrowed books</li>
+      <li>Paid all pending fines</li>
+      <li>No damage or loss claims pending</li>
+      <li>Library card returned (if applicable)</li>
+    </ul>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/members/members.js' %}"></script>
+<script src="{% static 'js/members/clearance_check.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,146 @@
+/* ═══════════════════════════════════════════════════════════════════
+   MEMBERS LIST PAGE — page-specific styles
+   ═══════════════════════════════════════════════════════════════════ */
+
+@import url("members.css");
+
+/* ── Filters — wrap naturally, no horizontal scroll ── */
+.members-list-page .filters-section {
+  overflow: visible;
+}
+.members-list-page .filters-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+.members-list-page .filters-grid .filter-group {
+  flex: 1 1 140px;
+  min-width: 120px;
+  max-width: 200px;
+}
+.members-list-page .filters-grid .filter-actions {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* ── Quick actions ── */
+.members-list-page .quick-actions {
+  background: white;
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   TABLE CONTAINER
+   overflow:hidden on .members-table-container breaks sticky.
+   ════════════════════════════════════════════════════════════════════ */
+
+.members-list-page .members-table-container {
+  overflow: visible;
+}
+
+.members-list-page .members-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f9fafb;
+}
+.members-list-page .members-table-wrapper::-webkit-scrollbar        { height: 6px; }
+.members-list-page .members-table-wrapper::-webkit-scrollbar-track  { background: #f9fafb; }
+.members-list-page .members-table-wrapper::-webkit-scrollbar-thumb  { background: #d1d5db; border-radius: 99px; }
+
+/* ════════════════════════════════════════════════════════════════════
+   TABLE
+   Col:  1.MemberInfo  2.MemberID  3.Role  4.Dept  5.Course
+         6.Year  7.Semester  8.Contact  9.Status  10.Actions
+   ════════════════════════════════════════════════════════════════════ */
+
+.members-list-page .members-table {
+  width: max-content;
+  min-width: 100%;
+  table-layout: auto;
+  border-collapse: collapse;
+}
+
+.members-list-page .members-table th,
+.members-list-page .members-table td {
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  vertical-align: middle;
+  text-align: center;
+}
+
+/* Col 1 — left-align Member Info */
+.members-list-page .members-table th:nth-child(1),
+.members-list-page .members-table td:nth-child(1) {
+  text-align: left;
+}
+
+/* ── STICKY RIGHT — Col 9: Status ── */
+.members-list-page .members-table th:nth-child(9),
+.members-list-page .members-table td:nth-child(9) {
+  position: sticky;
+  right: 140px;
+  z-index: 2;
+  min-width: 80px;
+  background: #fff;
+  border-left: 1px solid #e5e7eb;
+  box-shadow: -2px 0 6px rgba(0,0,0,0.06);
+}
+.members-list-page .members-table thead th:nth-child(9) { background: #f9fafb; }
+
+/* ── STICKY RIGHT — Col 10: Actions ── */
+.members-list-page .members-table th:nth-child(10),
+.members-list-page .members-table td:nth-child(10) {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  min-width: 110px;
+  background: #fff;
+  box-shadow: -2px 0 6px rgba(0,0,0,0.06);
+}
+.members-list-page .members-table thead th:nth-child(10) { background: #f9fafb; }
+
+/* ── Member Info — no wrap ── */
+.members-list-page .member-name,
+.members-list-page .member-id,
+.members-list-page .member-details {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   STATUS DOT — dot only, no pill, no text
+   ════════════════════════════════════════════════════════════════════ */
+
+.members-list-page .status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  font-size: 0 !important;
+}
+.members-list-page .status-badge i {
+  font-size: 0.7rem !important;
+  display: inline-block !important;
+  color: #9ca3af;
+}
+.members-list-page .status-badge.active   i { color: #10b981 !important; animation: sdot-pulse 1.8s ease-in-out infinite; }
+.members-list-page .status-badge.passout  i { color: #f59e0b !important; }
+.members-list-page .status-badge.inactive i { color: #ef4444 !important; }
+.members-list-page .status-badge.pending  i { color: #3b82f6 !important; }
+.members-list-page .status-badge.cleared  i { color: #10b981 !important; }
+
+@keyframes sdot-pulse {
+  0%, 100% { opacity: 1;    transform: scale(1); }
+  50%       { opacity: 0.35; transform: scale(0.6); }
+}

@@ -1,0 +1,49 @@
+/* ═══════════════════════════════════════════════════════════════════
+   ADD MEMBER PAGE — page-specific styles
+   ═══════════════════════════════════════════════════════════════════ */
+
+@import url("members.css");
+
+/* ── All select-or-create styles now live in members.css (sections 11-14).
+      This file keeps the form centred and adds submit-button loading state. ── */
+
+/* ── Constrain form width a bit more on wide screens ── */
+.form-container {
+  max-width: 860px;
+}
+
+/* ── Submit button — loading state toggled by JS ── */
+#submitBtn[disabled] {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* ── Error message below fields ── */
+.error-message {
+  color: #ef4444;
+  font-size: 0.8125rem;
+  margin-top: 0.25rem;
+}
+
+
+/* ── Role selector cards ─────────────────────────────────────────── */
+.role-selector{display:flex;gap:1rem;flex-wrap:wrap;margin-top:.5rem}
+.role-option{flex:1;min-width:150px;display:flex;flex-direction:column;align-items:center;
+  gap:.4rem;padding:1.25rem 1rem;border:2px solid #e5e7eb;border-radius:12px;cursor:pointer;
+  transition:border-color .2s,background .2s;background:#fff;text-align:center}
+.role-option input[type="radio"]{display:none}
+.role-option i{font-size:1.75rem;color:#6b7280}
+.role-option span{font-weight:600;color:#374151;font-size:.95rem}
+.role-option small{color:#9ca3af;font-size:.8rem}
+.role-option.selected,.role-option:hover{border-color:#3b82f6;background:#eff6ff}
+.role-option.selected i,.role-option:hover i{color:#3b82f6}
+.role-option[data-role="teacher"].selected,.role-option[data-role="teacher"]:hover{border-color:#8b5cf6;background:#f5f3ff}
+.role-option[data-role="teacher"].selected i,.role-option[data-role="teacher"]:hover i{color:#8b5cf6}
+.role-option[data-role="general"].selected,.role-option[data-role="general"]:hover{border-color:#6b7280;background:#f9fafb}
+.role-option[data-role="general"].selected i,.role-option[data-role="general"]:hover i{color:#6b7280}
+
+/* ── Drop zone: the entire zone is the click target ── */
+.photo-upload-zone { cursor: pointer; }
+.photo-upload-text span { pointer-events: none; }
+.photo-upload-text small { pointer-events: none; }
+.photo-upload-icon { pointer-events: none; }

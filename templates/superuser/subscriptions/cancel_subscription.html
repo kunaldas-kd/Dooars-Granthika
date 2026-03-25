@@ -1,0 +1,59 @@
+{% extends "superuser/superuser_dashboard_base.html" %}
+{% block title %}Cancel Subscription{% endblock %}
+{% block breadcrumb %}Cancel Subscription{% endblock %}
+{% block nav_subscriptions %}active{% endblock %}
+
+{% block content %}
+<div class="confirm-page" style="margin: -28px; min-height: calc(100vh - 64px);">
+  <div class="confirm-card">
+    <div class="confirm-icon danger">✕</div>
+    <h2 class="confirm-title">Cancel Subscription</h2>
+    <p class="confirm-desc">
+      This will immediately deactivate the subscription and set the expiry date to today.
+      The library will lose access at the end of today.
+    </p>
+
+    <div class="confirm-target">
+      <div class="label">Subscription to cancel</div>
+      <div class="value">{{ subscription.library.library_name }}</div>
+      <div style="margin-top:6px; font-size:12.5px; color:var(--text-secondary); font-family:'JetBrains Mono',monospace;">
+        {{ subscription.library.library_code }} · Plan: {{ subscription.plan|capfirst }} · Expires {{ subscription.expiry_date|date:"M d, Y" }}
+      </div>
+    </div>
+
+    <div class="alert alert-danger" style="margin-bottom:20px;">
+      <span class="alert-icon">⚠</span>
+      <div class="alert-text">
+        <div class="alert-title">This action cannot be undone automatically</div>
+        All billing history will be retained. The subscription can be manually reactivated if needed.
+      </div>
+    </div>
+
+    <form method="post" data-confirm>
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Cancellation reason <span class="required">*</span></label>
+        <select name="reason" class="form-control" required>
+          <option value="">— Select a reason —</option>
+          <option value="non_payment">Non-payment</option>
+          <option value="library_request">Library request</option>
+          <option value="policy_violation">Policy violation</option>
+          <option value="plan_downgrade">Plan downgrade</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Additional notes</label>
+        <textarea name="notes" class="form-control" rows="2" placeholder="Optional notes…"></textarea>
+      </div>
+      <div class="confirm-actions">
+        <a href="{% url 'superuser:subscription_detail' subscription.pk %}" class="btn btn-secondary">Go Back</a>
+        <button type="submit" class="btn btn-danger">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Yes, Cancel Subscription
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

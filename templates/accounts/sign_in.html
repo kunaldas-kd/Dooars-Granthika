@@ -1,0 +1,143 @@
+{% comment %} {% extends 'base.html' %} {% endcomment %}
+{% load static %}
+
+{% comment %} {% block title %}Sign In - Dooars Granthika{% endblock %} {% endcomment %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/accounts/sign_in.css' %}" />
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+
+  <!-- ═══════════════════════════════════════
+       LEFT DECORATIVE PANEL
+       ═══════════════════════════════════════ -->
+  <div class="left-panel">
+
+    <!-- Background image — swap src for your own photo -->
+    <img class="left-media-img" src="{% static 'assets/img/Library.png' %}" alt="" aria-hidden="true" onload="this.classList.add('loaded')" />
+
+    <!-- Moon glow -->
+    <div class="moon"></div>
+
+    <!-- Brand overlay text -->
+    {% comment %} <div class="brand-text">
+      <h1>Dooars <span>Granthika</span></h1>
+      <div class="divider"></div>
+      <p>Your Digital Library Portal</p>
+    </div> {% endcomment %}
+
+    <!-- Floating book emojis -->
+    {% comment %} <div class="floating-books">
+      <span class="book">📚</span>
+      <span class="book">📖</span>
+      <span class="book">📕</span>
+      <span class="book">📗</span>
+    </div> {% endcomment %}
+
+    <!-- Decorative SVG hill scene -->
+    <div class="scene">
+      <svg viewBox="0 0 900 180" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+        <path d="M0,140 Q150,60 300,110 Q450,155 600,90 Q750,30 900,100 L900,180 L0,180 Z"
+              fill="rgba(10,20,50,0.55)" />
+        <path d="M0,160 Q200,130 400,150 Q600,170 900,140 L900,180 L0,180 Z"
+              fill="rgba(5,13,26,0.75)" />
+      </svg>
+    </div>
+  </div><!-- /left-panel -->
+
+
+  <!-- ═══════════════════════════════════════
+       RIGHT LOGIN PANEL
+       ═══════════════════════════════════════ -->
+  <div class="login-container">
+
+    <!-- Logo -->
+    <div class="logo-section">
+      <div class="logo-container">
+        <span class="logo-icon">
+          <img src="{% static 'assets/img/logo2.png' %}" alt="Dooars Granthika logo" width="44" height="44">
+        </span>
+      </div>
+      <div class="logo-text">Dooars Granthika</div>
+    </div>
+
+    <!-- Heading -->
+    <div class="header-section">
+      <h2>Welcome Back</h2>
+      <p class="subtitle">Access your digital library</p>
+    </div>
+
+    <!-- Django flash messages -->
+    {% if messages %}
+      <div id="status-msg" class="status {% for message in messages %}{{ message.tags }}{% endfor %}">
+        {% for message in messages %}{{ message }}{% endfor %}
+      </div>
+    {% else %}
+      <div id="status-msg" class="status"></div>
+    {% endif %}
+
+    <!-- Login form -->
+    <form method="post" id="loginForm" novalidate>
+      {% csrf_token %}
+
+      <!-- Username -->
+      <div class="form-group">
+        <label for="username">User ID</label>
+        <div class="input-wrapper">
+          <div class="input-icon">👤</div>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            placeholder="Enter your User ID"
+            required
+            autofocus
+            autocomplete="username"
+          />
+        </div>
+        <span class="error-message">Please enter your User ID.</span>
+      </div>
+
+      <!-- Password -->
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="input-wrapper">
+          <div class="input-icon">🔒</div>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Enter your password"
+            required
+            autocomplete="current-password"
+          />
+        </div>
+        <span class="error-message">Please enter your password.</span>
+      </div>
+
+      <!-- Remember me + forgot password (correct flexbox structure) -->
+      <div class="save-password-container">
+        <div>
+          <input type="checkbox" id="savePassword" name="remember_me">
+          <label for="savePassword">Remember Me</label>
+        </div>
+        <a href="{% url 'accounts:forgetpassword' %}" class="forgot-link">Forgot password?</a>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit" class="btn login-btn" id="loginBtn">
+        <div class="loading-spinner"></div>
+        <span class="btn-text">Sign In</span>
+      </button>
+    </form>
+    <h6 class='signup-text'>Don’t have an account? <a class='signup-link' href="{% url "accounts:signup" %}">Click here to register.</a></h6>
+  </div><!-- /login-container -->
+
+</div><!-- /auth-wrapper -->
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/accounts/sign_in.js' %}"></script>
+{% endblock %}

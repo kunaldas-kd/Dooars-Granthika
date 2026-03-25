@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}About Dooars Granthika - Our Story{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/core/about.css' %}" />
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+  <h1>About Dooars Granthika</h1>
+  <p>Transforming library management through innovation and technology</p>
+</section>
+
+<!-- Mission Section -->
+<section class="content-section">
+  <div class="content-container">
+    <div class="content-card">
+      <h2 class="card-title">Our Mission</h2>
+      <div class="card-content">
+        <p>
+          Dooars Granthika was created with a singular vision: to revolutionize library management by replacing outdated manual processes with intelligent, automated solutions. We believe that every educational institution deserves access to powerful, user-friendly tools that make library operations seamless and efficient.
+        </p>
+        <p>
+          Our mission is to empower librarians, students, and educators with a comprehensive platform that not only simplifies day-to-day operations but also provides valuable insights through advanced analytics and reporting capabilities.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Story Section -->
+<section class="content-section alternate-bg">
+  <div class="content-container">
+    <div class="content-card">
+      <h2 class="card-title">Our Story</h2>
+      <div class="card-content">
+        <p>
+          Dooars Granthika was developed by three passionate final-year students from the Department of Electronics and Telecommunication Engineering (ETCE) at Falakata Polytechnic: <strong>Kunal Das</strong>, <strong>Ashim Bakshi</strong>, and <strong>Arindam Das</strong>.
+        </p>
+        <p>
+          Having witnessed firsthand the challenges faced by library staff in managing records manually, we recognized an opportunity to make a real difference. What started as a final-year project quickly evolved into a full-featured library management system designed to address real-world problems.
+        </p>
+        <p>
+          Through countless hours of development, testing, and refinement, we've created a solution that combines robust functionality with an intuitive user interface. Dooars Granthika represents our commitment to leveraging technology for educational advancement.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Values Section -->
+<section class="content-section">
+  <div class="content-container">
+    <h2 class="section-title">Our Core Values</h2>
+    <div class="values-grid">
+      <div class="value-item" style="--item-index: 0">
+        <div class="value-icon">💡</div>
+        <h3>Innovation</h3>
+        <p>We continuously innovate to provide cutting-edge solutions that meet evolving library management needs.</p>
+      </div>
+      
+      <div class="value-item" style="--item-index: 1">
+        <div class="value-icon">🎯</div>
+        <h3>User-Centric</h3>
+        <p>Every feature is designed with the end user in mind, ensuring maximum usability and efficiency.</p>
+      </div>
+      
+      <div class="value-item" style="--item-index: 2">
+        <div class="value-icon">🤝</div>
+        <h3>Reliability</h3>
+        <p>We build robust, dependable systems that libraries can trust for their critical operations.</p>
+      </div>
+      
+      <div class="value-item" style="--item-index: 3">
+        <div class="value-icon">🌱</div>
+        <h3>Growth</h3>
+        <p>We're committed to continuous improvement and growing alongside our users' needs.</p>
+      </div>
+      
+      <div class="value-item" style="--item-index: 4">
+        <div class="value-icon">🔐</div>
+        <h3>Security</h3>
+        <p>Data protection and privacy are at the core of everything we build and maintain.</p>
+      </div>
+      
+      <div class="value-item" style="--item-index: 5">
+        <div class="value-icon">💚</div>
+        <h3>Support</h3>
+        <p>We provide dedicated support to ensure our users get the most out of Dooars Granthika.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Team Section -->
+<section class="content-section alternate-bg">
+  <div class="content-container">
+    <h2 class="section-title">Meet the Team</h2>
+    <div class="team-grid">
+      <div class="team-member" style="--member-index: 0">
+        <div class="member-avatar">KD</div>
+        <h3>Kunal Das</h3>
+        <p class="member-role">Co-Founder & Lead Developer</p>
+        <p>Specializes in backend architecture and database design.</p>
+      </div>
+      
+      <div class="team-member" style="--member-index: 1">
+        <div class="member-avatar">AB</div>
+        <h3>Ashim Bakshi</h3>
+        <p class="member-role">Co-Founder & Frontend Developer</p>
+        <p>Focuses on user interface and user experience design.</p>
+      </div>
+      
+      <div class="team-member" style="--member-index: 2">
+        <div class="member-avatar">AD</div>
+        <h3>Arindam Das</h3>
+        <p class="member-role">Co-Founder & Systems Architect</p>
+        <p>Handles system integration and performance optimization.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+  <h2>Join Us on Our Journey</h2>
+  <p>Be part of the library management revolution.</p>
+  <a href="{% url 'contact' %}" class="btn btn-primary btn-lg">Get in Touch</a>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/core/about.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,145 @@
+{% extends "superuser/superuser_dashboard_base.html" %}
+{% block title %}Libraries{% endblock %}
+{% block breadcrumb %}Libraries{% endblock %}
+{% block nav_libraries %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Libraries</h1>
+    <p class="page-subtitle">All registered library accounts on the platform.</p>
+  </div>
+  <div class="page-actions">
+    <button class="btn btn-secondary" onclick="exportTable('libraries-table','libraries.csv')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export
+    </button>
+  </div>
+</div>
+
+<div class="card">
+  <form method="get" class="filters-bar" id="filter-form">
+    <div class="filter-group">
+      <span class="filter-label">Status</span>
+      {{ form.status }}
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Plan</span>
+      {{ form.plan }}
+    </div>
+    <div class="filter-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      {{ form.q }}
+    </div>
+    <div class="ml-auto" style="font-size:12px; color:var(--text-muted); font-family:'JetBrains Mono',monospace;">
+      {{ libraries.paginator.count }} libraries
+    </div>
+  </form>
+
+  <div class="table-wrapper" style="border:none; border-radius:0;">
+    <table id="libraries-table">
+      <thead>
+        <tr>
+          <th data-sort>Code</th>
+          <th data-sort>Library Name</th>
+          <th data-sort>Institute</th>
+          <th data-sort>Email</th>
+          <th data-sort>Plan</th>
+          <th data-sort>Subscription</th>
+          <th data-sort>Joined</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for library in libraries %}
+        <tr data-href="{% url 'superuser:library_detail' library.pk %}">
+          <td class="td-mono">{{ library.library_code }}</td>
+          <td class="td-name">{{ library.library_name }}</td>
+          <td>{{ library.institute_name }}</td>
+          <td class="td-mono" style="font-size:12px;">{{ library.institute_email }}</td>
+          <td>
+            {% if library.subscription %}
+              {{ library.subscription.plan|capfirst }}
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if library.subscription %}
+              {% if library.subscription.is_active %}
+                <span class="badge badge-active">Active</span>
+              {% else %}
+                <span class="badge badge-danger">Expired</span>
+              {% endif %}
+            {% else %}
+              <span class="badge badge-neutral">None</span>
+            {% endif %}
+          </td>
+          <td class="td-mono">{{ library.created_at|date:"M d, Y" }}</td>
+          <td>
+            <div class="td-actions">
+              <a href="{% url 'superuser:library_detail' library.pk %}" class="btn btn-ghost btn-sm btn-icon" title="View">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </a>
+              {% if library.subscription and library.subscription.is_active %}
+              <a href="{% url 'superuser:library_suspend' library.pk %}" class="btn btn-warning btn-sm btn-icon" title="Suspend">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+              </a>
+              {% elif library.subscription %}
+              <a href="{% url 'superuser:library_activate' library.pk %}" class="btn btn-success btn-sm btn-icon" title="Activate">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              </a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8">
+          <div class="empty-state">
+            <div class="empty-icon">🏛</div>
+            <div class="empty-title">No Libraries Found</div>
+            <div class="empty-text">No libraries match your current filters, or none have registered yet.</div>
+          </div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card-footer">
+    <div style="display:flex; align-items:center; justify-content:space-between;">
+      <span style="font-size:12.5px; color:var(--text-muted); font-family:'JetBrains Mono',monospace;">
+        Showing {{ libraries.start_index }}–{{ libraries.end_index }} of {{ libraries.paginator.count }}
+      </span>
+      <div class="pagination" style="padding:0;">
+        {% if libraries.has_previous %}<a href="?page={{ libraries.previous_page_number }}" class="page-btn">‹</a>{% else %}<button class="page-btn" disabled>‹</button>{% endif %}
+        {% for i in libraries.paginator.page_range %}
+          {% if libraries.number == i %}<button class="page-btn active">{{ i }}</button>
+          {% elif i <= 3 or i >= libraries.paginator.num_pages|add:"-2" %}<a href="?page={{ i }}" class="page-btn">{{ i }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if libraries.has_next %}<a href="?page={{ libraries.next_page_number }}" class="page-btn">›</a>{% else %}<button class="page-btn" disabled>›</button>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('#filter-form select, #filter-form input').forEach(el => {
+  el.addEventListener('change', () => el.closest('form').submit());
+  el.addEventListener('keyup', e => { if (e.key === 'Enter') el.closest('form').submit(); });
+});
+function exportTable(id, filename) {
+  const rows = document.querySelectorAll('#' + id + ' tr');
+  const csv  = Array.from(rows).map(r =>
+    Array.from(r.querySelectorAll('th,td')).slice(0,-1).map(c => `"${c.textContent.trim()}"`).join(',')
+  ).join('\n');
+  Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([csv], {type:'text/csv'})),
+    download: filename
+  }).click();
+}
+</script>
+{% endblock %}

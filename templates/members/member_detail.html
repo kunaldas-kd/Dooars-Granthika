@@ -1,0 +1,280 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}{{ member.full_name }} - Dooars Granthika{% endblock %}
+
+{% block nav_members %}active{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/members/member_detail.css' %}" />
+<style>
+.role-badge{display:inline-block;padding:3px 12px;border-radius:12px;font-size:.8rem;font-weight:600;color:#fff}
+.role-badge.role-student{background:#3b82f6}
+.role-badge.role-teacher{background:#8b5cf6}
+.role-badge.role-general{background:#6b7280}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="member-detail-container">
+
+  <!-- Member Header Card -->
+  <div class="member-header-card">
+    <div class="member-header-content">
+      {% if member.photo %}
+      <img src="{% url 'members:member_photo' member.id %}" alt="{{ member.full_name }}" class="member-photo" />
+      {% else %}
+      <div class="member-photo-placeholder">
+        {{ member.full_name|slice:":1"|upper }}
+      </div>
+      {% endif %}
+
+      <div class="member-header-info">
+        <h1>{{ member.full_name }}</h1>
+        <div class="member-meta">
+          <div class="member-meta-item">
+            <i class="fas fa-user-tag"></i>
+            <span class="role-badge role-{{ member.role }}">{{ member.get_role_display }}</span>
+          </div>
+          <div class="member-meta-item">
+            <i class="fas fa-id-card"></i>
+            <span>{{ member.member_id }}</span>
+          </div>
+          <div class="member-meta-item">
+            <i class="fas fa-envelope"></i>
+            <span>{{ member.email }}</span>
+          </div>
+          <div class="member-meta-item">
+            <i class="fas fa-phone"></i>
+            <span>{{ member.phone }}</span>
+          </div>
+          <div class="member-meta-item">
+            <span class="status-badge {{ member.status }}" style="font-size: 0.875rem;">
+              <i class="fas fa-circle"></i>
+              {{ member.get_status_display }}
+            </span>
+          </div>
+        </div>
+
+        <div class="member-header-actions">
+          <a href="{% url 'members:member_edit' member.id %}" class="btn btn-outline-white">
+            <i class="fas fa-edit"></i> Edit Profile
+          </a>
+          <button class="btn btn-outline-white delete-member-btn"
+                  data-member-name="{{ member.full_name }}"
+                  data-delete-url="{% url 'members:member_delete' member.id %}">
+            <i class="fas fa-trash"></i> Delete Member
+          </button>
+          <a href="{% url 'members:members_list' %}" class="btn btn-outline-white">
+            <i class="fas fa-arrow-left"></i> Back to List
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Member Details Grid -->
+  <div class="member-details-grid">
+
+    <!-- Personal Information -->
+    <div class="detail-card">
+      <div class="detail-card-header">
+        <div class="detail-card-icon personal">
+          <i class="fas fa-user"></i>
+        </div>
+        <h3>Personal Information</h3>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Full Name</span>
+        <span class="detail-value">{{ member.full_name }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Date of Birth</span>
+        <span class="detail-value">{{ member.date_of_birth|date:"F d, Y" }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Gender</span>
+        <span class="detail-value">{{ member.get_gender_display }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Address</span>
+        <span class="detail-value">{{ member.address|default:"Not provided" }}</span>
+      </div>
+    </div>
+
+    <!-- Contact Information -->
+    <div class="detail-card">
+      <div class="detail-card-header">
+        <div class="detail-card-icon contact">
+          <i class="fas fa-phone"></i>
+        </div>
+        <h3>Contact Information</h3>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Email</span>
+        <span class="detail-value">{{ member.email }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Phone</span>
+        <span class="detail-value">{{ member.phone }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Alternate Phone</span>
+        <span class="detail-value">{{ member.alternate_phone|default:"Not provided" }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Guardian Phone</span>
+        <span class="detail-value">{{ member.guardian_phone|default:"Not provided" }}</span>
+      </div>
+    </div>
+
+    <!-- Academic Information -->
+    <div class="detail-card">
+      <div class="detail-card-header">
+        <div class="detail-card-icon academic">
+          <i class="fas fa-graduation-cap"></i>
+        </div>
+        <h3>Academic Information</h3>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Department</span>
+        <span class="detail-value">{{ member.department.name|default:"N/A" }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Course</span>
+        <span class="detail-value">{{ member.course.name|default:"N/A" }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Year</span>
+        <span class="detail-value">{{ member.year.name|default:"N/A" }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Roll Number</span>
+        <span class="detail-value">{{ member.roll_number|default:"N/A" }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Admission Year</span>
+        <span class="detail-value">{{ member.admission_year|default:"N/A" }}</span>
+      </div>
+    </div>
+
+    <!-- Library Information -->
+    <div class="detail-card">
+      <div class="detail-card-header">
+        <div class="detail-card-icon library">
+          <i class="fas fa-book"></i>
+        </div>
+        <h3>Library Information</h3>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Member ID</span>
+        <span class="detail-value"><strong>{{ member.member_id }}</strong></span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Role</span>
+        <span class="detail-value">
+          <span class="role-badge role-{{ member.role }}">{{ member.get_role_display }}</span>
+        </span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Join Date</span>
+        <span class="detail-value">{{ member.date_joined|date:"F d, Y" }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Status</span>
+        <span class="detail-value">
+          <span class="status-badge {{ member.status }}">
+            <i class="fas fa-circle"></i>
+            {{ member.get_status_display }}
+          </span>
+        </span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Books Issued</span>
+        <span class="detail-value">{{ member.books_issued_count|default:"0" }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Total Transactions</span>
+        <span class="detail-value">{{ member.total_transactions|default:"0" }}</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Transaction History -->
+  <div class="members-table-container" style="margin-top: 2rem;">
+    <div class="table-header">
+      <h2>
+        <i class="fas fa-history"></i> Recent Transactions
+      </h2>
+      <a href="#" class="btn btn-secondary">
+        View All <i class="fas fa-arrow-right"></i>
+      </a>
+    </div>
+
+    {% if transactions %}
+    <div class="members-table-wrapper">
+    <table class="members-table">
+      <thead>
+        <tr>
+          <th>Book Title</th>
+          <th>Issue Date</th>
+          <th>Due Date</th>
+          <th>Return Date</th>
+          <th>Status</th>
+          <th>Fine</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for transaction in transactions %}
+        <tr>
+          <td>
+            <strong>{{ transaction.book_title }}</strong>
+            <br>
+            <small style="color: #9ca3af;">{{ transaction.book_author|default:"" }}</small>
+          </td>
+          <td>{{ transaction.issue_date|date:"M d, Y" }}</td>
+          <td>{{ transaction.due_date|date:"M d, Y" }}</td>
+          <td>
+            {% if transaction.return_date %}
+              {{ transaction.return_date|date:"M d, Y" }}
+            {% else %}
+              <span class="not-returned">Not returned</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="status-badge {% if transaction.status == 'returned' %}returned{% else %}issued{% endif %}">
+              <i class="fas fa-circle"></i>
+              {{ transaction.get_status_display }}
+            </span>
+          </td>
+          <td>
+            {% if transaction.fine_amount %}
+              <span class="fine-pending">₹{{ transaction.fine_amount }}</span>
+            {% else %}
+              <span class="fine-paid">₹0</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div><!-- /.members-table-wrapper -->
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-state-icon">
+        <i class="fas fa-book-open"></i>
+      </div>
+      <h3>No Transactions Yet</h3>
+      <p>This member hasn't borrowed any books yet.</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/members/members.js' %}"></script>
+<script src="{% static 'js/members/member_detail.js' %}"></script>
+{% endblock %}

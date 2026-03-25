@@ -1,0 +1,200 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Dashboard{% endblock %} — SaaS Admin</title>
+  <link rel="stylesheet" href="{% static 'css/superuser/admin.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body data-superuser="{{ request.user.is_superuser|lower }}" data-manager="{% if not request.user.is_superuser and request.user.staff_profile.primary_role.can_add_staff %}true{% else %}false{% endif %}">
+
+<!-- Sidebar overlay (mobile) -->
+<div id="sidebar-overlay"></div>
+
+<div class="app-shell">
+
+  <!-- ── Sidebar ──────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-text">SaaSControl</div>
+        <div class="logo-sub">Superuser Panel</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+
+      <div class="nav-section">
+        <div class="nav-section-label">Overview</div>
+        <a href="{% url 'superuser:dashboard' %}" class="nav-item {% block nav_dashboard %}{% endblock %}">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+      </div>
+
+      {% if request.user.is_superuser %}
+      <div class="nav-section">
+        <div class="nav-section-label">Subscriptions</div>
+        <a href="{% url 'superuser:subscriptions_list' %}" class="nav-item {% block nav_subscriptions %}{% endblock %}">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          All Subscriptions
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-label">Plans</div>
+        <a href="{% url 'superuser:plans_list' %}" class="nav-item {% block nav_plans %}{% endblock %}">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          Plans
+        </a>
+        <a href="{% url 'superuser:plan_create' %}" class="nav-item {% block nav_plan_create %}{% endblock %}">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          Create Plan
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-label">Libraries</div>
+        <a href="{% url 'superuser:libraries_list' %}" class="nav-item {% block nav_libraries %}{% endblock %}">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+          Libraries
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-label">Billing</div>
+        <a href="{% url 'superuser:transactions_list' %}" class="nav-item {% block nav_transactions %}{% endblock %}">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Transactions
+        </a>
+        <a href="{% url 'superuser:invoices' %}" class="nav-item {% block nav_invoices %}{% endblock %}">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Invoices
+        </a>
+      </div>
+      {% endif %}
+
+      <div class="nav-section">
+        <div class="nav-section-label">Team</div>
+        <a href="{% url 'superuser:staff_list' %}" class="nav-item {% block nav_staff %}{% endblock %}">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Staff
+        </a>
+        <a href="{% url 'superuser:tasks_list' %}" class="nav-item {% block nav_tasks %}{% endblock %}">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Tasks
+        </a>
+        {% if request.user.is_superuser %}
+        <a href="{% url 'superuser:roles_list' %}" class="nav-item {% block nav_roles %}{% endblock %}">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+          Roles
+        </a>
+        {% endif %}
+      </div>
+
+      {% if request.user.is_superuser %}
+      <div class="nav-section">
+        <div class="nav-section-label">Reports</div>
+        <a href="{% url 'superuser:revenue_report' %}" class="nav-item {% block nav_revenue %}{% endblock %}">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Revenue Report
+        </a>
+        <a href="{% url 'superuser:usage_overview' %}" class="nav-item {% block nav_usage %}{% endblock %}">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+          Usage Overview
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-label">System</div>
+        <a href="{% url 'superuser:settings' %}" class="nav-item {% block nav_settings %}{% endblock %}">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+          Settings
+        </a>
+      </div>
+      {% endif %}
+
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar">{{ request.user.username|first|upper }}</div>
+        <div class="user-info">
+          <div class="user-name">{{ request.user.username }}</div>
+          <div class="user-role">
+            {% if request.user.is_superuser %}Superuser{% else %}{% with sp=request.user.staff_profile %}{% if sp %}{{ sp.primary_role.name }}{% else %}Staff{% endif %}{% endwith %}{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Main Area ─────────────────────────────────────────── -->
+  <div class="main-area">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <button id="sidebar-toggle" class="topbar-btn" aria-label="Toggle sidebar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+
+      <div class="topbar-breadcrumb">
+        <span class="breadcrumb-item">Admin</span>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-item current">{% block breadcrumb %}Dashboard{% endblock %}</span>
+      </div>
+
+      <div class="topbar-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Search…" id="global-search">
+      </div>
+
+      <div class="topbar-actions">
+        {% if request.user.is_superuser %}
+        <a href="{% url 'superuser:revenue_report' %}" class="topbar-btn" title="Reports">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </a>
+        {% endif %}
+        <button class="topbar-btn" title="Notifications" id="notif-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="dot"></span>
+        </button>
+        <a href="{% url 'accounts:signout' %}" class="topbar-btn" title="Logout">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </a>
+      </div>
+    </header>
+
+    <!-- Django Messages -->
+    {% if messages %}
+    <div class="messages-container" style="padding: 0 28px; padding-top: 16px;">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">
+        <span class="alert-icon">
+          {% if message.tags == 'success' %}✓{% elif message.tags == 'error' %}✕{% elif message.tags == 'warning' %}⚠{% else %}ℹ{% endif %}
+        </span>
+        <div class="alert-text">{{ message }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Page Content -->
+    <main class="page-content">
+      {% block content %}{% endblock %}
+    </main>
+
+  </div><!-- .main-area -->
+</div><!-- .app-shell -->
+
+<!-- Toast container -->
+<div class="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="{% static 'js/superuser/admin.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

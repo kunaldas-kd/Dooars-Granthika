@@ -1,0 +1,109 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}My Fines — Dooars Granthika{% endblock %}
+{% block nav_finance %}active{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/finance/finance_dashboard.css' %}" />
+{% endblock %}
+
+{% block content %}
+<div class="fin-wrapper" style="max-width:860px;">
+
+  <div class="fin-page-header">
+    <div class="fin-page-header__left">
+      <div class="fin-page-header__icon" style="background:linear-gradient(135deg,#f59e0b,#d97706);">
+        <i class="fas fa-clock"></i>
+      </div>
+      <div>
+        <div class="fin-page-title">My Outstanding Fines</div>
+        <div class="fin-page-sub">All unpaid fines across your library account</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Total Banner -->
+  {% if fines %}
+  <div class="fin-kpi-card fin-kpi-card--fines" style="margin-bottom:20px;max-width:340px;">
+    <div class="fin-kpi-header">
+      <div class="fin-kpi-icon fin-kpi-icon--fines"><i class="fas fa-hourglass-half"></i></div>
+      <span class="fin-kpi-trend fin-kpi-trend--flat">Unpaid</span>
+    </div>
+    <div class="fin-kpi-label">Total Outstanding</div>
+    <div class="fin-kpi-value"><span class="fin-rupee">&#8377;</span>{{ total|floatformat:2 }}</div>
+    <div class="fin-kpi-sub">{{ fines|length }} fine(s) pending</div>
+  </div>
+  {% endif %}
+
+  <!-- Fines Table -->
+  <div class="fin-panel">
+    <div class="fin-panel__head">
+      <div class="fin-panel__title">
+        <i class="fas fa-list"></i> Unpaid Fines
+        <span class="fin-count">{{ fines|length }}</span>
+      </div>
+    </div>
+    <div class="fin-table-wrap">
+      <table class="fin-table">
+        <thead>
+          <tr>
+            <th>Fine ID</th>
+            <th>Book</th>
+            <th>Fine Type</th>
+            <th>Due Date</th>
+            <th>Raised On</th>
+            <th style="text-align:right;">Amount</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for fine in fines %}
+          <tr>
+            <td><span class="fin-mono">{{ fine.fine_id }}</span></td>
+            <td>
+              <div style="font-size:13px;font-weight:500;color:var(--fin-ink-soft);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                {{ fine.book_title|default:fine.transaction.book.title|default:"—" }}
+              </div>
+            </td>
+            <td>
+              <span class="fin-badge fin-badge--pending">{{ fine.get_fine_type_display }}</span>
+            </td>
+            <td>
+              <span style="font-size:13px;color:var(--fin-ink-soft);">
+                {{ fine.due_date_snapshot|date:"d M Y"|default:"—" }}
+              </span>
+            </td>
+            <td>
+              <span style="font-size:13px;color:var(--fin-muted);">
+                {{ fine.created_at|date:"d M Y" }}
+              </span>
+            </td>
+            <td style="text-align:right;">
+              <span class="fin-amount fin-amount--negative">&#8377;{{ fine.amount|floatformat:2 }}</span>
+            </td>
+            <td>
+              <a href="{% url 'finance:process_payment' %}?fine_id={{ fine.fine_id }}"
+                 class="fin-btn fin-btn--success" style="padding:6px 12px;font-size:12px;">
+                <i class="fas fa-hand-holding-dollar"></i> Pay Now
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7">
+              <div class="fin-empty">
+                <i class="fas fa-circle-check" style="color:var(--fin-green-mid);"></i>
+                <div class="fin-empty__title">All Clear!</div>
+                <div class="fin-empty__sub">You have no outstanding fines.</div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
